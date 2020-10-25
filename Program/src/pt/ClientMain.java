@@ -8,7 +8,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-public class Main extends Application {
+public class ClientMain extends Application {
 	
 	private Scene scene;
 	private Stage stage;
