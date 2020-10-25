@@ -1,5 +1,3 @@
--- create database main;
-
 drop table if exists Channel_Message;
 drop table if exists User_Message;
 drop table if exists Channel_User;
@@ -7,6 +5,7 @@ drop table if exists Message;
 drop table if exists Channel;
 drop table if exists User;
 
+create database if not exists main;
 -- User ----------------------------------
 create table if not exists User (
 	id  int not null primary key,

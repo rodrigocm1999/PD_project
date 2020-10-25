@@ -1,4 +1,4 @@
-// Connected Users
+-- Connected Users
 SELECT SUBSTRING_INDEX(host, ':', 1) AS host_short,
        GROUP_CONCAT(DISTINCT user) AS users,
        COUNT(*) AS threads
