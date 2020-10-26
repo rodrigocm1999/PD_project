@@ -12,7 +12,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 public class ClientWindow extends Application {
-	
+
 	private Scene scene;
 	private Stage stage;
 
@@ -28,7 +28,7 @@ public class ClientWindow extends Application {
 		stage = primaryStage;
 		primaryStage.setTitle("");
 		Parent root = loadParent("sample.fxml");
-		scene = new Scene(root, 300, 275);
+		scene = new Scene(root, 600, 460);
 		primaryStage.setScene(scene);
 		primaryStage.show();
 
@@ -55,8 +55,9 @@ public class ClientWindow extends Application {
 			serverAddress = args[0];
 		}
 		
-		ClientMain client = new ClientMain(serverAddress, Constants.SERVER_PORT);
+
 		try {
+			ClientMain client = new ClientMain(serverAddress, Constants.SERVER_PORT);
 			if (client.run() > 0) {
 				System.out.println("gtnreiiger");
 				launch(args);
@@ -65,6 +66,8 @@ public class ClientWindow extends Application {
 				return;
 			}
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}

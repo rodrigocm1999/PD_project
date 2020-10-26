@@ -23,6 +23,19 @@ public class Registration {
         String repeatPwd = idRepeatPassword.getText();
         String name = idName.getText();
         String photoPath = idPhotoPath.getText();
+
+
+        if(!password.equals(repeatPwd)){
+            errorLabel.setText("PASSWORD MUST BE THE SAME");
+            return;
+        }
+
+        UserInfo user = new UserInfo(name,username,password,photoPath);
+        ClientMain instance = ClientMain.getInstance();
+
+        instance.userRegistration(user);
+
+
         errorLabel.setText("Funciona");
     }
 }
