@@ -14,5 +14,8 @@ public class Constants {
 	public  static final String LOGIN = "LOGIN_ATTEMPT";
 	public  static final String LOGIN_SUCCESS = "LOGIN_SUCCESS";
 
+	public static final String DATABASE_URL = "jdbc:mysql://rodrigohost.ddns.net:3306/main";
+	public static final String DATABASE_USER_NAME = "server";
+	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
 	
 }

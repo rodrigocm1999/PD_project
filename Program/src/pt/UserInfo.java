@@ -15,4 +15,14 @@ public class UserInfo implements Serializable {
 		this.password = password;
 		this.photoPath = photoPath;
 	}
+	
+	@Override
+	public String toString() {
+		return "UserInfo{" +
+				"name='" + name + '\'' +
+				", username='" + username + '\'' +
+				", password='" + password + '\'' +
+				", photoPath='" + photoPath + '\'' +
+				'}';
+	}
 }
