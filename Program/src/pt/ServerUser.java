@@ -5,7 +5,7 @@ import java.net.Socket;
 
 public class ServerUser extends Thread {
 
-	private Socket socket;
+	private final Socket socket;
 	private String username;
 	
 	public ServerUser(Socket socket) {
