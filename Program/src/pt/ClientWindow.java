@@ -55,7 +55,7 @@ public class ClientWindow extends Application {
 			serverAddress = args[0];
 		}
 		
-		ClientMain client = new ClientMain(serverAddress, ServerMain.SERVER_PORT);
+		ClientMain client = new ClientMain(serverAddress, Constants.SERVER_PORT);
 		try {
 			if (client.run() > 0) {
 				System.out.println("gtnreiiger");

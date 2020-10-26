@@ -21,13 +21,13 @@ public class ClientMain {
 	public int run() throws IOException {
 		DatagramSocket datagramSocket = new DatagramSocket();
 		
-		byte[] buff = ServerMain.ESTABLISH_CONNECTION.getBytes();
+		byte[] buff = Constants.ESTABLISH_CONNECTION.getBytes();
 		InetAddress ip = InetAddress.getByName(ipServer);
 		DatagramPacket datagramPacket = new DatagramPacket(buff, buff.length, ip, port);
 		
 		datagramSocket.send(datagramPacket);
 		
-		datagramPacket = new DatagramPacket(new byte[ServerMain.UDP_PACKET_SIZE], ServerMain.UDP_PACKET_SIZE);
+		datagramPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 		datagramSocket.setSoTimeout(2000);
 		datagramSocket.receive(datagramPacket);
 		
@@ -35,8 +35,8 @@ public class ClientMain {
 		System.out.println(str);
 		
 		
-		if (str.equals(ServerMain.CONNECTION_ACCEPTED)) {
-			socket =  new Socket(ipServer, ServerMain.SERVER_PORT);
+		if (str.equals(Constants.CONNECTION_ACCEPTED)) {
+			socket =  new Socket(ipServer, Constants.SERVER_PORT);
 			return 1;
 		} else {
 			
