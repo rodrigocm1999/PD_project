@@ -45,13 +45,15 @@ public class ServerMain {
 					if (canAcceptNewUser()) {
 						
 						byte[] answer = CONNECTION_ACCEPTED.getBytes();
-						DatagramPacket answerPacket = new DatagramPacket(answer, answer.length,recievedPacket.getAddress(),recievedPacket.getPort());
+						DatagramPacket answerPacket = new DatagramPacket(
+								answer, answer.length,recievedPacket.getAddress(),recievedPacket.getPort());
 						udpSocket.send(answerPacket);
 						
 						Socket socket = serverSocket.accept();
 						ServerUser serverUser = new ServerUser(socket);
 						connectedMachines.add(serverUser);
 						serverUser.start();
+						System.out.println(CONNECTION_ACCEPTED + " : " + recievedPacket.getAddress().getHostName() + ":" + recievedPacket.getPort());
 					} else {
 						
 						byte[] answer = CONNECTION_REFUSED.getBytes();
