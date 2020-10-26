@@ -20,7 +20,9 @@ public class ServerMain {
 	private ServerSocket serverSocket;
 	private String databaseAddress;
 	private ArrayList<ServerUser> connectedMachines;
-	
+
+
+
 	public ServerMain(String databaseAddress) {
 		this.databaseAddress = databaseAddress;
 		connectedMachines = new ArrayList<>();

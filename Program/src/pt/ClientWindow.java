@@ -15,9 +15,14 @@ public class ClientWindow extends Application {
 	
 	private Scene scene;
 	private Stage stage;
-	
 
-	
+	private static ClientWindow instance;
+
+	public static ClientWindow getInstance() {
+		return instance;
+	}
+
+
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		stage = primaryStage;
@@ -26,6 +31,11 @@ public class ClientWindow extends Application {
 		scene = new Scene(root, 300, 275);
 		primaryStage.setScene(scene);
 		primaryStage.show();
+
+		if (instance != null) {
+			throw new Exception("Server Already Running");
+		}
+		instance = this;
 	}
 	
 	

@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 
 public class ClientMain {
 	
 	private String ipServer;
 	private int port;
+	private Socket socket;
 	
 	
 	public ClientMain(String ipServer, int port) {
@@ -34,6 +36,7 @@ public class ClientMain {
 		
 		
 		if (str.equals(ServerMain.CONNECTION_ACCEPTED)) {
+			socket =  new Socket(ipServer, ServerMain.SERVER_PORT);
 			return 1;
 		} else {
 			
