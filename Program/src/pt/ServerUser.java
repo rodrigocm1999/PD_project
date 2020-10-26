@@ -23,9 +23,13 @@ public class ServerUser extends Thread {
 			
 			
 			
-			
 		}catch (Exception e){
-			e.printStackTrace();
+			System.out.println(e.getLocalizedMessage());
+			ServerMain.getInstance().removeConnected(this);
 		}
+	}
+	
+	public Socket getSocket() {
+		return socket;
 	}
 }
