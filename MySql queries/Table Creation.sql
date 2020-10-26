@@ -8,21 +8,21 @@ drop table if exists User;
 create database if not exists main;
 -- User ----------------------------------
 create table if not exists User (
-	id  int not null primary key,
+	id  int not null primary key auto_increment,
 	name varchar(50) not null,
-	username varchar(25) not null,
+	username varchar(25) not null unique key,
 	password_hash char(32) not null,
 	photo_path varchar(128) null,
-	user_creation datetime not null
+	user_creation datetime not null default current_timestamp
 );
 -- Channel ----------------------------------
 create table if not exists Channel (
-    id int NOT NULL primary key,
+    id int NOT NULL primary key auto_increment,
     creator_id int NOT NULL,
     name varchar(64) NOT NULL,
     password_hash char(32) NOT NULL,
     description varchar(256) NULL,
-    creation_moment datetime not null default CURRENT_TIMESTAMP,
+    creation_moment datetime not null default current_timestamp,
 
     foreign key (creator_id) references User(id) 
 );
@@ -38,7 +38,7 @@ create table if not exists Channel_User (
 -- Message ----------------------------------
 create table if not exists Message (
 	id int not null primary key,
-    moment_sent datetime not null default CURRENT_TIMESTAMP,
+    moment_sent datetime not null default current_timestamp,
     type enum( 'text' , 'file' ) not null,
     content varchar(2000) not null
 );

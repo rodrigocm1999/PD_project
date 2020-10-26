@@ -13,8 +13,10 @@ public class Constants {
 	public  static final String REGISTER_SUCCESS = "REGISTER_SUCCESS";
 	public  static final String LOGIN = "LOGIN_ATTEMPT";
 	public  static final String LOGIN_SUCCESS = "LOGIN_SUCCESS";
+	
+	public static final String ERROR = "ERROR";
 
-	public static final String DATABASE_URL = "jdbc:mysql://rodrigohost.ddns.net:3306/main";
+	public static final String DATABASE_URL = "jdbc:mysql://localhost:3306/main?autoReconnect=true&useSSL=false";
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
 	

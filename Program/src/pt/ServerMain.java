@@ -6,6 +6,10 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 public class ServerMain {
@@ -13,13 +17,23 @@ public class ServerMain {
 	private ServerSocket serverSocket;
 	private final String databaseAddress;
 	private final ArrayList<ServerUser> connectedMachines;
+	private Connection databaseConnection;
 	private static ServerMain instance;
 	
 	public static ServerMain getInstance() {
 		return instance;
 	}
 	
-	public ServerMain(String databaseAddress)  throws Exception{
+	public Connection getDatabaseConnection() {
+		return databaseConnection;
+	}
+	
+	/*public Statement getDatabaseStatement() throws SQLException {
+		return databaseConnection.createStatement();
+	}*/
+	
+	
+	public ServerMain(String databaseAddress) throws Exception {
 		if (instance != null) {
 			throw new Exception("Server Already Running");
 		}
@@ -32,7 +46,8 @@ public class ServerMain {
 		return true;
 	}
 	
-	public void Run() throws IOException {
+	public void Run() throws Exception {
+		connectDatabase();
 		
 		DatagramSocket udpSocket = new DatagramSocket(Constants.SERVER_PORT);
 		serverSocket = new ServerSocket(Constants.SERVER_PORT);
@@ -79,10 +94,6 @@ public class ServerMain {
 	
 	public static void main(String[] args) throws Exception {
 		
-		/*Class.forName("com.mysql.jdbc.Driver").newInstance();
-		Connection con = DriverManager.getConnection(
-				"jdbc:mysql://rodrigohost.ddns.net:3306/main","server","VeryStrongPassword");
-		Statement stmt = con.createStatement();*/
 		String databaseAddress = "localhost";
 		if (args.length == 0) {
 			System.out.println("No database address on arguments\nUsing localhost");
@@ -104,6 +115,11 @@ public class ServerMain {
 	
 	public void removeConnected(ServerUser user) {
 		connectedMachines.remove(user);
+	}
+	
+	private void connectDatabase() throws SQLException, ClassNotFoundException {
+		Class.forName("com.mysql.jdbc.Driver");
+		databaseConnection = DriverManager.getConnection(Constants.DATABASE_URL, Constants.DATABASE_USER_NAME, Constants.DATABASE_USER_PASSWORD);
 	}
 	
 }
