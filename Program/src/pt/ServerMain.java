@@ -10,18 +10,20 @@ import java.util.ArrayList;
 
 public class ServerMain {
 	
-	public static final int UDP_PACKET_SIZE = 256;
-	public static final int SERVER_PORT = 9321;
-	
-	public static final String ESTABLISH_CONNECTION = "ESTABLISH_CONNECTION";
-	public static final String CONNECTION_ACCEPTED = "CONNECTION_ACCEPTED";
-	public static final String CONNECTION_REFUSED = "CONNECTION_REFUSED";
-	
 	private ServerSocket serverSocket;
-	private String databaseAddress;
-	private ArrayList<ServerUser> connectedMachines;
+	private final String databaseAddress;
+	private final ArrayList<ServerUser> connectedMachines;
+	private static ServerMain instance;
 	
-	public ServerMain(String databaseAddress) {
+	public static ServerMain getInstance() {
+		return instance;
+	}
+	
+	public ServerMain(String databaseAddress)  throws Exception{
+		if (instance != null) {
+			throw new Exception("Server Already Running");
+		}
+		instance = this;
 		this.databaseAddress = databaseAddress;
 		connectedMachines = new ArrayList<>();
 	}
@@ -32,43 +34,50 @@ public class ServerMain {
 	
 	public void Run() throws IOException {
 		
-		DatagramSocket udpSocket = new DatagramSocket(SERVER_PORT);
-		serverSocket = new ServerSocket(SERVER_PORT);
+		DatagramSocket udpSocket = new DatagramSocket(Constants.SERVER_PORT);
+		serverSocket = new ServerSocket(Constants.SERVER_PORT);
 		
 		while (true) {
-			DatagramPacket recievedPacket = new DatagramPacket(new byte[UDP_PACKET_SIZE], UDP_PACKET_SIZE);
-			udpSocket.receive(recievedPacket);
-			String request = new String(recievedPacket.getData(), 0, recievedPacket.getLength());
+			DatagramPacket receivedPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+			udpSocket.receive(receivedPacket);
+			String request = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
+			
 			
 			switch (request) {
-				case ESTABLISH_CONNECTION -> {
+				case Constants.ESTABLISH_CONNECTION -> {
 					if (canAcceptNewUser()) {
-						
-						byte[] answer = CONNECTION_ACCEPTED.getBytes();
+						System.out.println(Constants.ESTABLISH_CONNECTION);
+						byte[] answer = Constants.CONNECTION_ACCEPTED.getBytes();
 						DatagramPacket answerPacket = new DatagramPacket(
-								answer, answer.length,recievedPacket.getAddress(),recievedPacket.getPort());
+								answer, answer.length, receivedPacket.getAddress(), receivedPacket.getPort());
 						udpSocket.send(answerPacket);
 						
-						Socket socket = serverSocket.accept();
-						ServerUser serverUser = new ServerUser(socket);
-						connectedMachines.add(serverUser);
-						serverUser.start();
-						System.out.println(CONNECTION_ACCEPTED + " : " + recievedPacket.getAddress().getHostName() + ":" + recievedPacket.getPort());
+						try {
+							serverSocket.setSoTimeout(1500);
+							Socket socket = serverSocket.accept();
+							
+							ServerUser serverUser = new ServerUser(socket);
+							connectedMachines.add(serverUser);
+							serverUser.start();
+							System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket.getInetAddress().getHostName() + ":" + socket.getLocalPort()
+									+ "\tserver port : " + socket.getLocalPort());
+							//printConnected();
+						} catch (Exception e) {
+							System.out.println("Catch Establish Connection : " + e.getMessage());
+						}
 					} else {
 						
-						byte[] answer = CONNECTION_REFUSED.getBytes();
+						byte[] answer = Constants.CONNECTION_REFUSED.getBytes();
 						udpSocket.send(new DatagramPacket(answer, answer.length));
 						//TODO send list with other servers
 					}
 				}
 			}
-			
 		}
-		
-		
 	}
 	
-	public static void main(String[] args) throws IOException {
+	
+	public static void main(String[] args) throws Exception {
 		
 		/*Class.forName("com.mysql.jdbc.Driver").newInstance();
 		Connection con = DriverManager.getConnection(
@@ -83,6 +92,18 @@ public class ServerMain {
 		
 		ServerMain serverMain = new ServerMain(databaseAddress);
 		serverMain.Run();
+	}
+	
+	private void printConnected() {
+		System.out.println("Connected : ");
+		for (ServerUser conn : connectedMachines) {
+			System.out.println("local port: " + conn.getSocket().getLocalPort() + " " + conn.getSocket().getInetAddress().getHostName() + ":" + conn.getSocket().getPort());
+		}
+		System.out.println("--------------");
+	}
+	
+	public void removeConnected(ServerUser user) {
+		connectedMachines.remove(user);
 	}
 	
 }
