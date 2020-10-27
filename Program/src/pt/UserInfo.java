@@ -11,6 +11,10 @@ public class UserInfo implements Serializable {
 	public String password;
 	public String photoPath;
 	
+	public UserInfo(String username, String password) {
+		this.username = username;
+		this.password = password;
+	}
 	
 	public UserInfo(String name, String username, String password, String photoPath) {
 		this.name = name;

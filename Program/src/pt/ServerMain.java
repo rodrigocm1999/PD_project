@@ -90,7 +90,7 @@ public class ServerMain {
 		
 		String databaseAddress = "localhost";
 		if (args.length == 0) {
-			System.out.println("No database address on arguments\nUsing localhost");
+			System.out.println("No database address on arguments. Using 'localhost'");
 		} else {
 			databaseAddress = args[0];
 		}

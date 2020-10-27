@@ -10,6 +10,7 @@ public class ServerUser extends Thread {
 	private final Socket socket;
 	private ObjectOutputStream oos;
 	private ObjectInputStream ois;
+	private boolean isLoggedIn;
 	
 	public ServerUser(Socket socket) {
 		this.socket = socket;
@@ -79,11 +80,7 @@ public class ServerUser extends Thread {
 						UserInfo userInfo = (UserInfo) ois.readObject();
 						System.out.println(userInfo);
 						
-						if (login(userInfo.getUsername(), userInfo.getPassword())) {
-						
-						
-						}
-						
+						isLoggedIn = login(userInfo.getUsername(), userInfo.getPassword());
 					}
 				}
 			}
@@ -126,7 +123,7 @@ public class ServerUser extends Thread {
 	}
 	
 	private void sendCommand(String command, String extra) throws IOException {
-		oos.writeObject(command + "," + (extra == null ? "" : extra));
+		oos.writeObject(command + ";" + (extra == null ? "" : extra));
 	}
 	
 	private int insertUser(UserInfo user) throws SQLException, NoSuchAlgorithmException {
@@ -159,4 +156,8 @@ public class ServerUser extends Thread {
 		return name.length() <= 50;
 	}
 	
+	
+	public boolean isLoggedIn() {
+		return isLoggedIn;
+	}
 }

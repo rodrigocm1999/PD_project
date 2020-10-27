@@ -15,5 +15,6 @@ insert into user(name,username,password_hash) values('yee','yeet','dwefiogr');
 insert into user(name,username,password_hash) values('yee','yeeeet','dwefiogr');
 insert into user(name,username,password_hash) values('yee','dorin','dwefiogr');
 insert into user(name,username,password_hash,photo_path) values('yee','dodsrin','dwefiogr','gae');
-insert into user(name,username,password_hash,photo_path) values('','dsa','5j7irtsx93n2jojxywz09zxecwctwrdqrzkvb8oo2w7drxzmup','');
+insert into user(name,username,password_hash,photo_path) values('','dsar','5j7irtsx93n2jojxywz09zxecwctwrdqrzkvb8oo2w7drxzmup','');
 select * from user;
+select count(id) from user where username = 'dsar' and password_hash = '7irtsx93n2jojxywz09zxecwctwrdqrzkvb8oo2w7drxzmup';
