@@ -21,6 +21,6 @@
       <TextField fx:id="idPhotoPath" layoutX="16.0" layoutY="238.0" prefHeight="25.0" prefWidth="423.0" />
       
       <Button layoutX="380.0" layoutY="344.0" mnemonicParsing="false" onAction="#onRegister" text="Register" />
-      <Label fx:id="errorLabel" alignment="CENTER_RIGHT" layoutX="109.0" layoutY="348.0" prefHeight="17.0" prefWidth="259.0" text="OLA" textFill="RED" />
+      <Label fx:id="errorLabel" alignment="CENTER_RIGHT" layoutX="109.0" layoutY="348.0" prefHeight="17.0" prefWidth="259.0" textFill="RED" />
    </children>
 </AnchorPane>

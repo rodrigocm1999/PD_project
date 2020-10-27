@@ -5,6 +5,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.paint.Color;
+
+import java.io.IOException;
 
 public class Registration {
 
@@ -18,6 +21,8 @@ public class Registration {
 
 
     public void onRegister(ActionEvent actionEvent) {
+
+        errorLabel.setDisable(true);
         String username = idUsername.getText();
         String password = idPassword.getText();
         String repeatPwd = idRepeatPassword.getText();
@@ -25,17 +30,30 @@ public class Registration {
         String photoPath = idPhotoPath.getText();
 
 
-        if(!password.equals(repeatPwd)){
+        if (!password.equals(repeatPwd)) {
             errorLabel.setText("PASSWORD MUST BE THE SAME");
             return;
         }
 
-        UserInfo user = new UserInfo(name,username,password,photoPath);
+        UserInfo user = new UserInfo(name, username, password, photoPath);
         ClientMain instance = ClientMain.getInstance();
 
-        instance.userRegistration(user);
+        String[] answer = instance.userRegistration(user);
 
+        if (answer[0].equals(Constants.REGISTER_SUCCESS)) {
+            errorLabel.setText(answer[0]);
+            errorLabel.setTextFill(Color.web("green"));
+            errorLabel.setDisable(false);
 
-        errorLabel.setText("Funciona");
+            try {
+                ClientWindow instanceWindow = ClientWindow.getInstance();
+                instanceWindow.setWindowRoot("sample.fxml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else if (answer[0].equals(Constants.REGISTER_ERROR)) {
+            errorLabel.setText(answer[1]);
+            errorLabel.setDisable(false);
+        }
     }
 }
