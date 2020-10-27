@@ -11,7 +11,7 @@ create table if not exists User (
 	id  int not null primary key auto_increment,
 	name varchar(50) not null,
 	username varchar(25) not null unique key,
-	password_hash char(32) not null,
+	password_hash char(64) not null,
 	photo_path varchar(128) null,
 	user_creation datetime not null default current_timestamp
 );
@@ -20,7 +20,7 @@ create table if not exists Channel (
     id int NOT NULL primary key auto_increment,
     creator_id int NOT NULL,
     name varchar(64) NOT NULL,
-    password_hash char(32) NOT NULL,
+    password_hash char(64) NOT NULL,
     description varchar(256) NULL,
     creation_moment datetime not null default current_timestamp,
 

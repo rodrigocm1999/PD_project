@@ -1,15 +1,13 @@
 package pt;
 
-import javax.xml.crypto.Data;
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 
 public class ServerMain {
@@ -28,10 +26,9 @@ public class ServerMain {
 		return databaseConnection;
 	}
 	
-	/*public Statement getDatabaseStatement() throws SQLException {
-		return databaseConnection.createStatement();
-	}*/
-	
+	public PreparedStatement getPreparedStatement(String sql) throws SQLException {
+		return databaseConnection.prepareStatement(sql);
+	}
 	
 	public ServerMain(String databaseAddress) throws Exception {
 		if (instance != null) {
@@ -61,7 +58,6 @@ public class ServerMain {
 			switch (request) {
 				case Constants.ESTABLISH_CONNECTION -> {
 					if (canAcceptNewUser()) {
-						System.out.println(Constants.ESTABLISH_CONNECTION);
 						byte[] answer = Constants.CONNECTION_ACCEPTED.getBytes();
 						DatagramPacket answerPacket = new DatagramPacket(
 								answer, answer.length, receivedPacket.getAddress(), receivedPacket.getPort());
@@ -70,13 +66,11 @@ public class ServerMain {
 						try {
 							serverSocket.setSoTimeout(1500);
 							Socket socket = serverSocket.accept();
-							
 							ServerUser serverUser = new ServerUser(socket);
-							connectedMachines.add(serverUser);
 							serverUser.start();
+							connectedMachines.add(serverUser);
 							System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket.getInetAddress().getHostName() + ":" + socket.getLocalPort()
 									+ "\tserver port : " + socket.getLocalPort());
-							//printConnected();
 						} catch (Exception e) {
 							System.out.println("Catch Establish Connection : " + e.getMessage());
 						}
@@ -108,7 +102,7 @@ public class ServerMain {
 	private void printConnected() {
 		System.out.println("Connected : ");
 		for (ServerUser conn : connectedMachines) {
-			System.out.println("local port: " + conn.getSocket().getLocalPort() + " " + conn.getSocket().getInetAddress().getHostName() + ":" + conn.getSocket().getPort());
+			System.out.println(conn.getSocketInformation());
 		}
 		System.out.println("--------------");
 	}

@@ -3,6 +3,9 @@ package pt;
 import java.io.Serializable;
 
 public class UserInfo implements Serializable {
+	
+	private static final long serialVersionUID = 123L;
+	
 	public String name;
 	public String username;
 	public String password;
