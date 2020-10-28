@@ -7,9 +7,6 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 
 public class ClientWindow extends Application {
 
@@ -57,7 +54,7 @@ public class ClientWindow extends Application {
 		
 
 		try {
-			ClientMain client = new ClientMain(serverAddress, Constants.SERVER_PORT);
+			ClientMain client = new ClientMain(serverAddress, 9321);
 			if (client.run() > 0) {
 				System.out.println("gtnreiiger");
 				launch(args);

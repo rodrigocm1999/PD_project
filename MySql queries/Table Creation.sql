@@ -1,3 +1,11 @@
+drop database if exists main;
+create database if not exists main;
+use main;
+
+drop user 'server';
+create user 'server'@'%' identified by 'VeryStrongPassword';
+grant all privileges on main.* to 'server';
+
 drop table if exists Channel_Message;
 drop table if exists User_Message;
 drop table if exists Channel_User;
@@ -5,23 +13,22 @@ drop table if exists Message;
 drop table if exists Channel;
 drop table if exists User;
 
-create database if not exists main;
 -- User ----------------------------------
 create table if not exists User (
 	id  int not null primary key auto_increment,
 	name varchar(50) not null,
 	username varchar(25) not null unique key,
 	password_hash char(64) not null,
-	photo_path varchar(128) null,
+	photo_path varchar(128) not null,
 	user_creation datetime not null default current_timestamp
 );
 -- Channel ----------------------------------
 create table if not exists Channel (
     id int NOT NULL primary key auto_increment,
-    creator_id int NOT NULL,
-    name varchar(64) NOT NULL,
-    password_hash char(64) NOT NULL,
-    description varchar(256) NULL,
+    creator_id int not null,
+    name varchar(64) not null unique,
+    password_hash char(64) not null,
+    description varchar(256) not null,
     creation_moment datetime not null default current_timestamp,
 
     foreign key (creator_id) references User(id) 

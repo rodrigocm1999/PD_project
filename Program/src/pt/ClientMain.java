@@ -48,7 +48,7 @@ public class ClientMain {
 		
 		
 		if (str.equals(Constants.CONNECTION_ACCEPTED)) {
-			socket =  new Socket(ipServer, Constants.SERVER_PORT);
+			socket =  new Socket(ipServer, 9321);
 			oOS = new ObjectOutputStream(socket.getOutputStream());
 			oIS =  new ObjectInputStream(socket.getInputStream());
 

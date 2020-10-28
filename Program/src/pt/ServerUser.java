@@ -10,7 +10,9 @@ public class ServerUser extends Thread {
 	private final Socket socket;
 	private ObjectOutputStream oos;
 	private ObjectInputStream ois;
-	private boolean isLoggedIn;
+	private boolean isLoggedIn = false;
+	private String username;
+	private int userId;
 	private boolean toRemove = false;
 	private boolean keepReceiving = true;
 	
@@ -35,9 +37,9 @@ public class ServerUser extends Thread {
 		try {
 			while (keepReceiving) {
 				
-				String protocol = Constants.INVALID_PROTOCOL;
+				Command command;
 				try {
-					protocol = (String) ois.readObject();
+					command = (Command) ois.readObject();
 				} catch (ClassNotFoundException e) {
 					System.out.println("Error reading protocol : " + e.getLocalizedMessage());
 					continue;
@@ -46,19 +48,15 @@ public class ServerUser extends Thread {
 					throw new Exception("Connection lost");
 				}
 				
-				int returned = handleRequest(protocol);
+				handleRequest(command);
 				
-				if (returned == -1) {
-					// TODO leaving -----
-					return;
-				}
 			}
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 			toRemove = true;
 			ServerUser temp = this;
-			//TODO test this shit, finish waitConnecion. toRemove never becomes false again
+			//TODO test this shit, finish wait Connection. toRemove never becomes false again
 			Thread thread = new Thread(() -> {
 				try {
 					Thread.sleep(Constants.CONNECTION_TIMEOUT);
@@ -80,22 +78,21 @@ public class ServerUser extends Thread {
 		ServerMain.getInstance().removeConnected(this);
 	}
 	
-	private void waitConnection(){
+	private void waitConnection() {
 		int localPort = socket.getLocalPort();
 		//socket = new Socket(localPort);
 	}
 	
-	private int handleRequest(String protocol) throws
-			IOException, SQLException, NoSuchAlgorithmException, ClassNotFoundException {
-		switch (protocol) {
+	private void handleRequest(Command protocol) throws Exception {
+		switch (protocol.getProtocol()) {
 			case Constants.REGISTER -> {
 				if (isLoggedIn()) {
 					System.out.println("Illegal Request\tNot supposed to happen");
 					sendCommand(Constants.INVALID_REQUEST, null);
-					return 0;
+					return;
 				}
 				try {
-					UserInfo userInfo = (UserInfo) ois.readObject();
+					UserInfo userInfo = (UserInfo) protocol.getExtras();
 					System.out.println(userInfo);
 					
 					if (!Utils.checkPasswordFollowsRules(userInfo.getPassword())) {
@@ -111,7 +108,6 @@ public class ServerUser extends Thread {
 						sendCommand(Constants.REGISTER_ERROR, "Username already in use");
 						
 					} else {
-								
 								/*if (!userInfo.getPhotoPath().isEmpty()) {
 									//TODO receive image
 									byte[] imageBytes = (byte[]) ois.readObject();
@@ -135,30 +131,43 @@ public class ServerUser extends Thread {
 			}
 			
 			case Constants.LOGIN -> {
-				UserInfo userInfo = (UserInfo) ois.readObject();
+				UserInfo userInfo = (UserInfo) protocol.getExtras();
 				System.out.println(userInfo);
-				isLoggedIn = login(userInfo.getUsername(), userInfo.getPassword());
+				login(userInfo.getUsername(), userInfo.getPassword());
 			}
 			
 			case Constants.DISCONNECTING -> {
-				return -1;
+				//TODO clear something I don't know yet
+				// TODO test this shit
+				disconnectNRemove();
 			}
 		}
-		return 0;
 	}
 	
-	private boolean login(String username, String password) throws
-			SQLException, IOException, NoSuchAlgorithmException {
+	private void login(String username, String password) throws Exception {
 		if (!doesUsernameExist(username)) {
 			sendCommand(Constants.LOGIN_ERROR, "Username does not exist");
-			return false;
+			return;
 		}
 		if (!doesPasswordMatchUsername(username, password)) {
 			sendCommand(Constants.LOGIN_ERROR, "Password is incorrect");
-			return false;
+			return;
 		}
 		sendCommand(Constants.LOGIN_SUCCESS, null);
-		return true;
+		
+		userId = getUserId(username);
+		this.username = username;
+		isLoggedIn = true;
+	}
+	
+	private int getUserId(String username) throws Exception {
+		String select = "select id from user where username = ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setString(1, username);
+		ResultSet result = statement.executeQuery();
+		if (!result.next())
+			throw new Exception("WTF HOW DID THIS HAPPEN");
+		return result.getInt(1);
 	}
 	
 	private boolean doesPasswordMatchUsername(String username, String password) throws
@@ -177,11 +186,11 @@ public class ServerUser extends Thread {
 	}
 	
 	public String getSocketInformation() {
-		return ("local port: " + socket.getLocalPort() + " " + socket.getInetAddress().getHostName() + ":" + socket.getPort());
+		return ("local port: " + socket.getInetAddress().getHostName() + ":" + socket.getPort());
 	}
 	
-	private void sendCommand(String command, String extra) throws IOException {
-		oos.writeObject(command + ";" + (extra == null ? "" : extra));
+	private void sendCommand(String command, Object extra) throws IOException {
+		oos.writeObject(new Command(command, extra));
 	}
 	
 	private int insertUser(UserInfo user) throws SQLException, NoSuchAlgorithmException {
