@@ -11,6 +11,10 @@ public class Command implements Serializable {
 		this.extras = extras;
 	}
 	
+	public Command(String protocol) {
+		this.protocol = protocol;
+	}
+	
 	public String getProtocol() {
 		return protocol;
 	}
