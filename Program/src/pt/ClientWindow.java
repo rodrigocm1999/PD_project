@@ -56,7 +56,6 @@ public class ClientWindow extends Application {
 		try {
 			ClientMain client = new ClientMain(serverAddress, 9321);
 			if (client.run() > 0) {
-				System.out.println("gtnreiiger");
 				launch(args);
 			} else {
 				System.out.println("CHOULD NOT ACCESS THE SERVER. TRY AGAIN LATER");

@@ -14,13 +14,13 @@
                <font>
                   <Font size="21.0" />
                </font></Label>
-                <TextField layoutX="384.0" layoutY="151.0" />
+                <TextField fx:id="idUsername" layoutX="384.0" layoutY="151.0" />
 
                 <Label layoutX="384.0" layoutY="191.0" text="Password">
                <font>
                   <Font size="21.0" />
                </font></Label>
-                <PasswordField layoutX="384.0" layoutY="221.0" />
+                <PasswordField fx:id="idPassword" layoutX="384.0" layoutY="221.0" />
 
                 <Button layoutX="383.0" layoutY="277.0" mnemonicParsing="false" onAction="#onClickLogin" prefHeight="25.0" prefWidth="149.0" style="-fx-background-color: #1EDA1E;" text="Login">
                <font>
