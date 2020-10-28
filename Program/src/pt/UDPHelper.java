@@ -87,16 +87,17 @@ public class UDPHelper {
 		return receiveUDPObjectReliably(new DatagramSocket(port));
 	}
 	
+	public static Object receiveUDPObject(DatagramSocket socket, DatagramPacket packet) throws IOException, ClassNotFoundException {
+		socket.receive(packet);
+		ObjectInputStream ois = new ObjectInputStream(
+				new ByteArrayInputStream(packet.getData(), 0, packet.getLength()));
+		return ois.readObject();
+	}
+	
 	public static Object receiveUDPObject(DatagramSocket socket) throws IOException, ClassNotFoundException {
 		DatagramPacket packet = new DatagramPacket(
 				new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-		socket.receive(packet);
-		
-		//Get Object from
-		ObjectInputStream ois = new ObjectInputStream(
-				new ByteArrayInputStream(packet.getData(), 0, packet.getLength()));
-		Wrapper wrap = (Wrapper) ois.readObject();
-		return wrap.object;
+		return receiveUDPObject(socket, packet);
 	}
 	
 	public static Object receiveUDPObjectReliably(DatagramSocket socket) throws IOException, ClassNotFoundException {

@@ -16,6 +16,10 @@ public class ServerUser extends Thread {
 	private boolean toRemove = false;
 	private boolean keepReceiving = true;
 	
+	private static ServerMain getApp() {
+		return ServerMain.getInstance();
+	}
+	
 	public ServerUser(Socket socket) {
 		this.socket = socket;
 	}
@@ -49,9 +53,7 @@ public class ServerUser extends Thread {
 				}
 				
 				handleRequest(command);
-				
 			}
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 			toRemove = true;
@@ -79,6 +81,7 @@ public class ServerUser extends Thread {
 	}
 	
 	private void waitConnection() {
+		//TODO do this stuffs
 		int localPort = socket.getLocalPort();
 		//socket = new Socket(localPort);
 	}
@@ -86,48 +89,7 @@ public class ServerUser extends Thread {
 	private void handleRequest(Command protocol) throws Exception {
 		switch (protocol.getProtocol()) {
 			case Constants.REGISTER -> {
-				if (isLoggedIn()) {
-					System.out.println("Illegal Request\tNot supposed to happen");
-					sendCommand(Constants.INVALID_REQUEST, null);
-					return;
-				}
-				try {
-					UserInfo userInfo = (UserInfo) protocol.getExtras();
-					System.out.println(userInfo);
-					
-					if (!Utils.checkPasswordFollowsRules(userInfo.getPassword())) {
-						System.out.println("Password doesn't follow rules");
-						sendCommand(Constants.REGISTER_ERROR, "Invalid Password");
-						
-					} else if (!Utils.checkNameUser(userInfo.getName())) {
-						System.out.println("Name is invalid");
-						sendCommand(Constants.REGISTER_ERROR, "Name is invalid (might be too long, 50 characters is the limit)");
-						
-					} else if (!checkUsernameAvailability(userInfo.getUsername())) {
-						System.out.println("Username is already in use");
-						sendCommand(Constants.REGISTER_ERROR, "Username already in use");
-						
-					} else {
-								/*if (!userInfo.getPhotoPath().isEmpty()) {
-									//TODO receive image
-									byte[] imageBytes = (byte[]) ois.readObject();
-									ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(imageBytes);
-									BufferedImage image = ImageIO.read(byteArrayInputStream);
-									image = Utils.getCompressedImage(image, 250, 250);
-								}*/
-						
-						if (insertUser(userInfo) == 1) {
-							System.out.println("Added new user");
-							sendCommand(Constants.REGISTER_SUCCESS, null);
-						} else {
-							System.out.println("No new user added");
-							sendCommand(Constants.REGISTER_ERROR, "No new user added");
-						}
-					}
-				} catch (Exception e) {
-					System.out.println("Error on User Registration : " + e.getMessage());
-					sendCommand(Constants.REGISTER_ERROR, null);
-				}
+				handleRegister((UserInfo) protocol.getExtras());
 			}
 			
 			case Constants.LOGIN -> {
@@ -138,51 +100,70 @@ public class ServerUser extends Thread {
 			
 			case Constants.DISCONNECTING -> {
 				//TODO clear something I don't know yet
-				// TODO test this shit
+				//TODO test this shit
 				disconnectNRemove();
 			}
 		}
 	}
 	
+	private void handleRegister(UserInfo userInfo) throws IOException {
+		if (isLoggedIn()) {
+			System.out.println("Illegal Request\tNot supposed to happen");
+			sendCommand(Constants.INVALID_REQUEST, null);
+			return;
+		}
+		try {
+			System.out.println(userInfo);
+			
+			if (!Utils.checkPasswordFollowsRules(userInfo.getPassword())) {
+				System.out.println("Password doesn't follow rules");
+				sendCommand(Constants.REGISTER_ERROR, "Invalid Password");
+				
+			} else if (!Utils.checkNameUser(userInfo.getName())) {
+				System.out.println("Name is invalid");
+				sendCommand(Constants.REGISTER_ERROR, "Name is invalid (might be too long, 50 characters is the limit)");
+				
+			} else if (!ServerUserManager.checkUsernameAvailability(userInfo.getUsername())) {
+				System.out.println("Username is already in use");
+				sendCommand(Constants.REGISTER_ERROR, "Username already in use");
+				
+			} else {
+				/*if (!userInfo.getPhotoPath().isEmpty()) {
+					//TODO receive image
+					byte[] imageBytes = (byte[]) ois.readObject();
+					ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(imageBytes);
+					BufferedImage image = ImageIO.read(byteArrayInputStream);
+					image = Utils.getCompressedImage(image, 250, 250);
+				}*/
+				
+				if (ServerUserManager.insertUser(userInfo) == 1) {
+					System.out.println("Added new user");
+					sendCommand(Constants.REGISTER_SUCCESS, null);
+				} else {
+					System.out.println("No new user added");
+					sendCommand(Constants.REGISTER_ERROR, "No new user added");
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Error on User Registration : " + e.getMessage());
+			sendCommand(Constants.REGISTER_ERROR, null);
+		}
+	}
+	
 	private void login(String username, String password) throws Exception {
-		if (!doesUsernameExist(username)) {
+		if (!ServerUserManager.doesUsernameExist(username)) {
 			sendCommand(Constants.LOGIN_ERROR, "Username does not exist");
 			return;
 		}
-		if (!doesPasswordMatchUsername(username, password)) {
+		if (!ServerUserManager.doesPasswordMatchUsername(username, password)) {
 			sendCommand(Constants.LOGIN_ERROR, "Password is incorrect");
 			return;
 		}
 		sendCommand(Constants.LOGIN_SUCCESS, null);
 		
-		userId = getUserId(username);
+		userId = ServerUserManager.getUserId(username);
 		this.username = username;
 		isLoggedIn = true;
-	}
-	
-	private int getUserId(String username) throws Exception {
-		String select = "select id from user where username = ?";
-		PreparedStatement statement = getApp().getPreparedStatement(select);
-		statement.setString(1, username);
-		ResultSet result = statement.executeQuery();
-		if (!result.next())
-			throw new Exception("WTF HOW DID THIS HAPPEN");
-		return result.getInt(1);
-	}
-	
-	private boolean doesPasswordMatchUsername(String username, String password) throws
-			SQLException, NoSuchAlgorithmException {
-		String select = "select count(id) from user where username = ? and password_hash = ?";
-		PreparedStatement preparedStatement = getApp().getPreparedStatement(select);
-		preparedStatement.setString(1, username);
-		preparedStatement.setString(2, Utils.hashStringBase36(password));
-		ResultSet resultSet = preparedStatement.executeQuery();
-		resultSet.next();
-		return resultSet.getInt(1) == 1;
-	}
-	
-	private static ServerMain getApp() {
-		return ServerMain.getInstance();
 	}
 	
 	public String getSocketInformation() {
@@ -191,32 +172,6 @@ public class ServerUser extends Thread {
 	
 	private void sendCommand(String command, Object extra) throws IOException {
 		oos.writeObject(new Command(command, extra));
-	}
-	
-	private int insertUser(UserInfo user) throws SQLException, NoSuchAlgorithmException {
-		// insert the new user into the database ------------------------------------------
-		String insert = "insert into user(name,username,password_hash,photo_path) values(?,?,?,?)";
-		PreparedStatement preparedStatement = getApp().getPreparedStatement(insert);
-		preparedStatement.setString(1, user.getName());
-		preparedStatement.setString(2, user.getUsername());
-		preparedStatement.setString(3, Utils.hashStringBase36(user.getPassword()));
-		preparedStatement.setString(4, user.getPhotoPath());
-		return preparedStatement.executeUpdate();
-	}
-	
-	private boolean checkUsernameAvailability(String username) throws SQLException {
-		// check if username is already taken ---------------------------------------
-		return !doesUsernameExist(username);
-	}
-	
-	private boolean doesUsernameExist(String username) throws SQLException {
-		// check if username exists -------------------------------------------
-		String select = "select count(id) from user where username = ?";
-		PreparedStatement stat = getApp().getPreparedStatement(select);
-		stat.setString(1, username);
-		ResultSet result = stat.executeQuery();
-		result.next();
-		return result.getInt(1) == 1;
 	}
 	
 	public boolean isLoggedIn() {
