@@ -1,5 +1,6 @@
 package pt;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
@@ -17,6 +18,7 @@ public class ServerMain {
 	private final ArrayList<ServerUser> connectedMachines;
 	private Connection databaseConnection;
 	private static ServerMain instance;
+	private final ArrayList<Thread> threads;
 	
 	public static ServerMain getInstance() {
 		return instance;
@@ -37,6 +39,7 @@ public class ServerMain {
 		instance = this;
 		this.databaseAddress = databaseAddress;
 		connectedMachines = new ArrayList<>();
+		threads = new ArrayList<>();
 	}
 	
 	private boolean canAcceptNewUser() {
@@ -57,34 +60,57 @@ public class ServerMain {
 			
 			switch (request) {
 				case Constants.ESTABLISH_CONNECTION -> {
-					if (canAcceptNewUser()) {
-						byte[] answer = Constants.CONNECTION_ACCEPTED.getBytes();
-						DatagramPacket answerPacket = new DatagramPacket(
-								answer, answer.length, receivedPacket.getAddress(), receivedPacket.getPort());
-						udpSocket.send(answerPacket);
-						
-						try {
-							serverSocket.setSoTimeout(1500);
-							Socket socket = serverSocket.accept();
-							ServerUser serverUser = new ServerUser(socket);
-							serverUser.start();
-							connectedMachines.add(serverUser);
-							System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket.getInetAddress().getHostName() + ":" + socket.getLocalPort()
-									+ "\tserver port : " + socket.getLocalPort());
-						} catch (Exception e) {
-							System.out.println("Catch Establish Connection : " + e.getMessage());
+					Runnable runnable = new Runnable() {
+						@Override
+						public void run() {
+							try {
+								if (canAcceptNewUser()) {
+									byte[] answer = Constants.CONNECTION_ACCEPTED.getBytes();
+									udpSocket.send(new DatagramPacket(
+											answer, answer.length, receivedPacket.getAddress(), receivedPacket.getPort()));
+									//TODO garantir entrega
+									receiveNewUser(receivedPacket, udpSocket);
+								} else {
+									
+									byte[] answer = Constants.CONNECTION_REFUSED.getBytes();
+									udpSocket.send(new DatagramPacket(
+											answer, answer.length, receivedPacket.getAddress(), receivedPacket.getPort()));
+									//TODO send list with other servers
+									
+									sendServersList();
+								}
+							} catch (Exception e) {
+							
+							}
 						}
-					} else {
-						
-						byte[] answer = Constants.CONNECTION_REFUSED.getBytes();
-						udpSocket.send(new DatagramPacket(answer, answer.length));
-						//TODO send list with other servers
-					}
+					};
+					//Thread thread = new Thread(runnable);
+					//thread.start();
+					//threads.add(thread);
+					runnable.run();
 				}
 			}
 		}
 	}
 	
+	private void sendServersList() {
+	
+	}
+	
+	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
+		try {
+			serverSocket.setSoTimeout((int) Constants.CONNECTION_TIMEOUT);
+			Socket socket = serverSocket.accept();
+			ServerUser serverUser = new ServerUser(socket);
+			serverUser.start();
+			synchronized (connectedMachines) {
+				connectedMachines.add(serverUser);
+			}
+			System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket.getInetAddress().getHostName() + ":" + socket.getPort());
+		} catch (Exception e) {
+			System.out.println("Catch Establish Connection : " + e.getMessage());
+		}
+	}
 	
 	public static void main(String[] args) throws Exception {
 		
