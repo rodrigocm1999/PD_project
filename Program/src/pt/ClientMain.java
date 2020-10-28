@@ -81,5 +81,24 @@ public class ClientMain {
 		return(null);
 	}
 
+	public String[] userLogin(UserInfo user){
+		String[] strSplited = null;
+
+		try {
+			oOS.writeObject(Constants.LOGIN);
+
+			oOS.writeObject(user);
+
+			String serverAnswer = (String)oIS.readObject();
+			strSplited = serverAnswer.split(";");
+
+			return(strSplited);
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		return(null);
+	}
+
 
 }

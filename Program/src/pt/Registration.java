@@ -9,6 +9,8 @@ import javafx.scene.paint.Color;
 
 import java.io.IOException;
 
+import static java.lang.Thread.sleep;
+
 public class Registration {
 
 
@@ -45,10 +47,13 @@ public class Registration {
             errorLabel.setTextFill(Color.web("green"));
             errorLabel.setDisable(false);
 
+
+
             try {
+                sleep(1000);
                 ClientWindow instanceWindow = ClientWindow.getInstance();
                 instanceWindow.setWindowRoot("sample.fxml");
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         } else if (answer[0].equals(Constants.REGISTER_ERROR)) {
