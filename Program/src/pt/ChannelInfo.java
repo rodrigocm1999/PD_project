@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 public class ChannelInfo implements Serializable {
 	
+	private static final long serialVersionUID = 222L;
+	
 	public int id;
 	public int creatorId;
 	public String name;

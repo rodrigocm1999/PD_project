@@ -7,9 +7,11 @@ import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 
-public class ReliableUDP {
+public class UDPHelper {
 	
 	private static class Wrapper implements Serializable {
+		private static final long serialVersionUID = 333L;
+		
 		private final long id;
 		private final Object object;
 		static private long idCounter;
@@ -23,14 +25,22 @@ public class ReliableUDP {
 	
 	static int RETRY_LIMIT = 3;
 	
-	public static DatagramSocket sendUDPObject(Object object, InetAddress address, int port) throws Exception {
+	public static DatagramSocket sendUDPObjectReliably(Object object, InetAddress address, int port) throws Exception {
 		DatagramSocket socket = new DatagramSocket();
-		sendUDPObject(object, socket, address, port);
+		sendUDPObjectReliably(object, socket, address, port);
 		return socket;
 	}
 	
+	public static void sendUDPObject(Object obj, DatagramSocket socket, InetAddress address, int port) throws IOException {
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+		objectOutputStream.writeObject(obj);
+		byte[] bytes = byteArrayOutputStream.toByteArray();
+		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address, port);
+		socket.send(packet);
+	}
 	
-	public static void sendUDPObject(Object object, DatagramSocket socket, InetAddress address, int port) throws Exception {
+	public static void sendUDPObjectReliably(Object object, DatagramSocket socket, InetAddress address, int port) throws Exception {
 		
 		Wrapper wrap = new Wrapper(object);
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -73,11 +83,23 @@ public class ReliableUDP {
 		socket.setSoTimeout(0);
 	}
 	
-	public static Object receiveUDPObject(int port) throws IOException, ClassNotFoundException {
-		return receiveUDPObject(new DatagramSocket(port));
+	public static Object receiveUDPObjectReliably(int port) throws IOException, ClassNotFoundException {
+		return receiveUDPObjectReliably(new DatagramSocket(port));
 	}
 	
 	public static Object receiveUDPObject(DatagramSocket socket) throws IOException, ClassNotFoundException {
+		DatagramPacket packet = new DatagramPacket(
+				new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+		socket.receive(packet);
+		
+		//Get Object from
+		ObjectInputStream ois = new ObjectInputStream(
+				new ByteArrayInputStream(packet.getData(), 0, packet.getLength()));
+		Wrapper wrap = (Wrapper) ois.readObject();
+		return wrap.object;
+	}
+	
+	public static Object receiveUDPObjectReliably(DatagramSocket socket) throws IOException, ClassNotFoundException {
 		
 		DatagramPacket packet = new DatagramPacket(
 				new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
