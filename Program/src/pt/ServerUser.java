@@ -11,6 +11,8 @@ public class ServerUser extends Thread {
 	private ObjectOutputStream oos;
 	private ObjectInputStream ois;
 	private boolean isLoggedIn;
+	private boolean toRemove = false;
+	private boolean keepReceiving = true;
 	
 	public ServerUser(Socket socket) {
 		this.socket = socket;
@@ -19,40 +21,96 @@ public class ServerUser extends Thread {
 	@Override
 	public void run() {
 		try {
-			oos = new ObjectOutputStream(socket.getOutputStream());
-			ois = new ObjectInputStream(socket.getInputStream());
-			
-			while (true) {
+			receiveRequests(socket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private void receiveRequests(Socket socket) throws Exception {
+		oos = new ObjectOutputStream(socket.getOutputStream());
+		ois = new ObjectInputStream(socket.getInputStream());
+		
+		try {
+			while (keepReceiving) {
+				
 				String protocol = Constants.INVALID_PROTOCOL;
 				try {
 					protocol = (String) ois.readObject();
 				} catch (ClassNotFoundException e) {
 					System.out.println("Error reading protocol : " + e.getLocalizedMessage());
 					continue;
-				}catch (IOException e){
+				} catch (IOException e) {
 					System.out.println("Connection lost : " + e.getLocalizedMessage());
 					throw new Exception("Connection lost");
 				}
 				
-				switch (protocol) {
-					case Constants.REGISTER -> {
-						try {
-							UserInfo userInfo = (UserInfo) ois.readObject();
-							System.out.println(userInfo);
-							
-							if (false && !Utils.checkPasswordFollowsRules(userInfo.getPassword())) {
-								System.out.println("password doesn't follow rules");
-								sendCommand(Constants.REGISTER_ERROR, "Invalid Password");
-								
-							} else if (!checkNameUser(userInfo.getName())) {
-								System.out.println("Name is invalid");
-								sendCommand(Constants.REGISTER_ERROR, "Name is invalid (might be too long, 50 characters is the limit)");
-								
-							} else if (!checkUsernameAvailability(userInfo.getUsername())) {
-								System.out.println("Username is already in user");
-								sendCommand(Constants.REGISTER_ERROR, "Username already in use");
-								
-							} else {
+				int returned = handleRequest(protocol);
+				
+				if (returned == -1) {
+					// TODO leaving -----
+					return;
+				}
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			toRemove = true;
+			ServerUser temp = this;
+			//TODO test this shit, finish waitConnecion. toRemove never becomes false again
+			Thread thread = new Thread(() -> {
+				try {
+					Thread.sleep(Constants.CONNECTION_TIMEOUT);
+				} catch (InterruptedException interruptedException) {
+					System.out.println("Timeout thread couldn't sleep");
+					interruptedException.printStackTrace();
+				}
+				if (toRemove)
+					temp.disconnectNRemove();
+			});
+			thread.start();
+			waitConnection();
+			throw new Exception("Lost Connection \tAttempting to reconnect");
+		}
+	}
+	
+	public void disconnectNRemove() {
+		keepReceiving = false;
+		ServerMain.getInstance().removeConnected(this);
+	}
+	
+	private void waitConnection(){
+		int localPort = socket.getLocalPort();
+		//socket = new Socket(localPort);
+	}
+	
+	private int handleRequest(String protocol) throws
+			IOException, SQLException, NoSuchAlgorithmException, ClassNotFoundException {
+		switch (protocol) {
+			case Constants.REGISTER -> {
+				if (isLoggedIn()) {
+					System.out.println("Illegal Request\tNot supposed to happen");
+					sendCommand(Constants.INVALID_REQUEST, null);
+					return 0;
+				}
+				try {
+					UserInfo userInfo = (UserInfo) ois.readObject();
+					System.out.println(userInfo);
+					
+					if (!Utils.checkPasswordFollowsRules(userInfo.getPassword())) {
+						System.out.println("Password doesn't follow rules");
+						sendCommand(Constants.REGISTER_ERROR, "Invalid Password");
+						
+					} else if (!Utils.checkNameUser(userInfo.getName())) {
+						System.out.println("Name is invalid");
+						sendCommand(Constants.REGISTER_ERROR, "Name is invalid (might be too long, 50 characters is the limit)");
+						
+					} else if (!checkUsernameAvailability(userInfo.getUsername())) {
+						System.out.println("Username is already in use");
+						sendCommand(Constants.REGISTER_ERROR, "Username already in use");
+						
+					} else {
 								
 								/*if (!userInfo.getPhotoPath().isEmpty()) {
 									//TODO receive image
@@ -61,37 +119,36 @@ public class ServerUser extends Thread {
 									BufferedImage image = ImageIO.read(byteArrayInputStream);
 									image = Utils.getCompressedImage(image, 250, 250);
 								}*/
-								
-								if (insertUser(userInfo) == 1) {
-									System.out.println("Added new user");
-									sendCommand(Constants.REGISTER_SUCCESS, null);
-								} else {
-									System.out.println("No new user added");
-									sendCommand(Constants.REGISTER_ERROR, "No new user added");
-								}
-							}
-						} catch (Exception e) {
-							System.out.println("Error on User Registration : " + e.getMessage());
-							sendCommand(Constants.REGISTER_ERROR, null);
+						
+						if (insertUser(userInfo) == 1) {
+							System.out.println("Added new user");
+							sendCommand(Constants.REGISTER_SUCCESS, null);
+						} else {
+							System.out.println("No new user added");
+							sendCommand(Constants.REGISTER_ERROR, "No new user added");
 						}
 					}
-					
-					case Constants.LOGIN -> {
-						UserInfo userInfo = (UserInfo) ois.readObject();
-						System.out.println(userInfo);
-						
-						isLoggedIn = login(userInfo.getUsername(), userInfo.getPassword());
-					}
+				} catch (Exception e) {
+					System.out.println("Error on User Registration : " + e.getMessage());
+					sendCommand(Constants.REGISTER_ERROR, null);
 				}
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			ServerMain.getInstance().removeConnected(this);
+			
+			case Constants.LOGIN -> {
+				UserInfo userInfo = (UserInfo) ois.readObject();
+				System.out.println(userInfo);
+				isLoggedIn = login(userInfo.getUsername(), userInfo.getPassword());
+			}
+			
+			case Constants.DISCONNECTING -> {
+				return -1;
+			}
 		}
-		
+		return 0;
 	}
 	
-	private boolean login(String username, String password) throws SQLException, IOException, NoSuchAlgorithmException {
+	private boolean login(String username, String password) throws
+			SQLException, IOException, NoSuchAlgorithmException {
 		if (!doesUsernameExist(username)) {
 			sendCommand(Constants.LOGIN_ERROR, "Username does not exist");
 			return false;
@@ -104,7 +161,8 @@ public class ServerUser extends Thread {
 		return true;
 	}
 	
-	private boolean doesPasswordMatchUsername(String username, String password) throws SQLException, NoSuchAlgorithmException {
+	private boolean doesPasswordMatchUsername(String username, String password) throws
+			SQLException, NoSuchAlgorithmException {
 		String select = "select count(id) from user where username = ? and password_hash = ?";
 		PreparedStatement preparedStatement = getApp().getPreparedStatement(select);
 		preparedStatement.setString(1, username);
@@ -151,11 +209,6 @@ public class ServerUser extends Thread {
 		result.next();
 		return result.getInt(1) == 1;
 	}
-	
-	private static boolean checkNameUser(String name) {
-		return name.length() <= 50;
-	}
-	
 	
 	public boolean isLoggedIn() {
 		return isLoggedIn;

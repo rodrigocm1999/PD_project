@@ -13,7 +13,6 @@ public class Utils {
 	public static String hashStringBase36(String str) throws NoSuchAlgorithmException {
 		MessageDigest digest = MessageDigest.getInstance("SHA-256");
 		byte[] hash = digest.digest(str.getBytes());
-		//String stringHash = new String(hash);
 		return new BigInteger(1, hash).toString(36);
 	}
 	
@@ -21,6 +20,10 @@ public class Utils {
 		Pattern pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$");
 		Matcher matcher = pattern.matcher(password);
 		return matcher.find();
+	}
+	
+	public static boolean checkNameUser(String name) {
+		return name.length() > 3 && name.length() < 50;
 	}
 	
 	public static BufferedImage getCompressedImage(BufferedImage img, int newW, int newH) {
