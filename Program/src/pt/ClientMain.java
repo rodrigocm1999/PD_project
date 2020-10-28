@@ -1,6 +1,7 @@
 package pt;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -13,6 +14,8 @@ public class ClientMain {
 	private int port;
 	private Socket socket;
 	private static ClientMain instance;
+	private static ObjectOutputStream oOS;
+	private static ObjectInputStream oIS;
 
 	public static ClientMain getInstance() {
 		return instance;
@@ -46,7 +49,8 @@ public class ClientMain {
 		
 		if (str.equals(Constants.CONNECTION_ACCEPTED)) {
 			socket =  new Socket(ipServer, Constants.SERVER_PORT);
-
+			oOS = new ObjectOutputStream(socket.getOutputStream());
+			oIS =  new ObjectInputStream(socket.getInputStream());
 
 			return 1;
 		} else {
@@ -56,18 +60,25 @@ public class ClientMain {
 		
 	}
 
-	public void userRegistration(UserInfo user){
+	public String[] userRegistration(UserInfo user){
+		String[] strSplited = null;
 		try {
-			ObjectOutputStream ooS = new ObjectOutputStream(socket.getOutputStream());
-			ooS.writeObject(Constants.REGISTER);
+			//ObjectOutputStream ooS = new ObjectOutputStream(socket.getOutputStream());
+			//ObjectInputStream oIS =  new ObjectInputStream(socket.getInputStream());
+			oOS.writeObject(Constants.REGISTER);
 
-			ooS.writeObject(user);
+			oOS.writeObject(user);
+
+			String serverAnswer =  (String)oIS.readObject();
+			strSplited = serverAnswer.split(";");
 
 
-		} catch (IOException e) {
+			return(strSplited);
+
+		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-
+		return(null);
 	}
 
 
