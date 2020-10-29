@@ -1,5 +1,6 @@
 package pt;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -29,7 +30,7 @@ public class ClientMain {
 		this.portUDPServer = port;
 	}
 	
-	public void connectToServer() throws IOException, ClassNotFoundException {
+	public void connectToServer() throws Exception {
 		DatagramSocket datagramSocket = new DatagramSocket();
 		
 		while (true) {
@@ -45,7 +46,7 @@ public class ClientMain {
 		}
 	}
 	
-	private boolean tryConnectServer(InetAddress ipAddress, int port, DatagramSocket udpSocket) throws IOException, ClassNotFoundException {
+	private boolean tryConnectServer(InetAddress ipAddress, int port, DatagramSocket udpSocket) throws Exception {
 		Command command = new Command(Constants.ESTABLISH_CONNECTION);
 		UDPHelper.sendUDPObject(command, udpSocket, ipAddress, port);
 		
@@ -59,7 +60,11 @@ public class ClientMain {
 			oOS = new ObjectOutputStream(socket.getOutputStream());
 			oIS = new ObjectInputStream(socket.getInputStream());
 			
-			serversList = (ArrayList<ServerAddress>) oIS.readObject();
+			command = (Command) oIS.readObject();
+			if (!command.getProtocol().equals(Constants.SERVERS_LIST)) {
+				throw new Exception("Should not happen");
+			}
+			serversList = (ArrayList<ServerAddress>) command.getExtras();
 			return true;
 		} else if (protocol.equals(Constants.CONNECTION_REFUSED)) {
 			// TODO Garantir que recebe

@@ -30,4 +30,12 @@ public class ServerAddress implements Serializable {
 	public void setUDPPort(int listeningUDPPort) {
 		this.listeningUDPPort = listeningUDPPort;
 	}
+	
+	@Override
+	public String toString() {
+		return "ServerAddress{" +
+				"address=" + address +
+				", listeningUDPPort=" + listeningUDPPort +
+				'}';
+	}
 }

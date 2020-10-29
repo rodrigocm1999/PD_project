@@ -1,6 +1,5 @@
 package pt;
 
-import java.awt.font.NumericShaper;
 import java.io.*;
 import java.net.*;
 import java.sql.Connection;
@@ -47,7 +46,7 @@ public class ServerMain {
 		this.listeningTCPPort = listeningTCPPort;
 	}
 	
-	public void Run() throws Exception {
+	public void start() throws Exception {
 		connectDatabase();
 		startMulticastSocket();
 		synchronizeDatabase();
@@ -102,7 +101,7 @@ public class ServerMain {
 	private ArrayList<ServerAddress> getServersList() throws UnknownHostException {
 		//TODO get servers list
 		var list = new ArrayList<ServerAddress>();
-		list.add(new ServerAddress(InetAddress.getByName("localhost"),23124));
+		list.add(new ServerAddress(InetAddress.getByName("localhost"), 23124));
 		return list;
 	}
 	
@@ -110,20 +109,18 @@ public class ServerMain {
 		InetAddress group = InetAddress.getByName(Constants.MULTICAST_GROUP);
 		int port = Constants.MULTICAST_PORT;
 		MulticastSocket multicastSocket = new MulticastSocket(port);
-		SocketAddress socketAddress = new InetSocketAddress(group,port);
+		SocketAddress socketAddress = new InetSocketAddress(group, port);
 		NetworkInterface networkInterface = NetworkInterface.getByInetAddress(group);
-		multicastSocket.joinGroup(socketAddress,networkInterface);
+		multicastSocket.joinGroup(socketAddress, networkInterface);
 	}
-	
 	
 	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
 		try {
 			serverSocket.setSoTimeout((int) Constants.CONNECTION_TIMEOUT);
 			Socket socket = serverSocket.accept();
-			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 			//TODO check this
-			oos.writeObject(getServersList());
 			ServerUser serverUser = new ServerUser(socket);
+			serverUser.sendCommand(Constants.SERVERS_LIST, getServersList());
 			serverUser.start();
 			synchronized (connectedMachines) {
 				connectedMachines.add(serverUser);
@@ -168,39 +165,9 @@ public class ServerMain {
 			System.exit(-1);
 		}
 		
-		
 		ServerMain serverMain = new ServerMain(databaseAddress, listeningUDPPort, listeningTCPPort);
-		serverMain.Run();
-		
-		
-		/*String IP = "238.254.254.254";
-		int Port = 5432;
-		InetAddress ia = InetAddress.getByName(IP);
-		NetworkInterface ni = NetworkInterface.getByInetAddress(ia);
-		
-		MulticastSocket MSoc = new MulticastSocket(Port);
-		MSoc.setTimeToLive(200);
-		SocketAddress sa = new InetSocketAddress(IP, Port);
-		MSoc.joinGroup(ia);
-		
-		new Thread(() -> {
-			try {
-				var b = "Yert bageette Mundo".getBytes();
-				DatagramPacket p = new DatagramPacket(b, b.length, ia, Port);
-				Thread.sleep(500);
-				MSoc.send(p);
-				MSoc.leaveGroup(sa, ni);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		}).start();
-		
-		DatagramPacket p = new DatagramPacket(new byte[1024], 1024);
-		MSoc.receive(p);
-		
-		String str = new String(p.getData(), 0, p.getLength());
-		System.out.println("Data: " + str);*/
-		
+		serverMain.start();
 		
 	}
+	
 }

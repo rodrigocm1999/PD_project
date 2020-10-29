@@ -2,8 +2,6 @@ package pt;
 
 import java.io.*;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
-import java.sql.*;
 
 public class ServerUser extends Thread {
 	
@@ -20,8 +18,10 @@ public class ServerUser extends Thread {
 		return ServerMain.getInstance();
 	}
 	
-	public ServerUser(Socket socket) {
+	public ServerUser(Socket socket) throws IOException {
 		this.socket = socket;
+		oos = new ObjectOutputStream(socket.getOutputStream());
+		ois = new ObjectInputStream(socket.getInputStream());
 	}
 	
 	@Override
@@ -31,16 +31,11 @@ public class ServerUser extends Thread {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
 	}
 	
 	private void receiveRequests(Socket socket) throws Exception {
-		oos = new ObjectOutputStream(socket.getOutputStream());
-		ois = new ObjectInputStream(socket.getInputStream());
-		
 		try {
 			while (keepReceiving) {
-				
 				Command command;
 				try {
 					command = (Command) ois.readObject();
@@ -48,7 +43,6 @@ public class ServerUser extends Thread {
 					System.out.println("Error reading protocol : " + e.getLocalizedMessage());
 					continue;
 				} catch (IOException e) {
-					System.out.println("Connection lost : " + e.getLocalizedMessage());
 					throw new Exception("Connection lost");
 				}
 				
@@ -174,10 +168,10 @@ public class ServerUser extends Thread {
 		return ("local port: " + socket.getInetAddress().getHostName() + ":" + socket.getPort());
 	}
 	
-	private void sendCommand(String command, Object extra) throws IOException {
+	public void sendCommand(String command, Object extra) throws IOException {
 		Command obj = new Command(command, extra);
 		System.out.println(obj);
-		oos.writeObject(obj);
+		oos.writeUnshared(obj);
 	}
 	
 	public boolean isLoggedIn() {

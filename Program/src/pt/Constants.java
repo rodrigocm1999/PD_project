@@ -18,16 +18,18 @@ public class Constants {
 	public static final String LOGIN_SUCCESS = "LOGIN_SUCCESS";
 	public static final String LOGIN_ERROR = "LOGIN_ERROR";
 	public static final String DISCONNECTING = "DISCONNECTING";
+	public static final String SERVERS_LIST = "SERVERS_LIST";
 	
 	public static final String ERROR = "ERROR";
 	public static final String INVALID_PROTOCOL = "INVALID_PROTOCOL";
 	public static final String INVALID_REQUEST = "INVALID_REQUEST";
 	
-	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/main?autoReconnect=true&useSSL=false";
+	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/{2}?autoReconnect=true&useSSL=false";
+	private static final String DATABASE_NAME = "main";
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
 	
 	public static String getDatabaseURL(String address) {
-		return DATABASE_URL.replace("{1}", address);
+		return DATABASE_URL.replace("{1}", address).replace("{2}",DATABASE_NAME);
 	}
 }
