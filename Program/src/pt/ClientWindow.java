@@ -24,7 +24,7 @@ public class ClientWindow extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		stage = primaryStage;
 		primaryStage.setTitle("");
-		Parent root = loadParent("sample.fxml");
+		Parent root = loadParent("LoginPage.fxml");
 		scene = new Scene(root, 600, 460);
 		primaryStage.setScene(scene);
 		primaryStage.show();
@@ -45,16 +45,17 @@ public class ClientWindow extends Application {
 	}
 	
 	public static void main(String[] args) {
-		String serverAddress = "rodrigohost.ddns.net";
-		if (args.length == 0) {
-			System.out.println("No server address on arguments\nUsing default");
-		} else {
-			serverAddress = args[0];
+
+		if (args.length != 2) {
+			System.out.println("Invalid arguments: server_address, server_UDP_port");
 		}
+		String serverAddress = args[0];
+		int port = Integer.parseInt(args[1]);
 		
 
 		try {
-			ClientMain client = new ClientMain(serverAddress, 9321);
+
+			ClientMain client = new ClientMain(serverAddress, port);
 			if (client.run() > 0) {
 				launch(args);
 			} else {

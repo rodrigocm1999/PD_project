@@ -11,7 +11,7 @@ import java.io.IOException;
 
 import static java.lang.Thread.sleep;
 
-public class Registration {
+public class RegistrationController {
 
 
     public Label errorLabel;
@@ -39,25 +39,30 @@ public class Registration {
 
         UserInfo user = new UserInfo(name, username, password, photoPath);
         ClientMain instance = ClientMain.getInstance();
+        Command command;
 
-        String[] answer = instance.userRegistration(user);
+        try {
+            command = (Command) instance.sendCommandToServer(Constants.REGISTER,user);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
 
-        if (answer[0].equals(Constants.REGISTER_SUCCESS)) {
-            errorLabel.setText(answer[0]);
+
+        if (command.getProtocol().equals(Constants.REGISTER_SUCCESS)) {
+            errorLabel.setText((String) command.getExtras());
             errorLabel.setTextFill(Color.web("green"));
             errorLabel.setDisable(false);
-
-
 
             try {
                 sleep(1000);
                 ClientWindow instanceWindow = ClientWindow.getInstance();
-                instanceWindow.setWindowRoot("sample.fxml");
+                instanceWindow.setWindowRoot("LoginPage.fxml");
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
-        } else if (answer[0].equals(Constants.REGISTER_ERROR)) {
-            errorLabel.setText(answer[1]);
+        } else if (command.getProtocol().equals(Constants.REGISTER_ERROR)) {
+            errorLabel.setText((String) command.getExtras());
             errorLabel.setDisable(false);
         }
     }

@@ -1,5 +1,6 @@
 package pt;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -30,75 +31,32 @@ public class ClientMain {
 		this.port = port;
 	}
 	
-	public int run() throws IOException {
+	public int run() throws IOException, ClassNotFoundException {
 		DatagramSocket datagramSocket = new DatagramSocket();
-		
-		byte[] buff = Constants.ESTABLISH_CONNECTION.getBytes();
-		InetAddress ip = InetAddress.getByName(ipServer);
-		DatagramPacket datagramPacket = new DatagramPacket(buff, buff.length, ip, port);
-		
-		datagramSocket.send(datagramPacket);
-		
-		datagramPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-		datagramSocket.setSoTimeout(2000);
-		datagramSocket.receive(datagramPacket);
-		
-		String str = new String(datagramPacket.getData(), 0, datagramPacket.getLength());
-		System.out.println(str);
-		
-		
-		if (str.equals(Constants.CONNECTION_ACCEPTED)) {
-			socket =  new Socket(ipServer, 9321);
+
+		Command command = new Command(Constants.ESTABLISH_CONNECTION);
+		UDPHelper.sendUDPObject(command,datagramSocket,InetAddress.getByName(ipServer),port);
+
+		datagramSocket.setSoTimeout(4000);
+		command = (Command) UDPHelper.receiveUDPObject(datagramSocket);
+
+		if (command.getProtocol().equals(Constants.CONNECTION_ACCEPTED)) {
+			int socketTCPort =  (int)command.getExtras();
+			socket =  new Socket(ipServer, socketTCPort);
 			oOS = new ObjectOutputStream(socket.getOutputStream());
 			oIS =  new ObjectInputStream(socket.getInputStream());
 
 			return 1;
 		} else {
-			
+			// TODO HA DE RECEBER A LISTA DE SERVERS DISPONIVEIS
 			return -1;
 		}
 		
 	}
 
-	public String[] userRegistration(UserInfo user){
-		String[] strSplited = null;
-		try {
-			//ObjectOutputStream ooS = new ObjectOutputStream(socket.getOutputStream());
-			//ObjectInputStream oIS =  new ObjectInputStream(socket.getInputStream());
-			oOS.writeObject(Constants.REGISTER);
-
-			oOS.writeObject(user);
-
-			String serverAnswer =  (String)oIS.readObject();
-			strSplited = serverAnswer.split(";");
-
-
-			return(strSplited);
-
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return(null);
+	public Command sendCommandToServer(String protocol, Object object) throws IOException, ClassNotFoundException {
+		oOS.writeObject(new Command(protocol,object));
+		return (Command)oIS.readObject();
 	}
-
-	public String[] userLogin(UserInfo user){
-		String[] strSplited = null;
-
-		try {
-			oOS.writeObject(Constants.LOGIN);
-
-			oOS.writeObject(user);
-
-			String serverAnswer = (String)oIS.readObject();
-			strSplited = serverAnswer.split(";");
-
-			return(strSplited);
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-
-		return(null);
-	}
-
 
 }
