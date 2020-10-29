@@ -1,12 +1,10 @@
 package pt;
 
-import java.io.Serializable;
-
 public class Constants {
 	
 	public static final int UDP_PACKET_SIZE = 1024;
-	//public static final int SERVER_PORT = 9321;
 	public static final int MULTICAST_PORT = 5432;
+	public static final String MULTICAST_GROUP = "228.5.6.7";
 	
 	public static final String ESTABLISH_CONNECTION = "ESTABLISH_CONNECTION";
 	public static final String CONNECTION_ACCEPTED = "CONNECTION_ACCEPTED";

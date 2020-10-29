@@ -151,6 +151,10 @@ public class ServerUser extends Thread {
 	}
 	
 	private void login(String username, String password) throws Exception {
+		if (isLoggedIn()) {
+			sendCommand(Constants.LOGIN_ERROR, "Already Logged In");
+			return;
+		}
 		if (!ServerUserManager.doesUsernameExist(username)) {
 			sendCommand(Constants.LOGIN_ERROR, "Username does not exist");
 			return;
@@ -160,7 +164,7 @@ public class ServerUser extends Thread {
 			return;
 		}
 		sendCommand(Constants.LOGIN_SUCCESS, null);
-		
+		System.out.println("Login success : " + username);
 		userId = ServerUserManager.getUserId(username);
 		this.username = username;
 		isLoggedIn = true;
@@ -171,7 +175,9 @@ public class ServerUser extends Thread {
 	}
 	
 	private void sendCommand(String command, Object extra) throws IOException {
-		oos.writeObject(new Command(command, extra));
+		Command obj = new Command(command, extra);
+		System.out.println(obj);
+		oos.writeObject(obj);
 	}
 	
 	public boolean isLoggedIn() {

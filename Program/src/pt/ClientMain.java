@@ -1,62 +1,79 @@
 package pt;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.Socket;
+import java.net.*;
+import java.util.ArrayList;
 
 public class ClientMain {
 	
-	private String ipServer;
-	private int port;
+	private InetAddress serverIPAddress;
+	private int portUDPServer;
 	private Socket socket;
-	private static ClientMain instance;
 	private static ObjectOutputStream oOS;
 	private static ObjectInputStream oIS;
-
+	private ArrayList<ServerAddress> serversList;
+	private static ClientMain instance;
+	
 	public static ClientMain getInstance() {
 		return instance;
 	}
-
+	
 	public ClientMain(String ipServer, int port) throws Exception {
 		if (instance != null) {
 			throw new Exception("Client Main Exists");
 		}
 		instance = this;
-		this.ipServer = ipServer;
-		this.port = port;
+		this.serverIPAddress = InetAddress.getByName(ipServer);
+		this.portUDPServer = port;
 	}
 	
-	public int run() throws IOException, ClassNotFoundException {
+	public void connectToServer() throws IOException, ClassNotFoundException {
 		DatagramSocket datagramSocket = new DatagramSocket();
-
-		Command command = new Command(Constants.ESTABLISH_CONNECTION);
-		UDPHelper.sendUDPObject(command,datagramSocket,InetAddress.getByName(ipServer),port);
-
-		datagramSocket.setSoTimeout(4000);
-		command = (Command) UDPHelper.receiveUDPObject(datagramSocket);
-
-		if (command.getProtocol().equals(Constants.CONNECTION_ACCEPTED)) {
-			int socketTCPort =  (int)command.getExtras();
-			socket =  new Socket(ipServer, socketTCPort);
-			oOS = new ObjectOutputStream(socket.getOutputStream());
-			oIS =  new ObjectInputStream(socket.getInputStream());
-
-			return 1;
-		} else {
-			// TODO HA DE RECEBER A LISTA DE SERVERS DISPONIVEIS
-			return -1;
-		}
 		
+		while (true) {
+			boolean success = tryConnectServer(serverIPAddress, portUDPServer, datagramSocket);
+			if (success) {
+				return;
+			} else {
+				ServerAddress serverAddress = serversList.get(0);
+				serverIPAddress = serverAddress.getAddress();
+				portUDPServer = serverAddress.getUDPPort();
+				//TODO test this
+			}
+		}
 	}
-
-	public Command sendCommandToServer(String protocol, Object object) throws IOException, ClassNotFoundException {
-		oOS.writeObject(new Command(protocol,object));
-		return (Command)oIS.readObject();
+	
+	private boolean tryConnectServer(InetAddress ipAddress, int port, DatagramSocket udpSocket) throws IOException, ClassNotFoundException {
+		Command command = new Command(Constants.ESTABLISH_CONNECTION);
+		UDPHelper.sendUDPObject(command, udpSocket, ipAddress, port);
+		
+		udpSocket.setSoTimeout(1500);
+		command = (Command) UDPHelper.receiveUDPObject(udpSocket);
+		String protocol = command.getProtocol();
+		
+		if (protocol.equals(Constants.CONNECTION_ACCEPTED)) {
+			int socketTCPort = (int) command.getExtras();
+			socket = new Socket(ipAddress, socketTCPort);
+			oOS = new ObjectOutputStream(socket.getOutputStream());
+			oIS = new ObjectInputStream(socket.getInputStream());
+			
+			serversList = (ArrayList<ServerAddress>) oIS.readObject();
+			return true;
+		} else if (protocol.equals(Constants.CONNECTION_REFUSED)) {
+			// TODO Garantir que recebe
+			serversList = (ArrayList<ServerAddress>) UDPHelper.receiveUDPObject(udpSocket);
+			return false;
+		} else {
+			throw new IOException("Illegal Connection Protocol");
+		}
 	}
-
+	
+	public Object sendCommandToServer(String protocol, Object object) throws IOException, ClassNotFoundException {
+		oOS.writeObject(new Command(protocol, object));
+		Object ob = oIS.readObject();
+		return ob;
+	}
+	
 }

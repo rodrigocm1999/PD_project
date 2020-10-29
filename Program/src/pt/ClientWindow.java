@@ -9,30 +9,31 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class ClientWindow extends Application {
-
+	
 	private Scene scene;
 	private Stage stage;
-
+	private static ClientMain client;
+	
 	private static ClientWindow instance;
-
+	
 	public static ClientWindow getInstance() {
 		return instance;
 	}
-
-
+	
+	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		if (instance != null) {
+			throw new Exception("Server Already Running");
+		}
+		instance = this;
+		
 		stage = primaryStage;
 		primaryStage.setTitle("");
 		Parent root = loadParent("LoginPage.fxml");
 		scene = new Scene(root, 600, 460);
 		primaryStage.setScene(scene);
 		primaryStage.show();
-
-		if (instance != null) {
-			throw new Exception("Server Already Running");
-		}
-		instance = this;
 	}
 	
 	
@@ -45,25 +46,19 @@ public class ClientWindow extends Application {
 	}
 	
 	public static void main(String[] args) {
-
+		
 		if (args.length != 2) {
 			System.out.println("Invalid arguments: server_address, server_UDP_port");
 		}
 		String serverAddress = args[0];
 		int port = Integer.parseInt(args[1]);
 		
-
 		try {
-
-			ClientMain client = new ClientMain(serverAddress, port);
-			if (client.run() > 0) {
-				launch(args);
-			} else {
-				System.out.println("CHOULD NOT ACCESS THE SERVER. TRY AGAIN LATER");
-				return;
-			}
+			client = new ClientMain(serverAddress, port);
+			client.connectToServer();
+			launch(args);
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("COULD NOT ACCESS THE SERVER. TRY AGAIN LATER --> " + e.getLocalizedMessage());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -1,8 +1,7 @@
 package pt;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.awt.font.NumericShaper;
+import java.io.*;
 import java.net.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -21,6 +20,7 @@ public class ServerMain {
 	private Connection databaseConnection;
 	private static ServerMain instance;
 	private final ArrayList<Thread> threads;
+	private ArrayList<ServerAddress> serversList;
 	
 	public static ServerMain getInstance() {
 		return instance;
@@ -42,16 +42,15 @@ public class ServerMain {
 		this.databaseAddress = databaseAddress;
 		connectedMachines = new ArrayList<>();
 		threads = new ArrayList<>();
+		serversList = new ArrayList<>();
 		this.listeningUDPPort = listeningUDPPort;
 		this.listeningTCPPort = listeningTCPPort;
 	}
 	
-	private boolean canAcceptNewUser() {
-		return true;
-	}
-	
 	public void Run() throws Exception {
 		connectDatabase();
+		startMulticastSocket();
+		synchronizeDatabase();
 		
 		DatagramSocket udpSocket = new DatagramSocket(listeningUDPPort);
 		serverSocket = new ServerSocket(listeningTCPPort);
@@ -59,30 +58,28 @@ public class ServerMain {
 		
 		while (true) {
 			DatagramPacket receivedPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-			udpSocket.receive(receivedPacket);
-			String request = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
+			Command command = (Command) UDPHelper.receiveUDPObject(udpSocket, receivedPacket);
 			
-			
-			switch (request) {
+			switch (command.getProtocol()) {
 				case Constants.ESTABLISH_CONNECTION -> {
+					System.out.println("Establish Connection");
 					Runnable runnable = () -> {
 						try {
 							if (canAcceptNewUser()) {
-								Command command = new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort);
-								sendUDPObject(command, udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-								//TODO garantir entrega
+								UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
+										udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
+								
+								//TODO garantir entrega maybe
 								receiveNewUser(receivedPacket, udpSocket);
 							} else {
-								
-								byte[] answer = Constants.CONNECTION_REFUSED.getBytes();
-								udpSocket.send(new DatagramPacket(
-										answer, answer.length, receivedPacket.getAddress(), receivedPacket.getPort()));
 								//TODO send list with other servers
+								//TODO ALL SERVER CONNECTIONS
+								ArrayList<ServerAddress> serversList = getServersList();
 								
-								sendServersList();
+								UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, serversList),
+										udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
 							}
 						} catch (Exception e) {
-						
 						}
 					};
 					//Thread thread = new Thread(runnable);
@@ -94,23 +91,38 @@ public class ServerMain {
 		}
 	}
 	
-	private void sendUDPObject(Object obj, DatagramSocket socket, InetAddress address, int port) throws IOException {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-		objectOutputStream.writeObject(obj);
-		byte[] bytes = byteArrayOutputStream.toByteArray();
-		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address, port);
-		socket.send(packet);
+	private boolean canAcceptNewUser() {
+		return true;
 	}
 	
-	private void sendServersList() {
-		//TODO ALL SERVER CONNECTIONS
+	private void synchronizeDatabase() {
+		//TODO get all of the new information
 	}
+	
+	private ArrayList<ServerAddress> getServersList() throws UnknownHostException {
+		//TODO get servers list
+		var list = new ArrayList<ServerAddress>();
+		list.add(new ServerAddress(InetAddress.getByName("localhost"),23124));
+		return list;
+	}
+	
+	private void startMulticastSocket() throws IOException {
+		InetAddress group = InetAddress.getByName(Constants.MULTICAST_GROUP);
+		int port = Constants.MULTICAST_PORT;
+		MulticastSocket multicastSocket = new MulticastSocket(port);
+		SocketAddress socketAddress = new InetSocketAddress(group,port);
+		NetworkInterface networkInterface = NetworkInterface.getByInetAddress(group);
+		multicastSocket.joinGroup(socketAddress,networkInterface);
+	}
+	
 	
 	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
 		try {
 			serverSocket.setSoTimeout((int) Constants.CONNECTION_TIMEOUT);
 			Socket socket = serverSocket.accept();
+			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+			//TODO check this
+			oos.writeObject(getServersList());
 			ServerUser serverUser = new ServerUser(socket);
 			serverUser.start();
 			synchronized (connectedMachines) {
@@ -120,26 +132,6 @@ public class ServerMain {
 		} catch (Exception e) {
 			System.out.println("Catch Establish Connection : " + e.getMessage());
 		}
-	}
-	
-	public static void main(String[] args) throws Exception {
-		
-		/*String databaseAddress = "localhost";
-		if (args.length != 3) {
-			System.out.println("No database address on arguments. Using 'localhost'");
-		} else {
-			databaseAddress = args[0];
-		}*/
-		if (args.length != 3) {
-			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port");
-			return;
-		}
-		String databaseAddress = args[0];
-		int listeningUDPPort = Integer.parseInt(args[1]);
-		int listeningTCPPort = Integer.parseInt(args[2]);
-		
-		ServerMain serverMain = new ServerMain(databaseAddress, listeningUDPPort, listeningTCPPort);
-		serverMain.Run();
 	}
 	
 	private void printConnected() {
@@ -156,7 +148,59 @@ public class ServerMain {
 	
 	private void connectDatabase() throws SQLException, ClassNotFoundException {
 		Class.forName("com.mysql.jdbc.Driver");
-		databaseConnection = DriverManager.getConnection(Constants.getDatabaseURL(databaseAddress), Constants.DATABASE_USER_NAME, Constants.DATABASE_USER_PASSWORD);
+		databaseConnection = DriverManager.getConnection(Constants.getDatabaseURL(databaseAddress),
+				Constants.DATABASE_USER_NAME, Constants.DATABASE_USER_PASSWORD);
 	}
 	
+	public static void main(String[] args) throws Exception {
+		
+		if (args.length != 3) {
+			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port");
+			System.exit(-1);
+		}
+		String databaseAddress = args[0];
+		int listeningUDPPort = 0, listeningTCPPort = 0;
+		try {
+			listeningUDPPort = Integer.parseInt(args[1]);
+			listeningTCPPort = Integer.parseInt(args[2]);
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid Port number/s");
+			System.exit(-1);
+		}
+		
+		
+		ServerMain serverMain = new ServerMain(databaseAddress, listeningUDPPort, listeningTCPPort);
+		serverMain.Run();
+		
+		
+		/*String IP = "238.254.254.254";
+		int Port = 5432;
+		InetAddress ia = InetAddress.getByName(IP);
+		NetworkInterface ni = NetworkInterface.getByInetAddress(ia);
+		
+		MulticastSocket MSoc = new MulticastSocket(Port);
+		MSoc.setTimeToLive(200);
+		SocketAddress sa = new InetSocketAddress(IP, Port);
+		MSoc.joinGroup(ia);
+		
+		new Thread(() -> {
+			try {
+				var b = "Yert bageette Mundo".getBytes();
+				DatagramPacket p = new DatagramPacket(b, b.length, ia, Port);
+				Thread.sleep(500);
+				MSoc.send(p);
+				MSoc.leaveGroup(sa, ni);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}).start();
+		
+		DatagramPacket p = new DatagramPacket(new byte[1024], 1024);
+		MSoc.receive(p);
+		
+		String str = new String(p.getData(), 0, p.getLength());
+		System.out.println("Data: " + str);*/
+		
+		
+	}
 }

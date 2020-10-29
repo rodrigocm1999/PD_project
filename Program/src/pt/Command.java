@@ -18,7 +18,7 @@ public class Command implements Serializable {
 	public String getProtocol() {
 		return protocol;
 	}
-	
+
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
 	}
@@ -29,5 +29,13 @@ public class Command implements Serializable {
 	
 	public void setExtras(Object extras) {
 		this.extras = extras;
+	}
+	
+	@Override
+	public String toString() {
+		return "Command{" +
+				"protocol='" + protocol + '\'' +
+				", extras='" + extras + '\'' +
+				'}';
 	}
 }
