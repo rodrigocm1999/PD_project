@@ -20,10 +20,11 @@ public class ServerMain {
 	
 	private ServerSocket serverSocket;
 	private final String databaseAddress;
-	private final ArrayList<ServerUser> connectedMachines;
+	private final String databaseName;
 	private Connection databaseConnection;
 	private static ServerMain instance;
-	private final ArrayList<Thread> threads;
+	
+	private final ArrayList<ServerUser> connectedMachines;
 	private ArrayList<ServerAddress> serversList;
 	
 	public static ServerMain getInstance() {
@@ -38,26 +39,29 @@ public class ServerMain {
 		return databaseConnection.prepareStatement(sql);
 	}
 	
-	public ServerMain(String databaseAddress, int listeningUDPPort, int listeningTCPPort) throws Exception {
+	public ServerMain(String databaseAddress, String databaseName, int listeningUDPPort, int listeningTCPPort) throws Exception {
 		if (instance != null) {
 			throw new Exception("Server Already Running");
 		}
 		instance = this;
 		this.databaseAddress = databaseAddress;
+		this.databaseName = databaseName;
 		connectedMachines = new ArrayList<>();
-		threads = new ArrayList<>();
 		serversList = new ArrayList<>();
 		this.listeningUDPPort = listeningUDPPort;
 		this.listeningTCPPort = listeningTCPPort;
 	}
 	
 	public void start() throws Exception {
-		connectDatabase();
-		startMulticastSocket();
-		synchronizeDatabase();
-		
 		DatagramSocket udpSocket = new DatagramSocket(listeningUDPPort);
 		serverSocket = new ServerSocket(listeningTCPPort);
+		
+		connectDatabase();
+		MulticastSocket multicastSocket = startMulticastSocket();
+		discoverServers(multicastSocket);
+		synchronizeDatabase();
+		startServerSyncer(multicastSocket);
+		
 		System.out.println("Server Running");
 		
 		while (true) {
@@ -91,6 +95,18 @@ public class ServerMain {
 		}
 	}
 	
+	private void discoverServers(MulticastSocket multicastSocket) {
+	
+	
+	}
+	
+	private void startServerSyncer(MulticastSocket multicastSocket) throws UnknownHostException {
+		InetAddress group = InetAddress.getByName(Constants.MULTICAST_GROUP);
+		int port = Constants.MULTICAST_PORT;
+		// TODO Actually organize this crap
+		ServerSyncer syncer = new ServerSyncer(multicastSocket, group, port);
+	}
+	
 	private boolean canAcceptNewUser() {
 		//TODO make this actually check if can or not
 		return true;
@@ -107,13 +123,14 @@ public class ServerMain {
 		return list;
 	}
 	
-	private void startMulticastSocket() throws IOException {
+	private MulticastSocket startMulticastSocket() throws IOException {
 		InetAddress group = InetAddress.getByName(Constants.MULTICAST_GROUP);
 		int port = Constants.MULTICAST_PORT;
 		MulticastSocket multicastSocket = new MulticastSocket(port);
 		SocketAddress socketAddress = new InetSocketAddress(group, port);
 		NetworkInterface networkInterface = NetworkInterface.getByInetAddress(group);
 		multicastSocket.joinGroup(socketAddress, networkInterface);
+		return multicastSocket;
 	}
 	
 	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
@@ -147,14 +164,14 @@ public class ServerMain {
 	
 	private void connectDatabase() throws SQLException, ClassNotFoundException {
 		Class.forName("com.mysql.jdbc.Driver");
-		databaseConnection = DriverManager.getConnection(Constants.getDatabaseURL(databaseAddress),
+		databaseConnection = DriverManager.getConnection(Constants.getDatabaseURL(databaseAddress,databaseName),
 				Constants.DATABASE_USER_NAME, Constants.DATABASE_USER_PASSWORD);
 	}
 	
 	public static void main(String[] args) throws Exception {
 		
-		if (args.length != 3) {
-			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port");
+		if (args.length < 3) {
+			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port, OPTIONAL database_name");
 			System.exit(-1);
 		}
 		String databaseAddress = args[0];
@@ -167,7 +184,12 @@ public class ServerMain {
 			System.exit(-1);
 		}
 		
-		ServerMain serverMain = new ServerMain(databaseAddress, listeningUDPPort, listeningTCPPort);
+		String databaseName = Constants.DATABASE_NAME;
+		if (args.length == 4) {
+			databaseName = args[3];
+		}
+		
+		ServerMain serverMain = new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort);
 		serverMain.start();
 		
 	}

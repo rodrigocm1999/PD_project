@@ -11,9 +11,11 @@ public class ServerUser extends Thread {
 	private final Socket socket;
 	private ObjectOutputStream oos;
 	private ObjectInputStream ois;
+	
 	private boolean isLoggedIn = false;
 	private String username;
 	private int userId;
+	
 	private boolean toRemove = false;
 	private boolean keepReceiving = true;
 	
@@ -94,48 +96,60 @@ public class ServerUser extends Thread {
 				login(userInfo.getUsername(), userInfo.getPassword());
 			}
 			
-			case Constants.CHANNEL_GET_ALL -> {
-				ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userId);
-				sendCommand(Constants.CHANNEL_GET_ALL, channels);
-			}
-			
-			case Constants.CHANNEL_GET_MESSAGES -> {
-				//TODO Get Messages
-			
-			}
-			
-			case Constants.CHANNEL_ADD -> {
-				ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
-				boolean success = ServerChannelManager.createChannel(
-						userId, channelInfo.name, Utils.hashStringBase36(channelInfo.password), channelInfo.description);
-				if (success) sendCommand(Constants.SUCCESS);
-				else sendCommand(Constants.FAILURE);
-			}
-			
-			case Constants.CHANNEL_REMOVE -> {
-				int channelId = (int) protocol.getExtras();
-				if (ServerChannelManager.isUserChannelOwner(userId, channelId)) {
-					boolean success = ServerChannelManager.deleteChannel(channelId);
-					if (success) sendCommand(Constants.SUCCESS);
-					else sendCommand(Constants.FAILURE, "Error Removing channel"); // Shouldn't happen
-				} else sendCommand(Constants.FAILURE, "User doesn't have permissions"); // Shouldn't happen
-			}
-			
-			case Constants.CHANNEL_EDIT -> {
-				ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
-				//TODO edit channel
-			}
-			
-			case Constants.CHANNEL_ADD_MESSAGE -> {
-			
-			}
-			//TODO edit channel, remove channel
-			
 			case Constants.DISCONNECTING -> {
 				//TODO clear something I don't know yet
 				disconnectNRemove();
 			}
 		}
+		if (isLoggedIn()) {
+			switch (protocol.getProtocol()) {
+				case Constants.CHANNEL_GET_ALL -> {
+					ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userId);
+					sendCommand(Constants.CHANNEL_GET_ALL, channels);
+				}
+				
+				case Constants.CHANNEL_GET_MESSAGES -> {
+					//TODO Get Messages
+					
+				}
+				
+				case Constants.CHANNEL_ADD -> {
+					ChannelInfo info = (ChannelInfo) protocol.getExtras();
+					boolean success = ServerChannelManager.createChannel(
+							userId, info.name, info.password, info.description);
+					if (success) sendCommand(Constants.SUCCESS);
+					else sendCommand(Constants.FAILURE);
+				}
+				
+				case Constants.CHANNEL_REMOVE -> {
+					int channelId = (int) protocol.getExtras();
+					if (ServerChannelManager.isUserChannelOwner(userId, channelId)) {
+						boolean success = ServerChannelManager.deleteChannel(channelId);
+						if (success) sendCommand(Constants.SUCCESS);
+						else sendCommand(Constants.FAILURE, "Error Removing channel"); // Shouldn't happen
+					} else sendCommand(Constants.FAILURE, "User doesn't have permissions"); // Shouldn't happen
+				}
+				
+				case Constants.CHANNEL_EDIT -> {
+					ChannelInfo info = (ChannelInfo) protocol.getExtras();
+					//TODO edit channel
+				}
+				
+				case Constants.CHANNEL_ADD_MESSAGE -> {
+				
+				}
+				//TODO edit channel, remove channel,  add message, retrieve messages
+				
+				case Constants.LOGOUT -> {
+					logout();
+				}
+			}
+		}
+	}
+	
+	private void logout() {
+		isLoggedIn = false;
+		// TODO maybe clear userId and username
 	}
 	
 	private void handleRegister(UserInfo userInfo) throws IOException {
