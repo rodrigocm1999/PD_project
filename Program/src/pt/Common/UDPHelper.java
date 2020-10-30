@@ -1,4 +1,4 @@
-package pt;
+package pt.Common;
 
 import java.io.*;
 import java.net.DatagramPacket;

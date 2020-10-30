@@ -1,4 +1,4 @@
-package pt;
+package pt.Common;
 
 public class MessageInfo {
 	

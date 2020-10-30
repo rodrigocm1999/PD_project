@@ -1,4 +1,7 @@
-package pt;
+package pt.Server;
+
+import pt.Common.ChannelInfo;
+import pt.Common.MessageInfo;
 
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
