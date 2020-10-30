@@ -1,6 +1,10 @@
-package pt;
+package pt.Client;
 
-import java.io.EOFException;
+import pt.Common.Command;
+import pt.Common.Constants;
+import pt.Server.ServerAddress;
+import pt.Common.UDPHelper;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;

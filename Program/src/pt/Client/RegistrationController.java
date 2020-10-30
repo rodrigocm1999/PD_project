@@ -1,11 +1,13 @@
-package pt;
+package pt.Client;
 
 import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
+import pt.Common.Command;
+import pt.Common.Constants;
+import pt.Common.UserInfo;
 
 import java.io.IOException;
 

@@ -1,6 +1,6 @@
-package pt;
+package pt.Server;
 
-import com.mysql.fabric.Server;
+import pt.Common.*;
 
 import java.io.*;
 import java.net.Socket;

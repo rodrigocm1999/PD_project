@@ -1,4 +1,7 @@
-package pt;
+package pt.Server;
+
+import pt.Common.UserInfo;
+import pt.Common.Utils;
 
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;

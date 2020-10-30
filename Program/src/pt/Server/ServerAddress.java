@@ -1,4 +1,4 @@
-package pt;
+package pt.Server;
 
 import java.io.Serializable;
 import java.net.InetAddress;

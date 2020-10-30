@@ -1,4 +1,4 @@
-package pt;
+package pt.Server;
 
 import java.net.MulticastSocket;
 

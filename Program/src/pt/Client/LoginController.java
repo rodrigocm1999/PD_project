@@ -1,7 +1,10 @@
-package pt;
+package pt.Client;
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.*;
+import pt.Common.Command;
+import pt.Common.Constants;
+import pt.Common.UserInfo;
 
 import java.io.IOException;
 

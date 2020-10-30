@@ -1,4 +1,4 @@
-package pt;
+package pt.Client;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
