@@ -35,12 +35,12 @@ public class Utils {
 		}*/
 		
 		Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
-		BufferedImage dimg = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
+		BufferedImage bufferedImage = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
 		
-		Graphics2D g2d = dimg.createGraphics();
+		Graphics2D g2d = bufferedImage.createGraphics();
 		g2d.drawImage(tmp, 0, 0, null);
 		g2d.dispose();
-		return dimg;
+		return bufferedImage;
 	}
 	
 }

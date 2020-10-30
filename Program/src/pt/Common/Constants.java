@@ -40,7 +40,7 @@ public class Constants {
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
 	
-	public static String getDatabaseURL(String address) {
-		return DATABASE_URL.replace("{1}", address).replace("{2}", DATABASE_NAME);
+	public static String getDatabaseURL(String address, String name) {
+		return DATABASE_URL.replace("{1}", address).replace("{2}", name);
 	}
 }

@@ -2,6 +2,7 @@ package pt.Server;
 
 import pt.Common.ChannelInfo;
 import pt.Common.MessageInfo;
+import pt.Common.Utils;
 
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
@@ -38,7 +39,7 @@ public class ServerChannelManager {
 		PreparedStatement statement = getApp().getPreparedStatement(insert);
 		statement.setInt(1, creatorId);
 		statement.setString(2, name);
-		statement.setString(3, password);
+		statement.setString(3, Utils.hashStringBase36(password));
 		statement.setString(4, description);
 		return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
 	}

@@ -36,8 +36,8 @@ insert into channel(creator_ir,name,description,password_hash) values();
  select count(id) from channel where id = 1 and creator_id = 4;
  
 select id,(
-
+	select sender_id from channel_message where message_id = message.id
 )as sender_id,moment_sent,type,content
-from message where (select channel_id from channel_message);
+from message where (select channel_id from channel_message where channel_id = 3 and channel_message.message_id = message.id) = 2;
  
  
