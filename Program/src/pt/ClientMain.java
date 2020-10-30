@@ -74,11 +74,12 @@ public class ClientMain {
 			throw new IOException("Illegal Connection Protocol");
 		}
 	}
-	
+
 	public Object sendCommandToServer(String protocol, Object object) throws IOException, ClassNotFoundException {
 		oOS.writeObject(new Command(protocol, object));
 		Object ob = oIS.readObject();
 		return ob;
 	}
+
 	
 }
