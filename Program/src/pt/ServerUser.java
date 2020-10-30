@@ -1,7 +1,10 @@
 package pt;
 
+import com.mysql.fabric.Server;
+
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class ServerUser extends Thread {
 	
@@ -88,13 +91,48 @@ public class ServerUser extends Thread {
 			
 			case Constants.LOGIN -> {
 				UserInfo userInfo = (UserInfo) protocol.getExtras();
-				System.out.println(userInfo);
 				login(userInfo.getUsername(), userInfo.getPassword());
 			}
 			
+			case Constants.CHANNEL_GET_ALL -> {
+				ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userId);
+				sendCommand(Constants.CHANNEL_GET_ALL, channels);
+			}
+			
+			case Constants.CHANNEL_GET_MESSAGES -> {
+				//TODO Get Messages
+			
+			}
+			
+			case Constants.CHANNEL_ADD -> {
+				ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
+				boolean success = ServerChannelManager.createChannel(
+						userId, channelInfo.name, Utils.hashStringBase36(channelInfo.password), channelInfo.description);
+				if (success) sendCommand(Constants.SUCCESS);
+				else sendCommand(Constants.FAILURE);
+			}
+			
+			case Constants.CHANNEL_REMOVE -> {
+				int channelId = (int) protocol.getExtras();
+				if (ServerChannelManager.isUserChannelOwner(userId, channelId)) {
+					boolean success = ServerChannelManager.deleteChannel(channelId);
+					if (success) sendCommand(Constants.SUCCESS);
+					else sendCommand(Constants.FAILURE, "Error Removing channel"); // Shouldn't happen
+				} else sendCommand(Constants.FAILURE, "User doesn't have permissions"); // Shouldn't happen
+			}
+			
+			case Constants.CHANNEL_EDIT -> {
+				ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
+				//TODO edit channel
+			}
+			
+			case Constants.CHANNEL_ADD_MESSAGE -> {
+			
+			}
+			//TODO edit channel, remove channel
+			
 			case Constants.DISCONNECTING -> {
 				//TODO clear something I don't know yet
-				//TODO test this shit
 				disconnectNRemove();
 			}
 		}
@@ -103,7 +141,7 @@ public class ServerUser extends Thread {
 	private void handleRegister(UserInfo userInfo) throws IOException {
 		if (isLoggedIn()) {
 			System.out.println("Illegal Request\tNot supposed to happen");
-			sendCommand(Constants.INVALID_REQUEST, null);
+			sendCommand(Constants.INVALID_REQUEST);
 			return;
 		}
 		try {
@@ -132,7 +170,7 @@ public class ServerUser extends Thread {
 				
 				if (ServerUserManager.insertUser(userInfo) == 1) {
 					System.out.println("Added new user");
-					sendCommand(Constants.REGISTER_SUCCESS, null);
+					sendCommand(Constants.REGISTER_SUCCESS);
 				} else {
 					System.out.println("No new user added");
 					sendCommand(Constants.REGISTER_ERROR, "No new user added");
@@ -140,7 +178,7 @@ public class ServerUser extends Thread {
 			}
 		} catch (Exception e) {
 			System.out.println("Error on User Registration : " + e.getMessage());
-			sendCommand(Constants.REGISTER_ERROR, null);
+			sendCommand(Constants.REGISTER_ERROR);
 		}
 	}
 	
@@ -157,7 +195,7 @@ public class ServerUser extends Thread {
 			sendCommand(Constants.LOGIN_ERROR, "Password is incorrect");
 			return;
 		}
-		sendCommand(Constants.LOGIN_SUCCESS, null);
+		sendCommand(Constants.LOGIN_SUCCESS);
 		System.out.println("Login success : " + username);
 		userId = ServerUserManager.getUserId(username);
 		this.username = username;
@@ -166,6 +204,10 @@ public class ServerUser extends Thread {
 	
 	public String getSocketInformation() {
 		return ("local port: " + socket.getInetAddress().getHostName() + ":" + socket.getPort());
+	}
+	
+	public void sendCommand(String command) throws IOException {
+		sendCommand(command, null);
 	}
 	
 	public void sendCommand(String command, Object extra) throws IOException {

@@ -9,6 +9,7 @@ public class ChannelInfo implements Serializable {
 	public int id;
 	public int creatorId;
 	public String name;
+	public String password;
 	public String description;
 	public boolean isPartOf;
 	
@@ -20,10 +21,10 @@ public class ChannelInfo implements Serializable {
 		this.isPartOf = isPartOf;
 	}
 	
-	public ChannelInfo(int id, int creatorId, String name, String description) {
-		this.id = id;
+	public ChannelInfo(int creatorId, String name, String password, String description) {
 		this.creatorId = creatorId;
 		this.name = name;
+		this.password = password;
 		this.description = description;
 	}
 	

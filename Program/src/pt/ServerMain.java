@@ -56,41 +56,38 @@ public class ServerMain {
 		System.out.println("Server Running");
 		
 		while (true) {
-			DatagramPacket receivedPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+			DatagramPacket receivedPacket = new DatagramPacket(
+					new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 			Command command = (Command) UDPHelper.receiveUDPObject(udpSocket, receivedPacket);
 			
 			switch (command.getProtocol()) {
 				case Constants.ESTABLISH_CONNECTION -> {
 					System.out.println("Establish Connection");
-					Runnable runnable = () -> {
-						try {
-							if (canAcceptNewUser()) {
-								UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
-										udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-								
-								//TODO garantir entrega maybe
-								receiveNewUser(receivedPacket, udpSocket);
-							} else {
-								//TODO send list with other servers
-								//TODO ALL SERVER CONNECTIONS
-								ArrayList<ServerAddress> serversList = getServersList();
-								
-								UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, serversList),
-										udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-							}
-						} catch (Exception e) {
+					try {
+						if (canAcceptNewUser()) {
+							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
+									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
+							
+							//TODO garantir entrega maybe, if so, then make this non blocking
+							receiveNewUser(receivedPacket, udpSocket);
+						} else {
+							//TODO send list with other servers
+							//TODO ALL SERVER CONNECTIONS
+							ArrayList<ServerAddress> serversList = getServersList();
+							
+							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, serversList),
+									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
 						}
-					};
-					//Thread thread = new Thread(runnable);
-					//thread.start();
-					//threads.add(thread);
-					runnable.run();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
 	}
 	
 	private boolean canAcceptNewUser() {
+		//TODO make this actually check if can or not
 		return true;
 	}
 	

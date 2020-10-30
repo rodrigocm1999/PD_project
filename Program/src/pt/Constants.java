@@ -17,6 +17,16 @@ public class Constants {
 	public static final String LOGIN = "LOGIN_ATTEMPT";
 	public static final String LOGIN_SUCCESS = "LOGIN_SUCCESS";
 	public static final String LOGIN_ERROR = "LOGIN_ERROR";
+	public static final String CHANNEL_GET_ALL = "CHANNEL_GET_ALL";
+	public static final String CHANNEL_GET_MESSAGES = "CHANNEL_GET_MESSAGES";
+	public static final String CHANNEL_ADD = "CHANNEL_ADD";
+	public static final String CHANNEL_ADD_MESSAGE = "CHANNEL_ADD_MESSAGE";
+	public static final String CHANNEL_REMOVE = "CHANNEL_REMOVE";
+	public static final String CHANNEL_EDIT = "CHANNEL_EDIT";
+	
+	public static final String SUCCESS = "SUCCESS";
+	public static final String FAILURE = "FAILURE";
+	
 	public static final String DISCONNECTING = "DISCONNECTING";
 	public static final String SERVERS_LIST = "SERVERS_LIST";
 	
@@ -25,11 +35,11 @@ public class Constants {
 	public static final String INVALID_REQUEST = "INVALID_REQUEST";
 	
 	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/{2}?autoReconnect=true&useSSL=false";
-	private static final String DATABASE_NAME = "main";
+	public static final String DATABASE_NAME = "main";
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
 	
 	public static String getDatabaseURL(String address) {
-		return DATABASE_URL.replace("{1}", address).replace("{2}",DATABASE_NAME);
+		return DATABASE_URL.replace("{1}", address).replace("{2}", DATABASE_NAME);
 	}
 }
