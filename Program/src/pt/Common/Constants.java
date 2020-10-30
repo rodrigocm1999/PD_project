@@ -28,6 +28,7 @@ public class Constants {
 	public static final String FAILURE = "FAILURE";
 	
 	public static final String DISCONNECTING = "DISCONNECTING";
+	public static final String LOGOUT = "LOGOUT";
 	public static final String SERVERS_LIST = "SERVERS_LIST";
 	
 	public static final String ERROR = "ERROR";
