@@ -1,9 +1,7 @@
 package pt.Server;
 
-import pt.Common.Command;
-import pt.Common.Constants;
-import pt.Common.ServerAddress;
-import pt.Common.UDPHelper;
+import jdk.jshell.execution.Util;
+import pt.Common.*;
 
 import java.io.*;
 import java.net.*;
@@ -12,6 +10,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ServerMain {
 	
@@ -25,18 +25,10 @@ public class ServerMain {
 	private static ServerMain instance;
 	
 	private final ArrayList<ServerUser> connectedMachines;
-	private ArrayList<ServerAddress> serversList;
+	private ServerSyncer serversManager;
 	
 	public static ServerMain getInstance() {
 		return instance;
-	}
-	
-	public Connection getDatabaseConnection() {
-		return databaseConnection;
-	}
-	
-	public PreparedStatement getPreparedStatement(String sql) throws SQLException {
-		return databaseConnection.prepareStatement(sql);
 	}
 	
 	public ServerMain(String databaseAddress, String databaseName, int listeningUDPPort, int listeningTCPPort) throws Exception {
@@ -47,7 +39,6 @@ public class ServerMain {
 		this.databaseAddress = databaseAddress;
 		this.databaseName = databaseName;
 		connectedMachines = new ArrayList<>();
-		serversList = new ArrayList<>();
 		this.listeningUDPPort = listeningUDPPort;
 		this.listeningTCPPort = listeningTCPPort;
 	}
@@ -57,34 +48,29 @@ public class ServerMain {
 		serverSocket = new ServerSocket(listeningTCPPort);
 		
 		connectDatabase();
-		MulticastSocket multicastSocket = startMulticastSocket();
-		discoverServers(multicastSocket);
+		serversManager = createServerSyncer();
+		serversManager.discoverServers();
 		synchronizeDatabase();
-		startServerSyncer(multicastSocket);
+		serversManager.start();
 		
 		System.out.println("Server Running");
 		
 		while (true) {
-			DatagramPacket receivedPacket = new DatagramPacket(
-					new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+			DatagramPacket receivedPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 			Command command = (Command) UDPHelper.receiveUDPObject(udpSocket, receivedPacket);
 			
 			switch (command.getProtocol()) {
 				case Constants.ESTABLISH_CONNECTION -> {
-					System.out.println("Establish Connection");
+					System.out.println("Establish Connection --> can accept user: " + !serversManager.checkIfBetterServer());
 					try {
-						if (canAcceptNewUser()) {
+						if (!serversManager.checkIfBetterServer()) {
 							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
 									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-							
 							//TODO garantir entrega maybe, if so, then make this non blocking
 							receiveNewUser(receivedPacket, udpSocket);
 						} else {
-							//TODO send list with other servers
-							//TODO ALL SERVER CONNECTIONS
-							ArrayList<ServerAddress> serversList = getServersList();
-							
-							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, serversList),
+							ArrayList<ServerAddress> list = serversManager.getOrderedServerAddresses();
+							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
 									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
 						}
 					} catch (Exception e) {
@@ -95,56 +81,26 @@ public class ServerMain {
 		}
 	}
 	
-	private void discoverServers(MulticastSocket multicastSocket) {
-	
-	
-	}
-	
-	private void startServerSyncer(MulticastSocket multicastSocket) throws UnknownHostException {
-		InetAddress group = InetAddress.getByName(Constants.MULTICAST_GROUP);
-		int port = Constants.MULTICAST_PORT;
-		// TODO Actually organize this crap
-		ServerSyncer syncer = new ServerSyncer(multicastSocket, group, port);
-	}
-	
-	private boolean canAcceptNewUser() {
-		//TODO make this actually check if can or not
-		return true;
+	private ServerSyncer createServerSyncer() throws IOException {
+		InetAddress group = InetAddress.getByName(ServerConstants.MULTICAST_GROUP);
+		int port = ServerConstants.MULTICAST_PORT;
+		return new ServerSyncer(this, group, port, listeningUDPPort);
 	}
 	
 	private void synchronizeDatabase() {
 		//TODO get all of the new information
-	}
-	
-	private ArrayList<ServerAddress> getServersList() throws UnknownHostException {
-		//TODO get servers list
-		var list = new ArrayList<ServerAddress>();
-		list.add(new ServerAddress(InetAddress.getByName("localhost"), 23124));
-		return list;
-	}
-	
-	private MulticastSocket startMulticastSocket() throws IOException {
-		InetAddress group = InetAddress.getByName(Constants.MULTICAST_GROUP);
-		int port = Constants.MULTICAST_PORT;
-		MulticastSocket multicastSocket = new MulticastSocket(port);
-		SocketAddress socketAddress = new InetSocketAddress(group, port);
-		NetworkInterface networkInterface = NetworkInterface.getByInetAddress(group);
-		multicastSocket.joinGroup(socketAddress, networkInterface);
-		return multicastSocket;
+		System.out.println("Syncing Database --------------------------------");
 	}
 	
 	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
 		try {
-			serverSocket.setSoTimeout((int) Constants.CONNECTION_TIMEOUT);
+			serverSocket.setSoTimeout(Constants.CONNECTION_TIMEOUT);
 			Socket socket = serverSocket.accept();
-			//TODO check this
-			ServerUser serverUser = new ServerUser(socket);
-			serverUser.sendCommand(Constants.SERVERS_LIST, getServersList());
+			
+			ServerUser serverUser = new ServerUser(socket,serversManager.getOrderedServerAddresses());
 			serverUser.start();
-			synchronized (connectedMachines) {
-				connectedMachines.add(serverUser);
-			}
-			System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket.getInetAddress().getHostName() + ":" + socket.getPort());
+			connectedMachines.add(serverUser);
+			System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket);
 		} catch (Exception e) {
 			System.out.println("Catch Establish Connection : " + e.getMessage());
 		}
@@ -158,14 +114,32 @@ public class ServerMain {
 		System.out.println("--------------");
 	}
 	
+	public int getUDPPort() {
+		return listeningUDPPort;
+	}
+	
+	public int getConnectedUsers() {
+		return connectedMachines.size();
+	}
+	
 	public void removeConnected(ServerUser user) {
-		connectedMachines.remove(user);
+		synchronized (connectedMachines) {
+			connectedMachines.remove(user);
+		}
 	}
 	
 	private void connectDatabase() throws SQLException, ClassNotFoundException {
 		Class.forName("com.mysql.jdbc.Driver");
-		databaseConnection = DriverManager.getConnection(Constants.getDatabaseURL(databaseAddress,databaseName),
-				Constants.DATABASE_USER_NAME, Constants.DATABASE_USER_PASSWORD);
+		databaseConnection = DriverManager.getConnection(ServerConstants.getDatabaseURL(databaseAddress, databaseName),
+				ServerConstants.DATABASE_USER_NAME, ServerConstants.DATABASE_USER_PASSWORD);
+	}
+	
+	public Connection getDatabaseConnection() {
+		return databaseConnection;
+	}
+	
+	public PreparedStatement getPreparedStatement(String sql) throws SQLException {
+		return databaseConnection.prepareStatement(sql);
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -184,14 +158,12 @@ public class ServerMain {
 			System.exit(-1);
 		}
 		
-		String databaseName = Constants.DATABASE_NAME;
+		String databaseName = ServerConstants.DATABASE_NAME;
 		if (args.length == 4) {
 			databaseName = args[3];
 		}
 		
 		ServerMain serverMain = new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort);
 		serverMain.start();
-		
 	}
-	
 }

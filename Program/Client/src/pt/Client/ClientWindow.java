@@ -58,7 +58,7 @@ public class ClientWindow extends Application {
 			client.connectToServer();
 			launch(args);
 		} catch (IOException e) {
-			System.out.println("COULD NOT ACCESS THE SERVER. TRY AGAIN LATER --> " + e.getLocalizedMessage());
+			System.out.println("COULD NOT ACCESS THE SERVER. TRY AGAIN LATER --> " + e.getMessage());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

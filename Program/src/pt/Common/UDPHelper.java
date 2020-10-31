@@ -21,9 +21,9 @@ public class UDPHelper {
 			this.object = object;
 		}
 	}
-	//TODO test this stuff
-	
-	static int RETRY_LIMIT = 3;
+	//TODO test reliable ones
+	static final int RETRY_LIMIT = 3;
+	static final int RECEIVE_TIMEOUT = 500;
 	
 	public static DatagramSocket sendUDPObjectReliably(Object object, InetAddress address, int port) throws Exception {
 		DatagramSocket socket = new DatagramSocket();
@@ -49,7 +49,7 @@ public class UDPHelper {
 		byte[] bytes = byteArrayOutputStream.toByteArray();
 		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address, port);
 		
-		socket.setSoTimeout(2500);
+		socket.setSoTimeout(RECEIVE_TIMEOUT);
 		int retries = 0;
 		
 		while (true) {

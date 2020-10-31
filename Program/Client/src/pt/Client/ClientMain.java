@@ -1,9 +1,6 @@
 package pt.Client;
 
-import pt.Common.Command;
-import pt.Common.Constants;
-import pt.Common.ServerAddress;
-import pt.Common.UDPHelper;
+import pt.Common.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -59,6 +56,7 @@ public class ClientMain {
 		String protocol = command.getProtocol();
 		
 		if (protocol.equals(Constants.CONNECTION_ACCEPTED)) {
+			System.out.println("Aceite");
 			int socketTCPort = (int) command.getExtras();
 			socket = new Socket(ipAddress, socketTCPort);
 			oOS = new ObjectOutputStream(socket.getOutputStream());
@@ -72,7 +70,8 @@ public class ClientMain {
 			return true;
 		} else if (protocol.equals(Constants.CONNECTION_REFUSED)) {
 			// TODO Garantir que recebe
-			serversList = (ArrayList<ServerAddress>) UDPHelper.receiveUDPObject(udpSocket);
+			serversList = (ArrayList<ServerAddress>) command.getExtras();
+			Utils.printList(serversList, "Available Servers");
 			return false;
 		} else {
 			throw new IOException("Illegal Connection Protocol");
@@ -81,8 +80,7 @@ public class ClientMain {
 	
 	public Object sendCommandToServer(String protocol, Object object) throws IOException, ClassNotFoundException {
 		oOS.writeObject(new Command(protocol, object));
-		Object ob = oIS.readObject();
-		return ob;
+		return oIS.readObject();
 	}
 	
 }

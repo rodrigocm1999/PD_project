@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class ChannelInfo implements Serializable {
 	
-	private static final long serialVersionUID = 222L;
+	private static final long serialVersionUID = 536475864376L;
 	
 	public int id;
 	public int creatorId;
@@ -30,5 +30,17 @@ public class ChannelInfo implements Serializable {
 	
 	public boolean isOwner(int userId) {
 		return userId == creatorId;
+	}
+	
+	@Override
+	public String toString() {
+		return "ChannelInfo{" +
+				"id=" + id +
+				", creatorId=" + creatorId +
+				", name='" + name + '\'' +
+				", password='" + password + '\'' +
+				", description='" + description + '\'' +
+				", isPartOf=" + isPartOf +
+				'}';
 	}
 }

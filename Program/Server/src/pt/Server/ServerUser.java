@@ -9,8 +9,9 @@ import java.util.ArrayList;
 public class ServerUser extends Thread {
 	
 	private final Socket socket;
-	private ObjectOutputStream oos;
-	private ObjectInputStream ois;
+	private final ObjectOutputStream oos;
+	private final ObjectInputStream ois;
+	private ArrayList<ServerAddress> orderedServerAddresses;
 	
 	private boolean isLoggedIn = false;
 	private String username;
@@ -23,15 +24,18 @@ public class ServerUser extends Thread {
 		return ServerMain.getInstance();
 	}
 	
-	public ServerUser(Socket socket) throws IOException {
+	public ServerUser(Socket socket, ArrayList<ServerAddress> orderedServerAddresses) throws IOException {
 		this.socket = socket;
 		oos = new ObjectOutputStream(socket.getOutputStream());
 		ois = new ObjectInputStream(socket.getInputStream());
+		this.orderedServerAddresses = orderedServerAddresses;
 	}
 	
 	@Override
 	public void run() {
 		try {
+			sendCommand(Constants.SERVERS_LIST, orderedServerAddresses);
+			orderedServerAddresses = null;
 			receiveRequests(socket);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -61,9 +65,8 @@ public class ServerUser extends Thread {
 			Thread thread = new Thread(() -> {
 				try {
 					Thread.sleep(Constants.CONNECTION_TIMEOUT);
-				} catch (InterruptedException interruptedException) {
-					System.out.println("Timeout thread couldn't sleep");
-					interruptedException.printStackTrace();
+				} catch (InterruptedException eee) {
+					eee.printStackTrace();
 				}
 				if (toRemove)
 					temp.disconnectNRemove();
@@ -76,11 +79,11 @@ public class ServerUser extends Thread {
 	
 	public void disconnectNRemove() {
 		keepReceiving = false;
-		ServerMain.getInstance().removeConnected(this);
+		getApp().removeConnected(this);
 	}
 	
 	private void waitConnection() {
-		//TODO do this stuffs
+		//TODO do this stuffs. reconnect after losing connection
 		int localPort = socket.getLocalPort();
 		//socket = new Socket(localPort);
 	}

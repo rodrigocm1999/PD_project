@@ -2,6 +2,8 @@ package pt.Common;
 
 public class MessageInfo {
 	
+	private static final long serialVersionUID = 8574382340L;
+	
 	public static final String TYPE_TEXT = "TYPE_TEXT";
 	public static final String TYPE_FILE = "TYPE_FILE";
 	
