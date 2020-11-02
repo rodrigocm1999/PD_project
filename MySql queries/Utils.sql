@@ -10,15 +10,48 @@ SELECT default_character_set_name FROM information_schema.SCHEMATA
 WHERE schema_name = "main";
 
 
-delete from user where id != 9999;
+-- insert test users
 insert into user(name,username,password_hash) values('yee','yeet','dwefiogr');
 insert into user(name,username,password_hash) values('yee','yeeeet','dwefiogr');
 insert into user(name,username,password_hash,photo_path) values('yee','dodsrin','dwefiogr','gae');
-insert into user(name,username,password_hash,photo_path) values('','dsar','5j7irtsx93n2jojxywz09zxecwctwrdqrzkvb8oo2w7drxzmup','');
-insert into channel(creator_id,name,description,password_hash) values(4,'its free real estate','hmmmm','dsa');
-insert into channel(creator_id,name,description,password_hash) values(3,'abc ','hmmmm','dsa');
-select count(id) from user;
-select id from user where username = 'yeeeet';
+insert into user(id,name,username,password_hash,photo_path) values(100,'','rodrigo','5j7irtsx93n2jojxywz09zxecwctwrdqrzkvb8oo2w7drxzmup','');
+-- insert test channels
+insert into channel(id,creator_id,name,description,password_hash) values(15,100,'its free real estate','hmmmm','dsa');
+insert into channel(id,creator_id,name,description,password_hash) values(1,3,'abc ','hmmmm','dsa');
+-- insert test channel messages
+insert into message(id,sender_id,content) values(1,100,'only you know what is gonna happen to you next'); 
+insert into channel_message(channel_id,message_id) values(15,1);
+insert into message(id,sender_id,content) values(2,100,'dont rely on others to make your life happen'); 
+insert into channel_message(channel_id,message_id) values(15,2);
+-- insert test between user messages
+insert into user_message()
+
+select * from channel;
+select * from user;
+select * from message;
+-- get all user messages to channels
+select * from message where id in (select message_id from channel_message where sender_id = 100);
+-- get all messages before certain one on channel
+select id,type,content,moment_sent, sender_id
+from message,channel_message
+where message.id = channel_message.message_id
+and channel_id = 15
+and moment_sent <= (
+	select mess.moment_sent
+	from message as mess
+	where id = 2
+);
+-- get all messages before certain one between users
+select id,type,content,moment_sent, sender_id
+from message,user_message
+where message.id = user_message.message_id
+and (sender_id = 100 or receiver_id = 100)
+and moment_sent < (
+	select m.moment_sent
+	from message as m
+	where id = 2
+);
+
 insert into channel_user() values(1,2);
 
 select id,creator_id,name,description,(

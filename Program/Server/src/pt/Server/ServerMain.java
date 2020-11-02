@@ -100,6 +100,7 @@ public class ServerMain {
 			ServerUser serverUser = new ServerUser(socket,serversManager.getOrderedServerAddresses());
 			serverUser.start();
 			connectedMachines.add(serverUser);
+			serversManager.updateUserCount(getConnectedUsers());
 			System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket);
 		} catch (Exception e) {
 			System.out.println("Catch Establish Connection : " + e.getMessage());

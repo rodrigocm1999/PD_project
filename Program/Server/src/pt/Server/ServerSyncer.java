@@ -59,29 +59,39 @@ public class ServerSyncer extends Thread {
 			if (isOwnAddress(otherAddress))
 				continue;
 			
-			//TODO make user count be sent when new user arrives
 			
-			switch (command.getProtocol()) {
+			try {
 				
-				case ServerConstants.CAME_ONLINE -> {
-					ServerStatus server = (ServerStatus) command.getExtras();
-					server.setAddress(packet.getAddress());
-					serverConnected(server);
-					multiMan.sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getConnectedUsers());
-					System.out.println("Came Online : " + server);
-				}
-				
-				case ServerConstants.HEARTBEAT -> {
-					//System.out.println("got heartbeat -> address : " + otherAddress);
-					ServerStatus status = getServerStatus(otherAddress);
-					if (status != null) {
-						status.setHeartbeat(true);
-						//System.out.println("set heartbeat true : " + status);
-					} else {
-						System.out.println("Not yet registered. Not supposed to happen\t Registering now"); // should never happen
-						serverConnected(new ServerStatus(0, otherAddress));
+				switch (command.getProtocol()) {
+					
+					case ServerConstants.CAME_ONLINE -> {
+						ServerStatus server = (ServerStatus) command.getExtras();
+						server.setAddress(packet.getAddress());
+						serverConnected(server);
+						multiMan.sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getConnectedUsers());
+						System.out.println("Came Online : " + server);
+					}
+					
+					case ServerConstants.HEARTBEAT -> {
+						//System.out.println("got heartbeat -> address : " + otherAddress);
+						ServerStatus status = getServerStatus(otherAddress);
+						if (status != null) {
+							status.setHeartbeat(true);
+							//System.out.println("set heartbeat true : " + status);
+						} else {
+							System.out.println("Not yet registered. Not supposed to happen\t Registering now"); // should never happen
+							serverConnected(new ServerStatus(0, otherAddress));
+						}
+					}
+					
+					case ServerConstants.UPDATE_USER_COUNT -> {
+						int connected = (int) command.getExtras();
+						ServerStatus status = getServerStatus(otherAddress);
+						status.setConnectedUsers(connected);
 					}
 				}
+			} catch (Exception e) {
+			
 			}
 		}
 	}
@@ -191,10 +201,10 @@ public class ServerSyncer extends Thread {
 					alreadyAddedSelf = true;
 				}
 			}
-			if(!alreadyAddedSelf){
+			if (!alreadyAddedSelf) {
 				list.add(ownAddress);
 			}
-			return list;//TODO fix duplicated servers bug
+			return list;//TODO fix duplicated servers bug, not in this function though
 		}
 	}
 	
@@ -214,7 +224,7 @@ public class ServerSyncer extends Thread {
 		System.out.println("Server Discovery");
 		warnEveryone();
 		
-		socket.setSoTimeout(2000);
+		socket.setSoTimeout(1500);
 		try {
 			while (true) {
 				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
@@ -233,5 +243,9 @@ public class ServerSyncer extends Thread {
 		}
 		printAvailableServers();
 		socket.setSoTimeout(0);
+	}
+	
+	public void updateUserCount(int count) throws IOException {
+		multiMan.sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count);
 	}
 }

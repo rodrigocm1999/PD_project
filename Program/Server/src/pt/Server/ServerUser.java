@@ -4,6 +4,8 @@ import pt.Common.*;
 
 import java.io.*;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class ServerUser extends Thread {
@@ -36,13 +38,13 @@ public class ServerUser extends Thread {
 		try {
 			sendCommand(Constants.SERVERS_LIST, orderedServerAddresses);
 			orderedServerAddresses = null;
-			receiveRequests(socket);
+			receiveRequests();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private void receiveRequests(Socket socket) throws Exception {
+	private void receiveRequests() throws IOException {
 		try {
 			while (keepReceiving) {
 				Command command;
@@ -52,29 +54,37 @@ public class ServerUser extends Thread {
 					System.out.println("Error reading protocol : " + e.getLocalizedMessage());
 					continue;
 				} catch (IOException e) {
-					throw new Exception("Connection lost");
+					throw new IOException("Connection lost");
 				}
 				
 				handleRequest(command);
 			}
-		} catch (Exception e) {
+		} catch (IOException e) { // Lost connection
 			e.printStackTrace();
-			toRemove = true;
-			ServerUser temp = this;
-			//TODO test this shit, finish wait Connection. toRemove never becomes false again
-			Thread thread = new Thread(() -> {
-				try {
-					Thread.sleep(Constants.CONNECTION_TIMEOUT);
-				} catch (InterruptedException eee) {
-					eee.printStackTrace();
-				}
-				if (toRemove)
-					temp.disconnectNRemove();
-			});
-			thread.start();
-			waitConnection();
-			throw new Exception("Lost Connection \tAttempting to reconnect");
+			lostConnection();
+		} catch (NoSuchAlgorithmException | SQLException e) {
+			e.printStackTrace();
 		}
+	}
+	
+	public void lostConnection() throws IOException {
+		toRemove = true;
+		ServerUser temp = this;
+		//TODO test this shit, finish wait Connection. toRemove never becomes false again
+		//TODO maybe not even do this, because if the connection is lost the
+		// client can just connect to the next server
+		Thread thread = new Thread(() -> {
+			try {
+				Thread.sleep(Constants.CONNECTION_TIMEOUT);
+			} catch (InterruptedException eee) {
+				eee.printStackTrace();
+			}
+			if (toRemove)
+				temp.disconnectNRemove();
+		});
+		thread.start();
+		waitConnection();
+		throw new IOException("Lost Connection \tAttempting to reconnect");
 	}
 	
 	public void disconnectNRemove() {
@@ -88,7 +98,7 @@ public class ServerUser extends Thread {
 		//socket = new Socket(localPort);
 	}
 	
-	private void handleRequest(Command protocol) throws Exception {
+	private void handleRequest(Command protocol) throws IOException, SQLException, NoSuchAlgorithmException {
 		switch (protocol.getProtocol()) {
 			case Constants.REGISTER -> {
 				handleRegister((UserInfo) protocol.getExtras());
@@ -199,7 +209,7 @@ public class ServerUser extends Thread {
 		}
 	}
 	
-	private void login(String username, String password) throws Exception {
+	private void login(String username, String password) throws SQLException, IOException, NoSuchAlgorithmException {
 		if (isLoggedIn()) {
 			sendCommand(Constants.LOGIN_ERROR, "Already Logged In");
 			return;
