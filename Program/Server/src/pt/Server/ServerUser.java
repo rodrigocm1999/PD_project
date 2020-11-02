@@ -4,13 +4,16 @@ import pt.Common.*;
 
 import java.io.*;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class ServerUser extends Thread {
 	
 	private final Socket socket;
-	private ObjectOutputStream oos;
-	private ObjectInputStream ois;
+	private final ObjectOutputStream oos;
+	private final ObjectInputStream ois;
+	private ArrayList<ServerAddress> orderedServerAddresses;
 	
 	private boolean isLoggedIn = false;
 	private String username;
@@ -23,22 +26,25 @@ public class ServerUser extends Thread {
 		return ServerMain.getInstance();
 	}
 	
-	public ServerUser(Socket socket) throws IOException {
+	public ServerUser(Socket socket, ArrayList<ServerAddress> orderedServerAddresses) throws IOException {
 		this.socket = socket;
 		oos = new ObjectOutputStream(socket.getOutputStream());
 		ois = new ObjectInputStream(socket.getInputStream());
+		this.orderedServerAddresses = orderedServerAddresses;
 	}
 	
 	@Override
 	public void run() {
 		try {
-			receiveRequests(socket);
+			sendCommand(Constants.SERVERS_LIST, orderedServerAddresses);
+			orderedServerAddresses = null;
+			receiveRequests();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private void receiveRequests(Socket socket) throws Exception {
+	private void receiveRequests() throws IOException {
 		try {
 			while (keepReceiving) {
 				Command command;
@@ -48,44 +54,51 @@ public class ServerUser extends Thread {
 					System.out.println("Error reading protocol : " + e.getLocalizedMessage());
 					continue;
 				} catch (IOException e) {
-					throw new Exception("Connection lost");
+					throw new IOException("Connection lost");
 				}
 				
 				handleRequest(command);
 			}
-		} catch (Exception e) {
+		} catch (IOException e) { // Lost connection
 			e.printStackTrace();
-			toRemove = true;
-			ServerUser temp = this;
-			//TODO test this shit, finish wait Connection. toRemove never becomes false again
-			Thread thread = new Thread(() -> {
-				try {
-					Thread.sleep(Constants.CONNECTION_TIMEOUT);
-				} catch (InterruptedException interruptedException) {
-					System.out.println("Timeout thread couldn't sleep");
-					interruptedException.printStackTrace();
-				}
-				if (toRemove)
-					temp.disconnectNRemove();
-			});
-			thread.start();
-			waitConnection();
-			throw new Exception("Lost Connection \tAttempting to reconnect");
+			lostConnection();
+		} catch (NoSuchAlgorithmException | SQLException e) {
+			e.printStackTrace();
 		}
+	}
+	
+	public void lostConnection() throws IOException {
+		toRemove = true;
+		ServerUser temp = this;
+		//TODO test this shit, finish wait Connection. toRemove never becomes false again
+		//TODO maybe not even do this, because if the connection is lost the
+		// client can just connect to the next server
+		Thread thread = new Thread(() -> {
+			try {
+				Thread.sleep(Constants.CONNECTION_TIMEOUT);
+			} catch (InterruptedException eee) {
+				eee.printStackTrace();
+			}
+			if (toRemove)
+				temp.disconnectNRemove();
+		});
+		thread.start();
+		waitConnection();
+		throw new IOException("Lost Connection \tAttempting to reconnect");
 	}
 	
 	public void disconnectNRemove() {
 		keepReceiving = false;
-		ServerMain.getInstance().removeConnected(this);
+		getApp().removeConnected(this);
 	}
 	
 	private void waitConnection() {
-		//TODO do this stuffs
+		//TODO do this stuffs. reconnect after losing connection
 		int localPort = socket.getLocalPort();
 		//socket = new Socket(localPort);
 	}
 	
-	private void handleRequest(Command protocol) throws Exception {
+	private void handleRequest(Command protocol) throws IOException, SQLException, NoSuchAlgorithmException {
 		switch (protocol.getProtocol()) {
 			case Constants.REGISTER -> {
 				handleRegister((UserInfo) protocol.getExtras());
@@ -196,7 +209,7 @@ public class ServerUser extends Thread {
 		}
 	}
 	
-	private void login(String username, String password) throws Exception {
+	private void login(String username, String password) throws SQLException, IOException, NoSuchAlgorithmException {
 		if (isLoggedIn()) {
 			sendCommand(Constants.LOGIN_ERROR, "Already Logged In");
 			return;

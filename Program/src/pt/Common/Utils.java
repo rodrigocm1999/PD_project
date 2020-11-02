@@ -6,6 +6,8 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +35,7 @@ public class Utils {
 			newImage.createGraphics().drawImage(img, 0, 0, Color.WHITE, null);
 			img = newImage;
 		}*/
-		
+		//TODO make this work
 		Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
 		BufferedImage bufferedImage = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
 		
@@ -43,4 +45,13 @@ public class Utils {
 		return bufferedImage;
 	}
 	
+	public static void printList(ArrayList list) {
+		printList(list, "");
+	}
+	
+	public static void printList(ArrayList list, String prefix) {
+		System.out.println(prefix + "----------------------------");
+		for (Object asd : list) System.out.println(asd);
+		System.out.println("----------------------------");
+	}
 }

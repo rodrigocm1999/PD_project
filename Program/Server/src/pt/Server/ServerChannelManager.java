@@ -27,9 +27,9 @@ public class ServerChannelManager {
 		ArrayList<ChannelInfo> channels = new ArrayList<>();
 		while (rs.next()) {
 			channels.add(new ChannelInfo(
-					rs.getInt(1), rs.getInt(2),
-					rs.getString(3), rs.getString(4),
-					rs.getInt(5) == 1));
+					rs.getInt("id"), rs.getInt("creator_id"),
+					rs.getString("name"), rs.getString("description"),
+					rs.getInt("is_part_of_channel") == 1));
 		}
 		return channels;
 	}
@@ -62,12 +62,59 @@ public class ServerChannelManager {
 	}
 	
 	public static ArrayList<MessageInfo> getChannelMessagesBefore(int channelId, int messageId) throws SQLException {
-		String select = "select count(id) from channel where id = ? and creator_id = ?";
+		String select = "select id,type,content,moment_sent, sender_id " +
+				"from message,channel_message " +
+				"where message.id = channel_message.message_id " +
+				"and channel_id = ? " +
+				"and moment_sent <= ( " +
+				"   select mess.moment_sent " +
+				"   from message as mess " +
+				"   where id = ?" +
+				")";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
-		statement.setInt(1, channelId);
-		statement.setInt(2, messageId);
-		
+		statement.setInt(1, messageId);
+		statement.setInt(2, channelId);
+		ResultSet result = statement.executeQuery();
 		ArrayList<MessageInfo> messages = new ArrayList<>();
+		
+		while (result.next()){
+			int id = result.getInt("id");
+			int senderId = result.getInt("sender_id");
+			long utcTime = result.getDate("moment_sent").getTime();
+			String type = result.getString("type");
+			String content = result.getString("content");
+			
+			messages.add(new MessageInfo(id,senderId, MessageInfo.Recipient.CHANNEL,channelId,utcTime,type,content));
+		}
+		return messages;
+	}
+	
+	public static ArrayList<MessageInfo> getUserMessagesBefore(int userId, int messageId) throws SQLException {
+		String select = "select id,type,content,moment_sent, sender_id " +
+				"from message,user_message " +
+				"where message.id = user_message.message_id " +
+				"and (sender_id = ? or receiver_id = ?) " +
+				"and moment_sent < ( " +
+				"   select mess.moment_sent " +
+				"   from message as mess " +
+				"   where id = ? " +
+				");";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, userId);
+		statement.setInt(2, userId);
+		statement.setInt(3, messageId);
+		ResultSet result = statement.executeQuery();
+		ArrayList<MessageInfo> messages = new ArrayList<>();
+		
+		while (result.next()){
+			int id = result.getInt("id");
+			int senderId = result.getInt("sender_id");
+			long utcTime = result.getDate("moment_sent").getTime();
+			String type = result.getString("type");
+			String content = result.getString("content");
+			
+			messages.add(new MessageInfo(id,senderId, MessageInfo.Recipient.USER,userId,utcTime,type,content));
+		}
 		return messages;
 	}
 }

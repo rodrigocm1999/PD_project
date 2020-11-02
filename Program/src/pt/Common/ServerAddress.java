@@ -5,14 +5,35 @@ import java.net.InetAddress;
 
 public class ServerAddress implements Serializable {
 	
-	private static final long serialVersionUID = 444L;
+	private static final long serialVersionUID = 6374822L;
 	
 	private InetAddress address;
-	private int listeningUDPPort;
+	private int udpPort;
 	
-	public ServerAddress(InetAddress address, int listeningUDPPort) {
+	public ServerAddress(InetAddress address, int udpPort) {
 		this.address = address;
-		this.listeningUDPPort = listeningUDPPort;
+		this.udpPort = udpPort;
+	}
+	
+	public ServerAddress(int udpPort) {
+		this.udpPort = udpPort;
+	}
+	
+	@Override
+	public String toString() {
+		return "ServerAddress{" +
+				"address=" + address +
+				", listeningUDPPort=" + udpPort +
+				'}';
+	}
+	
+	@Override
+	public boolean equals(Object obj) { // comparações
+		if (obj == null) return false;
+		if (!(obj instanceof ServerAddress)) return false;
+		ServerAddress other = (ServerAddress) obj;
+		return getAddress().equals(other.getAddress())
+				&& getUDPPort() == other.getUDPPort();
 	}
 	
 	public InetAddress getAddress() {
@@ -24,18 +45,10 @@ public class ServerAddress implements Serializable {
 	}
 	
 	public int getUDPPort() {
-		return listeningUDPPort;
+		return udpPort;
 	}
 	
 	public void setUDPPort(int listeningUDPPort) {
-		this.listeningUDPPort = listeningUDPPort;
-	}
-	
-	@Override
-	public String toString() {
-		return "ServerAddress{" +
-				"address=" + address +
-				", listeningUDPPort=" + listeningUDPPort +
-				'}';
+		this.udpPort = listeningUDPPort;
 	}
 }

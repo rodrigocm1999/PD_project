@@ -47,13 +47,13 @@ public class ServerUserManager {
 		return resultSet.getInt(1) == 1;
 	}
 	
-	public static int getUserId(String username) throws Exception {
+	public static int getUserId(String username) throws SQLException {
 		String select = "select id from user where username = ?";
 		PreparedStatement statement = ServerMain.getInstance().getPreparedStatement(select);
 		statement.setString(1, username);
 		ResultSet result = statement.executeQuery();
 		if (!result.next())
-			throw new Exception("WTF HOW DID THIS HAPPEN");
+			throw new SQLException("WTF HOW DID THIS HAPPEN");
 		return result.getInt(1);
 	}
 }
