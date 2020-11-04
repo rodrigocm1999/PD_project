@@ -7,13 +7,13 @@ public class ChannelInfo implements Serializable {
 	
 	private static final long serialVersionUID = 536475864376L;
 	
-	public int id;
-	public int creatorId;
-	public String name;
-	public String password;
-	public String description;
-	public boolean isPartOf;
-	public ArrayList<MessageInfo> messages;
+	private int id;
+	private int creatorId;
+	private String name;
+	private String password;
+	private String description;
+	private boolean isPartOf;
+	private ArrayList<MessageInfo> messages;
 	
 	public ChannelInfo(int id, int creatorId, String name, String description, boolean isPartOf) {
 		this.id = id;
@@ -21,7 +21,6 @@ public class ChannelInfo implements Serializable {
 		this.name = name;
 		this.description = description;
 		this.isPartOf = isPartOf;
-		this.messages = null;
 	}
 	
 	public ChannelInfo(int creatorId, String name, String password, String description) {
@@ -29,7 +28,11 @@ public class ChannelInfo implements Serializable {
 		this.name = name;
 		this.password = password;
 		this.description = description;
-		this.messages = null;
+	}
+	
+	public ChannelInfo(int id, String password) {
+		this.id = id;
+		this.password = password;
 	}
 	
 	public boolean isOwner(int userId) {

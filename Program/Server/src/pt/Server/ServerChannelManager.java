@@ -132,7 +132,7 @@ public class ServerChannelManager {
 		statement.setInt(2, senderId);
 		statement.setString(3, content);
 		boolean added = statement.executeUpdate() == 1;
-		if(!added) return false;
+		if (!added) return false;
 		
 		statement = getApp().getPreparedStatement(insertChannelMessage);
 		statement.setInt(1, newMessageId);
@@ -148,5 +148,33 @@ public class ServerChannelManager {
 		ResultSet result = statement.executeQuery();
 		result.next();
 		return result.getInt(1);
+	}
+	
+	public static boolean isUserPartOf(int userId, int channelId) throws SQLException {
+		String select = "select count(user_id) from channel_user where user_id = ? and channel_id = ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, userId);
+		statement.setInt(2, channelId);
+		ResultSet result = statement.executeQuery();
+		result.next();
+		return result.getInt(1) == 1;
+	}
+	
+	public static boolean isChannelPassword(int channelId, String password) throws NoSuchAlgorithmException, SQLException {
+		String select = "select count(id) from channel where channel_id = ? and password_hash = ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, channelId);
+		statement.setString(2, Utils.hashStringBase36(password));
+		ResultSet result = statement.executeQuery();
+		result.next();
+		return result.getInt(1) == 1;
+	}
+	
+	public static boolean registerUserToChannel(int userId, int channelId) throws SQLException {
+		String insert = "insert into channel_user(channel_id,user_id) values(?,?)";
+		PreparedStatement statement = getApp().getPreparedStatement(insert);
+		statement.setInt(1, channelId);
+		statement.setInt(2, userId);
+		return statement.executeUpdate() == 1;
 	}
 }

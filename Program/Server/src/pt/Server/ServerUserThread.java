@@ -112,7 +112,7 @@ public class ServerUserThread extends Thread {
 				case Constants.CHANNEL_ADD -> {
 					ChannelInfo info = (ChannelInfo) protocol.getExtras();
 					boolean success = ServerChannelManager.createChannel(
-							userInfo.getUserId(), info.name, info.password, info.description);
+							userInfo.getUserId(), info.getName(), info.getPassword(), info.getDescription());
 					if (success) sendCommand(Constants.SUCCESS);
 					else sendCommand(Constants.FAILURE);
 				}
@@ -138,10 +138,22 @@ public class ServerUserThread extends Thread {
 					} else {
 						//TODO insert Message
 					}
-					
+				}
+				case Constants.CHANNEL_REGISTER -> {
+					ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
+					if (ServerChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId())) {
+						sendCommand(Constants.SUCCESS, "User is already part of channel");
+					} else {
+						if (ServerChannelManager.isChannelPassword(channelInfo.getId(), channelInfo.getPassword())
+								&& ServerChannelManager.registerUserToChannel(userInfo.getUserId(), channelInfo.getId())) {
+							sendCommand(Constants.SUCCESS);
+						} else {
+							sendCommand(Constants.ERROR, "Error, not supposed to happen");
+						}
+					}
 				}
 				//TODO edit channel, remove channel,  add message, retrieve messages
-				
+				//TODO verificar se user tem permissoes para receber mensagens
 				case Constants.LOGOUT -> {
 					logout();
 				}

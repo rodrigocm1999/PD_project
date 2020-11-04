@@ -19,12 +19,14 @@ insert into user(id,name,username,password_hash,photo_path) values(100,'','rodri
 insert into channel(id,creator_id,name,description,password_hash) values(15,100,'its free real estate','hmmmm','dsa');
 insert into channel(id,creator_id,name,description,password_hash) values(1,3,'abc ','hmmmm','dsa');
 -- insert test channel messages
-insert into message(id,sender_id,content) values(1,100,'only you know what is gonna happen to you next'); 
-insert into channel_message(channel_id,message_id) values(15,1);
+insert into message(id,sender_id,content) values (1,100,'only you know what is gonna happen to you next'); 
+insert into channel_message(channel_id,message_id) values (15,1);
 insert into message(id,sender_id,content) values(2,100,'dont rely on others to make your life happen'); 
 insert into channel_message(channel_id,message_id) values(15,2);
 -- insert test between user messages
-insert into user_message();
+
+-- insert user to channel
+insert into channel_user(channel_id,user_id) values(2,2);
 
 select * from channel;
 select * from user;

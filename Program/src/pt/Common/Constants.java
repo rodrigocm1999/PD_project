@@ -21,6 +21,7 @@ public class Constants {
 	public static final String CHANNEL_ADD_MESSAGE = "CHANNEL_ADD_MESSAGE";
 	public static final String CHANNEL_REMOVE = "CHANNEL_REMOVE";
 	public static final String CHANNEL_EDIT = "CHANNEL_EDIT";
+	public static final String CHANNEL_REGISTER = "CHANNEL_REGISTER";
 	
 	public static final String SUCCESS = "SUCCESS";
 	public static final String FAILURE = "FAILURE";
