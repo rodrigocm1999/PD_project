@@ -24,7 +24,7 @@ insert into channel_message(channel_id,message_id) values(15,1);
 insert into message(id,sender_id,content) values(2,100,'dont rely on others to make your life happen'); 
 insert into channel_message(channel_id,message_id) values(15,2);
 -- insert test between user messages
-insert into user_message()
+insert into user_message();
 
 select * from channel;
 select * from user;
@@ -36,21 +36,20 @@ select id,type,content,moment_sent, sender_id
 from message,channel_message
 where message.id = channel_message.message_id
 and channel_id = 15
-and moment_sent <= (
-	select mess.moment_sent
-	from message as mess
-	where id = 2
-);
+and id < 10
+order by moment_sent
+limit 10;
 -- get all messages before certain one between users
 select id,type,content,moment_sent, sender_id
 from message,user_message
 where message.id = user_message.message_id
 and (sender_id = 100 or receiver_id = 100)
-and moment_sent < (
-	select m.moment_sent
-	from message as m
-	where id = 2
-);
+and id < 6
+order by moment_sent
+limit 10;
+
+select max(id) from message,channel_message where message_id = id and channel_id = 1;
+
 
 insert into channel_user() values(1,2);
 

@@ -10,7 +10,7 @@ import java.sql.SQLException;
 
 public class ServerUserManager {
 	
-	public static int insertUser(UserInfo user) throws SQLException, NoSuchAlgorithmException {
+	public static boolean insertUser(UserInfo user) throws SQLException, NoSuchAlgorithmException {
 		// insert the new user into the database ------------------------------------------
 		String insert = "insert into user(name,username,password_hash,photo_path) values(?,?,?,?)";
 		PreparedStatement preparedStatement = ServerMain.getInstance().getPreparedStatement(insert);
@@ -18,7 +18,7 @@ public class ServerUserManager {
 		preparedStatement.setString(2, user.getUsername());
 		preparedStatement.setString(3, Utils.hashStringBase36(user.getPassword()));
 		preparedStatement.setString(4, user.getPhotoPath());
-		return preparedStatement.executeUpdate();
+		return preparedStatement.executeUpdate() == 1;
 	}
 	
 	public static boolean checkUsernameAvailability(String username) throws SQLException {

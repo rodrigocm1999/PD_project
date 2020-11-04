@@ -1,8 +1,14 @@
 package pt.Common;
 
+import pt.Server.ServerConstants;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -19,13 +25,19 @@ public class Utils {
 	}
 	
 	public static boolean checkPasswordFollowsRules(String password) {
-		Pattern pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$");
+		Pattern pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,25}$");
 		Matcher matcher = pattern.matcher(password);
 		return matcher.find();
 	}
 	
 	public static boolean checkNameUser(String name) {
 		return name.length() > 3 && name.length() < 50;
+	}
+	
+	public static boolean checkUsername(String username) {
+		Pattern pattern = Pattern.compile("^[a-zA-Z\\d_]{3,25}$");
+		Matcher matcher = pattern.matcher(username);
+		return matcher.find();
 	}
 	
 	public static BufferedImage getCompressedImage(BufferedImage img, int newW, int newH) {
@@ -53,5 +65,27 @@ public class Utils {
 		System.out.println(prefix + "----------------------------");
 		for (Object asd : list) System.out.println(asd);
 		System.out.println("----------------------------");
+	}
+	
+	public static InetAddress getPublicIp() {
+		HttpURLConnection connection = null;
+		BufferedReader in = null;
+		try {
+			URL url = new URL(ServerConstants.PUBLIC_IP_ADDRESS_API);
+			connection = (HttpURLConnection) url.openConnection();
+			int responseCode = connection.getResponseCode();
+			
+			if (responseCode == HttpURLConnection.HTTP_OK) {
+				in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				String publicIp = in.readLine();
+				in.close();
+				return InetAddress.getByName(publicIp);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (connection != null) connection.disconnect();
+		}
+		return null;
 	}
 }

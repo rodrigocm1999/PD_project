@@ -3,7 +3,7 @@ package pt.Server;
 public class ServerConstants {
 	
 	public static final int MULTICAST_PORT = 5432;
-	public static final String MULTICAST_GROUP = "228.5.6.7";
+	public static final String MULTICAST_GROUP = "239.234.102.123";
 	
 	public static final String HEARTBEAT = "HEARTBEAT";
 	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 10;
@@ -17,7 +17,7 @@ public class ServerConstants {
 	public static final String UPDATE_USER_COUNT = "UPDATE_USER_COUNT";
 	public static final float ACCEPT_PERCENTAGE_THRESHOLD = 0.5f;
 	
-	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/{2}?autoReconnect=true&useSSL=false";
+	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/{2}?allowPublicKeyRetrieval=true&autoReconnect=true&useSSL=false";
 	public static final String DATABASE_NAME = "main";
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
@@ -25,4 +25,6 @@ public class ServerConstants {
 	public static String getDatabaseURL(String address, String name) {
 		return DATABASE_URL.replace("{1}", address).replace("{2}", name);
 	}
+	
+	public static final String PUBLIC_IP_ADDRESS_API = "https://api.ipify.org";
 }

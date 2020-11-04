@@ -19,11 +19,6 @@ public class ServerStatus implements Serializable,Comparable<ServerStatus> {
 		this.heartbeat = true;
 	}
 	
-	public ServerStatus(int connectedUsers, int udpPort) {
-		this.connectedUsers = connectedUsers;
-		this.address = new ServerAddress(udpPort);
-	}
-	
 	@Override
 	public String toString() {
 		return "ServerStatus{" +
