@@ -6,14 +6,21 @@ public class UserInfo implements Serializable {
 	
 	private static final long serialVersionUID = 758943748912L;
 	
-	public String name;
-	public String username;
-	public String password;
-	public String photoPath;
+	private int userId;
+	private String name;
+	private String username;
+	private String password;
+	private String photoPath;
 	
 	public UserInfo(String username, String password) {
 		this.username = username;
 		this.password = password;
+	}
+	
+	public UserInfo(int userId, String name, String username) {
+		this.userId = userId;
+		this.name = name;
+		this.username = username;
 	}
 	
 	public UserInfo(String name, String username, String password, String photoPath) {
@@ -47,5 +54,9 @@ public class UserInfo implements Serializable {
 	
 	public String getPhotoPath() {
 		return photoPath != null ? photoPath : "";
+	}
+	
+	public int getUserId() {
+		return userId;
 	}
 }

@@ -56,4 +56,14 @@ public class ServerUserManager {
 			throw new SQLException("WTF HOW DID THIS HAPPEN");
 		return result.getInt(1);
 	}
+	
+	public static String getNameUser(int userId) throws SQLException {
+		String select = "select name from user where id = ?";
+		PreparedStatement statement = ServerMain.getInstance().getPreparedStatement(select);
+		statement.setInt(1, userId);
+		ResultSet result = statement.executeQuery();
+		if (!result.next())
+			throw new SQLException("WTF HOW DID THIS HAPPEN");
+		return result.getString(1);
+	}
 }

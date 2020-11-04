@@ -62,13 +62,7 @@ public class ServerChannelManager {
 	}
 	
 	public static ArrayList<MessageInfo> getChannelMessagesBefore(int channelId, int amount) throws SQLException {
-		String select = "select max(id) from message,channel_message where message_id = id and channel_id = ?";
-		PreparedStatement statement = getApp().getPreparedStatement(select);
-		statement.setInt(1, channelId);
-		ResultSet result = statement.executeQuery();
-		result.next();
-		int lastMessageId = result.getInt(1);
-		
+		int lastMessageId = getLastChannelMessageId(channelId);
 		return getChannelMessagesBefore(channelId, lastMessageId, amount);
 	}
 	
@@ -105,11 +99,9 @@ public class ServerChannelManager {
 				"from message,user_message " +
 				"where message.id = user_message.message_id " +
 				"and (sender_id = ? or receiver_id = ?) " +
-				"and moment_sent < ( " +
-				"   select mess.moment_sent " +
-				"   from message as mess " +
-				"   where id = ? " +
-				") limit ?";
+				"and id < ? " +
+				"order by moment_sent " +
+				"limit ? ;";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setInt(1, userId);
 		statement.setInt(2, userId);
@@ -128,5 +120,33 @@ public class ServerChannelManager {
 			messages.add(new MessageInfo(id, senderId, MessageInfo.Recipient.USER, userId, utcTime, type, content));
 		}
 		return messages;
+	}
+	
+	public static boolean insertMessage(int senderId, int channelId, String content) throws SQLException {
+		String insertMessage = "insert into message(id,sender_id,content) values(?,?,?)";
+		String insertChannelMessage = "insert into channel_message(message_id,channel_id) values(?,?)";
+		int newMessageId = getLastChannelMessageId(channelId) + 1;
+		
+		PreparedStatement statement = getApp().getPreparedStatement(insertMessage);
+		statement.setInt(1, newMessageId);
+		statement.setInt(2, senderId);
+		statement.setString(3, content);
+		boolean added = statement.executeUpdate() == 1;
+		if(!added) return false;
+		
+		statement = getApp().getPreparedStatement(insertChannelMessage);
+		statement.setInt(1, newMessageId);
+		statement.setInt(2, channelId);
+		return statement.executeUpdate() == 1;
+	}
+	
+	
+	private static int getLastChannelMessageId(int channelId) throws SQLException {
+		String select = "select max(id) from message,channel_message where message_id = id and channel_id = ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, channelId);
+		ResultSet result = statement.executeQuery();
+		result.next();
+		return result.getInt(1);
 	}
 }

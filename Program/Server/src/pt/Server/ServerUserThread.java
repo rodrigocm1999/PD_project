@@ -15,9 +15,7 @@ public class ServerUserThread extends Thread {
 	private final ObjectInputStream ois;
 	
 	private boolean isLoggedIn = false;
-	private int userId;
-	private String username;
-	private String photoPath;
+	private UserInfo userInfo;
 	
 	private boolean keepReceiving = true;
 	private ArrayList<ServerAddress> orderedServerAddresses;
@@ -89,7 +87,7 @@ public class ServerUserThread extends Thread {
 		if (isLoggedIn()) {
 			switch (protocol.getProtocol()) {
 				case Constants.CHANNEL_GET_ALL -> {
-					ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userId);
+					ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userInfo.getUserId());
 					Utils.printList(channels, "Channels");
 					sendCommand(Constants.CHANNEL_GET_ALL, channels);
 				}
@@ -97,12 +95,15 @@ public class ServerUserThread extends Thread {
 				case Constants.CHANNEL_GET_MESSAGES -> {
 					ArrayList<MessageInfo> channelMessages;
 					int[] arr = (int[]) protocol.getExtras();
+					if (arr.length != 2) {
+						sendCommand(Constants.ERROR, "Client Protocol Error. Get messages should receive a int[] with channel id and message id");
+					}
 					int channelId = arr[0];
-					if (arr.length == 2) {
-						int messageId = arr[1];
-						channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, messageId, 10);
+					int messageId = arr[1];
+					if (messageId == -1) {
+						channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 					} else {
-						channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, 10);
+						channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, messageId, ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 					}
 					Utils.printList(channelMessages, "channelMessages");
 					sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
@@ -111,14 +112,14 @@ public class ServerUserThread extends Thread {
 				case Constants.CHANNEL_ADD -> {
 					ChannelInfo info = (ChannelInfo) protocol.getExtras();
 					boolean success = ServerChannelManager.createChannel(
-							userId, info.name, info.password, info.description);
+							userInfo.getUserId(), info.name, info.password, info.description);
 					if (success) sendCommand(Constants.SUCCESS);
 					else sendCommand(Constants.FAILURE);
 				}
 				
 				case Constants.CHANNEL_REMOVE -> {
 					int channelId = (int) protocol.getExtras();
-					if (ServerChannelManager.isUserChannelOwner(userId, channelId)) {
+					if (ServerChannelManager.isUserChannelOwner(userInfo.getUserId(), channelId)) {
 						boolean success = ServerChannelManager.deleteChannel(channelId);
 						if (success) sendCommand(Constants.SUCCESS);
 						else sendCommand(Constants.FAILURE, "Error Removing channel"); // Shouldn't happen
@@ -131,7 +132,13 @@ public class ServerUserThread extends Thread {
 				}
 				
 				case Constants.CHANNEL_ADD_MESSAGE -> {
-				
+					MessageInfo message = (MessageInfo) protocol.getExtras();
+					if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
+						ServerChannelManager.insertMessage(message.getSenderId(), message.getRecipientId(), message.getContent());
+					} else {
+						//TODO insert Message
+					}
+					
 				}
 				//TODO edit channel, remove channel,  add message, retrieve messages
 				
@@ -142,8 +149,9 @@ public class ServerUserThread extends Thread {
 		}
 	}
 	
-	private void logout() {
+	private void logout() throws IOException {
 		isLoggedIn = false;
+		sendCommand(Constants.LOGOUT);
 	}
 	
 	private void handleRegister(UserInfo userInfo) throws IOException {
@@ -201,10 +209,12 @@ public class ServerUserThread extends Thread {
 			sendCommand(Constants.LOGIN_ERROR, "Password is incorrect");
 			return;
 		}
-		sendCommand(Constants.LOGIN_SUCCESS);
-		System.out.println("Login success : " + username);
-		userId = ServerUserManager.getUserId(username);
-		this.username = username;
+		//TODO send user info
+		int userId = ServerUserManager.getUserId(username);
+		String nameUser = ServerUserManager.getNameUser(userId);
+		userInfo = new UserInfo(userId, username, nameUser);
+		sendCommand(Constants.LOGIN_SUCCESS, userInfo);
+		System.out.println("Login success : " + userInfo);
 		isLoggedIn = true;
 	}
 	

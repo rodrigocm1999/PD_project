@@ -9,7 +9,6 @@ public class ServerConstants {
 	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 10;
 	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 12;
 	
-	
 	public static final String CAME_ONLINE = "CAME_ONLINE";
 	public static final String CAME_OFFLINE = "CAME_OFFLINE";
 	public static final String AM_ONLINE = "AM_ONLINE";
@@ -27,4 +26,6 @@ public class ServerConstants {
 	}
 	
 	public static final String PUBLIC_IP_ADDRESS_API = "https://api.ipify.org";
+	
+	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 10;
 }
