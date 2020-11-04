@@ -61,35 +61,46 @@ public class ServerChannelManager {
 		return rs.getInt(1) == 1;
 	}
 	
-	public static ArrayList<MessageInfo> getChannelMessagesBefore(int channelId, int messageId) throws SQLException {
+	public static ArrayList<MessageInfo> getChannelMessagesBefore(int channelId, int amount) throws SQLException {
+		String select = "select max(id) from message,channel_message where message_id = id and channel_id = ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, channelId);
+		ResultSet result = statement.executeQuery();
+		result.next();
+		int lastMessageId = result.getInt(1);
+		
+		return getChannelMessagesBefore(channelId, lastMessageId, amount);
+	}
+	
+	public static ArrayList<MessageInfo> getChannelMessagesBefore(int channelId, int messageId, int amount) throws SQLException {
 		String select = "select id,type,content,moment_sent, sender_id " +
 				"from message,channel_message " +
 				"where message.id = channel_message.message_id " +
 				"and channel_id = ? " +
-				"and moment_sent <= ( " +
-				"   select mess.moment_sent " +
-				"   from message as mess " +
-				"   where id = ?" +
-				")";
+				"and id < ? " +
+				"order by moment_sent " +
+				" limit ? ";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
-		statement.setInt(1, messageId);
-		statement.setInt(2, channelId);
+		statement.setInt(1, channelId);
+		statement.setInt(2, messageId);
+		statement.setInt(3, amount);
 		ResultSet result = statement.executeQuery();
 		ArrayList<MessageInfo> messages = new ArrayList<>();
 		
-		while (result.next()){
+		while (result.next()) {
 			int id = result.getInt("id");
 			int senderId = result.getInt("sender_id");
 			long utcTime = result.getDate("moment_sent").getTime();
 			String type = result.getString("type");
 			String content = result.getString("content");
 			
-			messages.add(new MessageInfo(id,senderId, MessageInfo.Recipient.CHANNEL,channelId,utcTime,type,content));
+			messages.add(new MessageInfo(id, senderId, MessageInfo.Recipient.CHANNEL, channelId, utcTime, type, content));
 		}
+		
 		return messages;
 	}
 	
-	public static ArrayList<MessageInfo> getUserMessagesBefore(int userId, int messageId) throws SQLException {
+	public static ArrayList<MessageInfo> getUserMessagesBefore(int userId, int messageId, int amount) throws SQLException {
 		String select = "select id,type,content,moment_sent, sender_id " +
 				"from message,user_message " +
 				"where message.id = user_message.message_id " +
@@ -98,22 +109,23 @@ public class ServerChannelManager {
 				"   select mess.moment_sent " +
 				"   from message as mess " +
 				"   where id = ? " +
-				");";
+				") limit ?";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setInt(1, userId);
 		statement.setInt(2, userId);
 		statement.setInt(3, messageId);
+		statement.setInt(4, amount);
 		ResultSet result = statement.executeQuery();
 		ArrayList<MessageInfo> messages = new ArrayList<>();
 		
-		while (result.next()){
+		while (result.next()) {
 			int id = result.getInt("id");
 			int senderId = result.getInt("sender_id");
 			long utcTime = result.getDate("moment_sent").getTime();
 			String type = result.getString("type");
 			String content = result.getString("content");
 			
-			messages.add(new MessageInfo(id,senderId, MessageInfo.Recipient.USER,userId,utcTime,type,content));
+			messages.add(new MessageInfo(id, senderId, MessageInfo.Recipient.USER, userId, utcTime, type, content));
 		}
 		return messages;
 	}

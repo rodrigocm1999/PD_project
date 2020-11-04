@@ -1,6 +1,5 @@
 package pt.Server;
 
-import jdk.jshell.execution.Util;
 import pt.Common.*;
 
 import java.io.*;
@@ -10,21 +9,20 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class ServerMain {
 	
 	private final int listeningUDPPort;
 	private final int listeningTCPPort;
-	
 	private ServerSocket serverSocket;
+	
 	private final String databaseAddress;
 	private final String databaseName;
 	private Connection databaseConnection;
+	
 	private static ServerMain instance;
 	
-	private final ArrayList<ServerUser> connectedMachines;
+	private final ArrayList<ServerUserThread> connectedMachines;
 	private ServerSyncer serversManager;
 	
 	public static ServerMain getInstance() {
@@ -53,11 +51,12 @@ public class ServerMain {
 		synchronizeDatabase();
 		serversManager.start();
 		
-		System.out.println("Server Running");
+		System.out.println("Server Running ------------------------------------------------");
 		
 		while (true) {
 			DatagramPacket receivedPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 			Command command = (Command) UDPHelper.receiveUDPObject(udpSocket, receivedPacket);
+			System.out.println(command);
 			
 			switch (command.getProtocol()) {
 				case Constants.ESTABLISH_CONNECTION -> {
@@ -66,10 +65,11 @@ public class ServerMain {
 						if (!serversManager.checkIfBetterServer()) {
 							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
 									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-							//TODO garantir entrega maybe, if so, then make this non blocking
+							//TODO garantir entrega MAYBE, if so, then make this non blocking, and add syncronized on connectedMachines
 							receiveNewUser(receivedPacket, udpSocket);
 						} else {
 							ArrayList<ServerAddress> list = serversManager.getOrderedServerAddresses();
+							Utils.printList(list,"Servers Sent");
 							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
 									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
 						}
@@ -89,17 +89,21 @@ public class ServerMain {
 	
 	private void synchronizeDatabase() {
 		//TODO get all of the new information
-		System.out.println("Syncing Database --------------------------------");
+		System.out.println("Syncing Database ----------------------------------------------");
+		//Connect to the server with the least load at the moment
+		
+		//Have to use reliable UDP and break files into 5KB chunks
+		
+		// get all of the info after list ID of the table that I have
 	}
 	
 	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
 		try {
 			serverSocket.setSoTimeout(Constants.CONNECTION_TIMEOUT);
 			Socket socket = serverSocket.accept();
-			
-			ServerUser serverUser = new ServerUser(socket,serversManager.getOrderedServerAddresses());
-			serverUser.start();
-			connectedMachines.add(serverUser);
+			ServerUserThread serverUserThread = new ServerUserThread(socket, serversManager.getOrderedServerAddresses());
+			serverUserThread.start();
+			connectedMachines.add(serverUserThread);
 			serversManager.updateUserCount(getConnectedUsers());
 			System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket);
 		} catch (Exception e) {
@@ -109,7 +113,7 @@ public class ServerMain {
 	
 	private void printConnected() {
 		System.out.println("Connected : ");
-		for (ServerUser conn : connectedMachines) {
+		for (ServerUserThread conn : connectedMachines) {
 			System.out.println(conn.getSocketInformation());
 		}
 		System.out.println("--------------");
@@ -123,7 +127,7 @@ public class ServerMain {
 		return connectedMachines.size();
 	}
 	
-	public void removeConnected(ServerUser user) {
+	public void removeConnected(ServerUserThread user) {
 		synchronized (connectedMachines) {
 			connectedMachines.remove(user);
 		}
@@ -155,7 +159,7 @@ public class ServerMain {
 			listeningUDPPort = Integer.parseInt(args[1]);
 			listeningTCPPort = Integer.parseInt(args[2]);
 		} catch (NumberFormatException e) {
-			System.out.println("Invalid Port number/s");
+			System.out.println("Invalid Port number(s)");
 			System.exit(-1);
 		}
 		
@@ -166,5 +170,7 @@ public class ServerMain {
 		
 		ServerMain serverMain = new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort);
 		serverMain.start();
+		
+		//TODO use this --> Runtime.getRuntime().addShutdownHook();
 	}
 }

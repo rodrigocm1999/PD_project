@@ -2,9 +2,7 @@ package pt.Server;
 
 import pt.Common.ServerAddress;
 
-import javax.xml.crypto.Data;
 import java.io.Serializable;
-import java.net.DatagramPacket;
 
 public class ServerCommand implements Serializable {
 	
@@ -25,11 +23,6 @@ public class ServerCommand implements Serializable {
 	}
 	
 	public ServerAddress getServerAddress() {
-		return serverAddress;
-	}
-	
-	public ServerAddress getServerAddress(DatagramPacket packet){
-		serverAddress.setAddress(packet.getAddress());
 		return serverAddress;
 	}
 	

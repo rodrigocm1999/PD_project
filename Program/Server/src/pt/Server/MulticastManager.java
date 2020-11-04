@@ -29,7 +29,7 @@ public class MulticastManager {
 	public void sendServerCommand(String protocol, Object extras) throws IOException {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-		objectOutputStream.writeUnshared(new ServerCommand(protocol, ownServerAddress, extras));
+		objectOutputStream.writeObject(new ServerCommand(protocol, ownServerAddress, extras));
 		byte[] bytes = byteArrayOutputStream.toByteArray();
 		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, group, port);
 		socket.send(packet);

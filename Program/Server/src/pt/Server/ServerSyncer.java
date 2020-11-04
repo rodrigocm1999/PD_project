@@ -8,31 +8,32 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 public class ServerSyncer extends Thread {
 	
 	private final ServerMain serverMain;
 	private MulticastSocket socket;
+	private final ServerAddress ownPublicAddress;
 	private final ServerAddress ownAddress;
-	private final InetAddress group;
-	private final int port;
 	private final ArrayList<ServerStatus> serversList;
 	private Thread heartbeatSend;
 	private Thread heartbeatCheck;
 	private boolean stop;
-	private MulticastManager multiMan;
+	private final MulticastManager multiMan;
 	
 	ServerSyncer(ServerMain serverMain, InetAddress group, int port, int serverUDPPort) throws IOException {
 		this.serverMain = serverMain;
-		this.group = group;
-		this.port = port;
 		serversList = new ArrayList<>();
 		stop = false;
+		InetAddress publicIPAddress = Utils.getPublicIp();
+		if (publicIPAddress == null)
+			publicIPAddress = InetAddress.getLocalHost();
+		
+		ownPublicAddress = new ServerAddress(publicIPAddress, serverUDPPort);
 		ownAddress = new ServerAddress(InetAddress.getLocalHost(), serverUDPPort);
-		System.out.println(ownAddress);
+		System.out.println("Own Local Address : " + ownAddress + "\t Own Public Address" + ownPublicAddress);
 		startMulticastSocket();
-		multiMan = new MulticastManager(socket, ownAddress, group, port);
+		multiMan = new MulticastManager(socket, ownPublicAddress, group, port);
 	}
 	
 	@Override
@@ -55,18 +56,17 @@ public class ServerSyncer extends Thread {
 			DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 			ServerCommand command = (ServerCommand) multiMan.receiveObject(packet);
 			
-			ServerAddress otherAddress = command.getServerAddress(packet);
-			if (isOwnAddress(otherAddress))
+			ServerAddress otherServerAddress = command.getServerAddress();
+			if (isOwnAddress(otherServerAddress))
 				continue;
-			
 			
 			try {
 				
 				switch (command.getProtocol()) {
 					
 					case ServerConstants.CAME_ONLINE -> {
-						ServerStatus server = (ServerStatus) command.getExtras();
-						server.setAddress(packet.getAddress());
+						ServerAddress serverAddress = command.getServerAddress();
+						ServerStatus server = new ServerStatus(0,serverAddress);
 						serverConnected(server);
 						multiMan.sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getConnectedUsers());
 						System.out.println("Came Online : " + server);
@@ -74,31 +74,35 @@ public class ServerSyncer extends Thread {
 					
 					case ServerConstants.HEARTBEAT -> {
 						//System.out.println("got heartbeat -> address : " + otherAddress);
-						ServerStatus status = getServerStatus(otherAddress);
+						ServerStatus status = getServerStatus(otherServerAddress);
 						if (status != null) {
 							status.setHeartbeat(true);
 							//System.out.println("set heartbeat true : " + status);
 						} else {
 							System.out.println("Not yet registered. Not supposed to happen\t Registering now"); // should never happen
-							serverConnected(new ServerStatus(0, otherAddress));
+							serverConnected(new ServerStatus(Integer.MAX_VALUE, otherServerAddress));
+							printAvailableServers();
 						}
 					}
 					
 					case ServerConstants.UPDATE_USER_COUNT -> {
 						int connected = (int) command.getExtras();
-						ServerStatus status = getServerStatus(otherAddress);
-						status.setConnectedUsers(connected);
+						ServerStatus status = getServerStatus(otherServerAddress);
+						if (status != null) {
+							status.setConnectedUsers(connected);
+						}else{
+							System.out.println("Status == null\t Should never happen");
+						}
 					}
 				}
 			} catch (Exception e) {
-			
+				e.printStackTrace();
 			}
 		}
 	}
 	
 	private void warnEveryone() throws IOException {
-		multiMan.sendServerCommand(ServerConstants.CAME_ONLINE,
-				new ServerStatus(serverMain.getConnectedUsers(), serverMain.getUDPPort()));
+		multiMan.sendServerCommand(ServerConstants.CAME_ONLINE);
 	}
 	
 	private void startMulticastSocket() throws IOException {
@@ -162,6 +166,7 @@ public class ServerSyncer extends Thread {
 	
 	private void serverDisconnected(ServerStatus server) {
 		System.out.println("Server Disconnected : " + server);
+		printAvailableServers();
 		synchronized (serversList) {
 			serversList.remove(server);
 		}
@@ -185,24 +190,24 @@ public class ServerSyncer extends Thread {
 	}
 	
 	private boolean isOwnAddress(ServerAddress other) {
-		return ownAddress.equals(other);
+		return ownPublicAddress.equals(other);
 	}
 	
 	public ArrayList<ServerAddress> getOrderedServerAddresses() {
 		synchronized (serversList) {
 			boolean alreadyAddedSelf = false;
 			Collections.sort(serversList);
-			ArrayList<ServerAddress> list = new ArrayList<>(serversList.size());
+			ArrayList<ServerAddress> list = new ArrayList<>(serversList.size() + 1);
 			for (int i = 0; i < serversList.size(); i++) {
-				var server = serversList.get(i);
+				ServerStatus server = serversList.get(i);
 				list.add(server.getServerAddress());
 				if (!alreadyAddedSelf && i != 0 && serverMain.getConnectedUsers() > server.getConnectedUsers()) {
-					list.add(ownAddress);
+					list.add(ownPublicAddress);
 					alreadyAddedSelf = true;
 				}
 			}
 			if (!alreadyAddedSelf) {
-				list.add(ownAddress);
+				list.add(ownPublicAddress);
 			}
 			return list;//TODO fix duplicated servers bug, not in this function though
 		}
@@ -211,17 +216,17 @@ public class ServerSyncer extends Thread {
 	public boolean checkIfBetterServer() {
 		//TODO test this
 		synchronized (serversList) {
-			if (serversList.size() == 0) return true;
+			if (serversList.size() == 0) return false;
 			Collections.sort(serversList);
 			ServerStatus smol = serversList.get(0);
 			//System.out.println("smol: " + smol.getConnectedUsers() + "\tthis: " + serverMain.getConnectedUsers());
-			return ((float) smol.getConnectedUsers() < // If has less then it is a better server
+			return ((float) smol.getConnectedUsers() < // If has less then it half of this one, then it is a better server
 					(float) serverMain.getConnectedUsers() * ServerConstants.ACCEPT_PERCENTAGE_THRESHOLD);
 		}
 	}
 	
 	public void discoverServers() throws ClassNotFoundException, IOException {
-		System.out.println("Server Discovery");
+		System.out.println("Server Discovery ----------------------------------------------");
 		warnEveryone();
 		
 		socket.setSoTimeout(1500);
@@ -232,8 +237,7 @@ public class ServerSyncer extends Thread {
 				
 				if (command.getProtocol().equals(ServerConstants.AM_ONLINE)) {
 					int nConnected = (int) command.getExtras();
-					ServerAddress serverAddress = command.getServerAddress(packet);
-					
+					ServerAddress serverAddress = command.getServerAddress();
 					if (!isOwnAddress(serverAddress))
 						serverConnected(new ServerStatus(nConnected, serverAddress));
 				}
