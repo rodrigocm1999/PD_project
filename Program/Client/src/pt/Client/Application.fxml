@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox fx:id="window" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="696.0" prefWidth="990.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ApplicationController">
    <children>
       <MenuBar>
         <menus>
@@ -24,9 +32,9 @@
           </Menu>
         </menus>
       </MenuBar>
-      <SplitPane dividerPositions="0.2157190635451505" prefHeight="438.0" prefWidth="807.0">
+      <SplitPane fx:id="bigSPane" dividerPositions="0.2" prefHeight="673.0" prefWidth="990.0">
         <items>
-          <GridPane minHeight="0.0" minWidth="0.0" prefHeight="216.0" prefWidth="126.0">
+          <GridPane minHeight="0.0" minWidth="0.0" prefHeight="670.0" prefWidth="284.0">
                <columnConstraints>
                   <ColumnConstraints />
                </columnConstraints>
@@ -34,16 +42,22 @@
                   <RowConstraints />
                </rowConstraints>
                <children>
-                  <SplitPane dividerPositions="0.5108108108108108" orientation="VERTICAL" prefHeight="372.0" prefWidth="126.0">
+                  <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" prefHeight="671.0" prefWidth="225.0">
                     <items>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0" />
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="127.0" prefWidth="124.0" />
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                           <children>
+                              <ListView fx:id="channelsList" prefHeight="331.0" prefWidth="200.0" />
+                           </children></AnchorPane>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="127.0" prefWidth="124.0">
+                           <children>
+                              <ListView fx:id="usersList" prefHeight="331.0" prefWidth="200.0" />
+                           </children></AnchorPane>
                     </items>
                   </SplitPane>
                </children></GridPane>
-          <GridPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+          <GridPane minHeight="0.0" minWidth="0.0" prefHeight="585.0" prefWidth="764.0">
                <children>
-                  <ListView layoutX="-5.0" layoutY="-3.0" prefHeight="382.0" prefWidth="474.0" />
+                  <ListView fx:id="msgList" layoutX="-5.0" layoutY="-3.0" prefHeight="686.0" prefWidth="776.0" />
                </children>
                <columnConstraints>
                   <ColumnConstraints />

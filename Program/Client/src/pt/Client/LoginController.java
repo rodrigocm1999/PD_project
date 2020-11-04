@@ -19,8 +19,6 @@ public class LoginController {
 		
 		Command command = (Command) instance.sendCommandToServer(Constants.LOGIN, user);
 		if (command.getProtocol().equals(Constants.LOGIN_SUCCESS)) {
-			//TODO ABRIR UMA NOVA JANELA
-			System.out.println("Login feito");
 			ClientWindow.getInstance().setWindowRoot("Application.fxml");
 		} else if (command.getProtocol().equals(Constants.LOGIN_ERROR)) {
 			//TODO CRIRAR errorLabel and show the error

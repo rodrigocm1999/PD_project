@@ -35,8 +35,15 @@ public class ClientWindow extends Application {
 		primaryStage.setScene(scene);
 		primaryStage.show();
 	}
-	
-	
+
+	public Scene getScene() {
+		return scene;
+	}
+
+	public Stage getStage() {
+		return stage;
+	}
+
 	public void setWindowRoot(String fileName) throws IOException {
 		scene.setRoot(loadParent(fileName));
 	}

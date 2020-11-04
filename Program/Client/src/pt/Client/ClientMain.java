@@ -1,9 +1,6 @@
 package pt.Client;
 
-import pt.Common.Command;
-import pt.Common.Constants;
-import pt.Common.ServerAddress;
-import pt.Common.UDPHelper;
+import pt.Common.*;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -20,6 +17,7 @@ public class ClientMain {
 	private static ObjectInputStream oIS;
 	private ArrayList<ServerAddress> serversList;
 	private static ClientMain instance;
+	private ArrayList<ChannelInfo> channels;
 	
 	public static ClientMain getInstance() {
 		return instance;
