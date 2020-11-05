@@ -19,6 +19,7 @@ public class LoginController {
 		
 		Command command = (Command) instance.sendCommandToServer(Constants.LOGIN, user);
 		if (command.getProtocol().equals(Constants.LOGIN_SUCCESS)) {
+			instance.setUserInfo((UserInfo) command.getExtras());
 			ClientWindow.getInstance().setWindowRoot("Application.fxml");
 		} else if (command.getProtocol().equals(Constants.LOGIN_ERROR)) {
 			//TODO CRIRAR errorLabel and show the error
