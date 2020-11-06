@@ -1,6 +1,7 @@
 package pt.Common;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class UserInfo implements Serializable {
 	
@@ -10,7 +11,7 @@ public class UserInfo implements Serializable {
 	private String name;
 	private String username;
 	private String password;
-	private String photoPath;
+	private byte[] imageBytes;
 	
 	public UserInfo(String username, String password) {
 		this.username = username;
@@ -23,40 +24,61 @@ public class UserInfo implements Serializable {
 		this.username = username;
 	}
 	
-	public UserInfo(String name, String username, String password, String photoPath) {
+	public UserInfo(String name, String username, String password, byte[] imageBytes) {
 		this.name = name;
 		this.username = username;
 		this.password = password;
-		this.photoPath = photoPath;
+		this.imageBytes = imageBytes;
 	}
 	
 	@Override
 	public String toString() {
 		return "UserInfo{" +
-				"name='" + getName() + '\'' +
-				", username='" + getUsername() + '\'' +
-				", password='" + getPassword() + '\'' +
-				", photoPath='" + getPhotoPath() + '\'' +
+				"userId=" + userId +
+				", name='" + name + '\'' +
+				", username='" + username + '\'' +
+				", password='" + password + '\'' +
+				", photoBytes=" + Arrays.toString(imageBytes) +
 				'}';
-	}
-	
-	public String getName() {
-		return name != null ? name : "";
-	}
-	
-	public String getUsername() {
-		return username != null ? username : "";
-	}
-	
-	public String getPassword() {
-		return password != null ? password : "";
-	}
-	
-	public String getPhotoPath() {
-		return photoPath != null ? photoPath : "";
 	}
 	
 	public int getUserId() {
 		return userId;
+	}
+	
+	public void setUserId(int userId) {
+		this.userId = userId;
+	}
+	
+	public String getName() {
+		return name;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	public String getUsername() {
+		return username;
+	}
+	
+	public void setUsername(String username) {
+		this.username = username;
+	}
+	
+	public String getPassword() {
+		return password;
+	}
+	
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	
+	public byte[] getImageBytes() {
+		return imageBytes;
+	}
+	
+	public void setImageBytes(byte[] imageBytes) {
+		this.imageBytes = imageBytes;
 	}
 }
