@@ -4,11 +4,14 @@ import javafx.application.Application;
 import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SplitPane;
+import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import pt.Common.ChannelInfo;
@@ -19,6 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class ApplicationController implements Initializable {
@@ -33,6 +37,9 @@ public class ApplicationController implements Initializable {
     public ListView channelsList;
     public ListView usersList;
     public ListView msgList;
+    public GridPane msgPane;
+    public Button btnSend;
+    public TextField msgTextField;
 
     private ObservableList<String> channels = FXCollections.observableArrayList();
     private ObservableList<String> users = FXCollections.observableArrayList();
@@ -49,25 +56,82 @@ public class ApplicationController implements Initializable {
         wWidth = (int)stage.getWidth();
         wHeight = (int)stage.getHeight();
 
-        window.setPrefSize(wWidth,wHeight);
 
-        bigSPane.setPrefSize(wWidth,wHeight-10);
-        smallSPane.setMaxSize(wWidth*0.2,wHeight-10);
-
-        channelsList.setItems(channels);
         ClientMain client = ClientMain.getInstance();
+        updateChannelsListView(client);
+
+    }
+
+    public void updateChannelsListView(ClientMain client){
+        channelsList.setItems(channels);
+        channels.removeAll();
         try {
             Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_GET_ALL,null);
             ArrayList<ChannelInfo> list = (ArrayList<ChannelInfo>) command.getExtras();
+            client.setChannels(list);
             for (var item:list) {
-                channels.add(item.name);
+                channels.add(item.getName());
             }
+            channelsList.setOnMouseClicked(event -> {
+                String selectedItem = (String) channelsList.getSelectionModel().getSelectedItem();
+                ChannelInfo channel = client.getChannelByName(selectedItem);
+                if (!channel.isPartOf()) {
+                    String pwd = openPasswordDialog(channel.getName());
+                    try {
+                        Command feedback = (Command) client.sendCommandToServer(Constants.CHANNEL_REGISTER,new ChannelInfo(channel.getId(),pwd));
+                        if (!feedback.getProtocol().equals(Constants.SUCCESS)){
+                            alertError("Channel Passsword incorret, try again");
+                        }
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                try {
+                    client.getMessagesFromChannel(channel.getId());
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            });
 
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
+    }
 
+    private String openPasswordDialog(String channelName) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle(channelName);
+        dialog.setHeaderText(null);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+
+        PasswordField password = new PasswordField();
+        password.setPromptText("Password");
+        grid.add(new Label("Channel Password:"), 0, 1);
+        grid.add(password, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.showAndWait();
+        return password.getText();
+    }
+
+    public void alertError(String error){
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(" ERROR ");
+        alert.setHeaderText(null);
+        alert.setContentText(error);
+
+        alert.showAndWait();
+    }
+
+
+
+    public void onClickSend(ActionEvent actionEvent) {
+        msgTextField.getText();
+        
 
     }
 }

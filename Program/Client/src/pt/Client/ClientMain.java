@@ -18,6 +18,7 @@ public class ClientMain {
 	private ArrayList<ServerAddress> serversList;
 	private static ClientMain instance;
 	private ArrayList<ChannelInfo> channels;
+	private UserInfo userInfo;
 	
 	public static ClientMain getInstance() {
 		return instance;
@@ -82,5 +83,39 @@ public class ClientMain {
 		Object ob = oIS.readObject();
 		return ob;
 	}
-	
+	public boolean logout() throws IOException, ClassNotFoundException {
+		Command command = (Command) sendCommandToServer(Constants.LOGOUT,null);
+		// wait for response
+		return true;
+	}
+
+	public UserInfo getUserInfo() {
+		return userInfo;
+	}
+
+	public void setUserInfo(UserInfo userInfo) {
+		this.userInfo = userInfo;
+	}
+	public ChannelInfo getChannelByName(String name){
+		for (var channel:channels) {
+			if (name.equals(channel.getName())){
+				return channel;
+			}
+		}
+		return null;
+	}
+
+	public ArrayList<MessageInfo> getMessagesFromChannel(int id) throws IOException, ClassNotFoundException {
+		Command command = (Command) sendCommandToServer(Constants.CHANNEL_GET_MESSAGES,id);
+		return (ArrayList<MessageInfo>) command.getExtras();
+
+	}
+
+	public ArrayList<ChannelInfo> getChannels() {
+		return channels;
+	}
+
+	public void setChannels(ArrayList<ChannelInfo> channels) {
+		this.channels = channels;
+	}
 }

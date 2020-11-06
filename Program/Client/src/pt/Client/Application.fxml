@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
 <VBox fx:id="window" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="696.0" prefWidth="990.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ApplicationController">
    <children>
@@ -17,12 +9,17 @@
         <menus>
           <Menu mnemonicParsing="false" text="File">
             <items>
-              <MenuItem mnemonicParsing="false" text="Close" />
+              <MenuItem mnemonicParsing="false" text="Logout" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
+          <Menu mnemonicParsing="false" text="Channels">
             <items>
-              <MenuItem mnemonicParsing="false" text="Delete" />
+              <MenuItem mnemonicParsing="false" text="Create" />
+                  <MenuItem mnemonicParsing="false" text="Enter" />
+                  <MenuItem mnemonicParsing="false" text="Add User" />
+                  <MenuItem mnemonicParsing="false" text="Remove user" />
+                  <MenuItem mnemonicParsing="false" text="Leave" />
+                  <MenuItem mnemonicParsing="false" text="Delete" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Help">
@@ -32,9 +29,9 @@
           </Menu>
         </menus>
       </MenuBar>
-      <SplitPane fx:id="bigSPane" dividerPositions="0.2" prefHeight="673.0" prefWidth="990.0">
+      <SplitPane fx:id="bigSPane" dividerPositions="0.2" VBox.vgrow="ALWAYS">
         <items>
-          <GridPane minHeight="0.0" minWidth="0.0" prefHeight="670.0" prefWidth="284.0">
+          <GridPane>
                <columnConstraints>
                   <ColumnConstraints />
                </columnConstraints>
@@ -42,22 +39,18 @@
                   <RowConstraints />
                </rowConstraints>
                <children>
-                  <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" prefHeight="671.0" prefWidth="225.0">
+                  <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
                     <items>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
-                           <children>
-                              <ListView fx:id="channelsList" prefHeight="331.0" prefWidth="200.0" />
-                           </children></AnchorPane>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="127.0" prefWidth="124.0">
-                           <children>
-                              <ListView fx:id="usersList" prefHeight="331.0" prefWidth="200.0" />
-                           </children></AnchorPane>
+                        <ListView fx:id="channelsList" />
+                        <ListView fx:id="usersList" />
                     </items>
                   </SplitPane>
                </children></GridPane>
-          <GridPane minHeight="0.0" minWidth="0.0" prefHeight="585.0" prefWidth="764.0">
+          <GridPane fx:id="msgPane">
                <children>
-                  <ListView fx:id="msgList" layoutX="-5.0" layoutY="-3.0" prefHeight="686.0" prefWidth="776.0" />
+                  <ListView fx:id="msgList" layoutX="-5.0" layoutY="-3.0" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS" />
+                  <TextField fx:id="msgTextField" alignment="TOP_LEFT" GridPane.valignment="BOTTOM" />
+                  <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onClickSend" text="Send" GridPane.halignment="RIGHT" GridPane.valignment="BOTTOM" />
                </children>
                <columnConstraints>
                   <ColumnConstraints />
