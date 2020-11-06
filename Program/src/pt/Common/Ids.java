@@ -1,6 +1,8 @@
 package pt.Common;
 
-public class Ids {
+import java.io.Serializable;
+
+public class Ids implements Serializable {
 	
 	private static final long serialVersionUID = 4326789L;
 	

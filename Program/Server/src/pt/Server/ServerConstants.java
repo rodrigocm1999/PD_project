@@ -28,4 +28,6 @@ public class ServerConstants {
 	public static final String PUBLIC_IP_ADDRESS_API = "https://api.ipify.org";
 	
 	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 25;
+	
+	public static final String USER_IMAGES_DIRECTORY = "user_images";
 }

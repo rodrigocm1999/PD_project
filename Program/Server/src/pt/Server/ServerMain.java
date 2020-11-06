@@ -148,6 +148,10 @@ public class ServerMain {
 		return databaseConnection.prepareStatement(sql);
 	}
 	
+	public String getDatabaseName() {
+		return databaseName;
+	}
+	
 	public static void main(String[] args) throws Exception {
 		
 		if (args.length < 3) {

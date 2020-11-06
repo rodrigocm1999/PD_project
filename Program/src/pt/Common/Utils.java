@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,8 +51,7 @@ public class Utils {
 			newImage.createGraphics().drawImage(img, 0, 0, Color.WHITE, null);
 			img = newImage;
 		}*/
-		//TODO make this work
-		//TODO scare this maybe
+		//TODO scale image properly maybe
 		Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
 		BufferedImage bufferedImage = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
 		

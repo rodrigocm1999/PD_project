@@ -2,8 +2,6 @@ package pt.Server;
 
 import pt.Common.*;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
@@ -113,7 +111,6 @@ public class ServerUserThread extends Thread {
 						
 						case Constants.CHANNEL_EDIT -> {
 							ChannelInfo info = (ChannelInfo) protocol.getExtras();
-							//TODO edit channel
 							protocolChannelEdit(info);
 							//TODO test channel edition
 						}
@@ -128,6 +125,8 @@ public class ServerUserThread extends Thread {
 							ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
 							protocolChannelRegister(channelInfo);
 						}
+						//TODO add same shit but for user messages
+						
 						case Constants.LOGOUT -> {
 							logout();
 						}
@@ -137,7 +136,7 @@ public class ServerUserThread extends Thread {
 		}
 	}
 	
-	private void protocolChannelEdit(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
+	public void protocolChannelEdit(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
 		if (!Utils.checkPasswordFollowsRules(info.getPassword())) {
 			sendCommand(Constants.FAILURE, "Invalid Password");
 			return;
@@ -162,12 +161,12 @@ public class ServerUserThread extends Thread {
 	
 	public void protocolAddMessage(MessageInfo message) throws IOException, SQLException {
 		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
-			if (ServerChannelManager.insertMessage(message.getSenderId(), message.getRecipientId(), message.getContent()))
+			if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
 				sendCommand(Constants.SUCCESS);
 			else
 				sendCommand(Constants.ERROR, "Should not happen");
 		} else if (message.getRecipientType().equals(MessageInfo.Recipient.USER)) {
-			if (ServerUserManager.insertMessage(message.getSenderId(), message.getRecipientId(), message.getContent()))
+			if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
 				sendCommand(Constants.SUCCESS);
 			else
 				sendCommand(Constants.ERROR, "Should not happen");
@@ -205,7 +204,6 @@ public class ServerUserThread extends Thread {
 	
 	public void protocolChannelGetALl() throws SQLException, IOException {
 		ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userInfo.getUserId());
-		Utils.printList(channels, "Channels");
 		sendCommand(Constants.CHANNEL_GET_ALL, channels);
 	}
 	
@@ -224,7 +222,7 @@ public class ServerUserThread extends Thread {
 			System.out.println(userInfo);
 			if (!Utils.checkUsername(userInfo.getUsername())) {
 				sendCommand(Constants.REGISTER_ERROR, "Username doesn't follow rules (Between 3 and 25 characters and have no special characters and )");
-				
+
 			} else if (!Utils.checkPasswordFollowsRules(userInfo.getPassword())) {
 				sendCommand(Constants.REGISTER_ERROR, "Password doesn't follow rules (needs 8 to 25 characters, a special character, a number and a upper and lower case letter)");
 				
@@ -237,11 +235,27 @@ public class ServerUserThread extends Thread {
 			} else {
 				String imagePath = "";
 				if (userInfo.getImageBytes() != null) {
-					//TODO receive image
-					imagePath = userInfo.getName();
-					File file = new File(imagePath);
-					try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-						fileOutputStream.write(userInfo.getImageBytes());
+					boolean saveImage = true;
+					File imagesFolder = new File(ServerMain.getInstance().getDatabaseName() + ServerConstants.USER_IMAGES_DIRECTORY);
+					File imageFile = null;
+					if (!imagesFolder.exists()) {
+						if (!imagesFolder.mkdir()) {
+							System.out.println("Error creating image files on path : " + imagesFolder.getAbsolutePath());
+							saveImage = false;
+						}
+					}
+					if (saveImage) {
+						imagePath = imagesFolder + "/" + userInfo.getName() + ".jpg";
+						imageFile = new File(imagePath);
+						if(imageFile.exists()){
+							System.out.println("Image already exists with path : " + imageFile.getAbsolutePath());
+							saveImage = false;
+						}
+					}
+					if (saveImage) {
+						try (FileOutputStream fileOutputStream = new FileOutputStream(imageFile)) {
+							fileOutputStream.write(userInfo.getImageBytes());
+						}
 					}
 				}
 				if (ServerUserManager.insertUser(userInfo, imagePath)) {
@@ -271,17 +285,12 @@ public class ServerUserThread extends Thread {
 			sendCommand(Constants.LOGIN_ERROR, "Password is incorrect");
 			return;
 		}
-		//TODO send user info
 		int userId = ServerUserManager.getUserId(username);
 		String nameUser = ServerUserManager.getNameUser(userId);
 		userInfo = new UserInfo(userId, username, nameUser);
 		sendCommand(Constants.LOGIN_SUCCESS, userInfo);
 		System.out.println("Login success : " + userInfo);
 		isLoggedIn = true;
-	}
-	
-	public String getSocketInformation() {
-		return ("local port: " + socket.getInetAddress().getHostName() + ":" + socket.getPort());
 	}
 	
 	public void sendCommand(String command) throws IOException {
@@ -292,6 +301,10 @@ public class ServerUserThread extends Thread {
 		Command obj = new Command(command, extra);
 		System.out.println(obj);
 		oos.writeUnshared(obj);
+	}
+	
+	public String getSocketInformation() {
+		return ("local port: " + socket.getInetAddress().getHostName() + ":" + socket.getPort());
 	}
 	
 	public boolean isLoggedIn() {
