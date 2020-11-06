@@ -1,28 +1,22 @@
 package pt.Client;
 
-import javafx.application.Application;
-import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import pt.Common.ChannelInfo;
 import pt.Common.Command;
 import pt.Common.Constants;
+import pt.Common.MessageInfo;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class ApplicationController implements Initializable {
@@ -34,9 +28,9 @@ public class ApplicationController implements Initializable {
     public VBox window;
     public SplitPane bigSPane;
     public SplitPane smallSPane;
-    public ListView channelsList;
-    public ListView usersList;
-    public ListView msgList;
+    public ListView channelsListView;
+    public ListView usersListView;
+    public ListView msgListView;
     public GridPane msgPane;
     public Button btnSend;
     public TextField msgTextField;
@@ -53,41 +47,45 @@ public class ApplicationController implements Initializable {
         ClientWindow instance = ClientWindow.getInstance();
         Stage stage = instance.getStage();
         stage.setMaximized(true);
-        wWidth = (int)stage.getWidth();
-        wHeight = (int)stage.getHeight();
+        wWidth = (int) stage.getWidth();
+        wHeight = (int) stage.getHeight();
 
 
         ClientMain client = ClientMain.getInstance();
         updateChannelsListView(client);
+        channelsListView.setItems(channels);
+        msgListView.setItems(msgs);
 
     }
 
-    public void updateChannelsListView(ClientMain client){
-        channelsList.setItems(channels);
+    public void updateChannelsListView(ClientMain client) {
         channels.removeAll();
         try {
-            Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_GET_ALL,null);
+            Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_GET_ALL, null);
             ArrayList<ChannelInfo> list = (ArrayList<ChannelInfo>) command.getExtras();
             client.setChannels(list);
-            for (var item:list) {
+            for (var item : list) {
                 channels.add(item.getName());
             }
-            channelsList.setOnMouseClicked(event -> {
-                String selectedItem = (String) channelsList.getSelectionModel().getSelectedItem();
+            channelsListView.setOnMouseClicked(event -> {
+                String selectedItem = (String) channelsListView.getSelectionModel().getSelectedItem();
                 ChannelInfo channel = client.getChannelByName(selectedItem);
                 if (!channel.isPartOf()) {
                     String pwd = openPasswordDialog(channel.getName());
                     try {
-                        Command feedback = (Command) client.sendCommandToServer(Constants.CHANNEL_REGISTER,new ChannelInfo(channel.getId(),pwd));
-                        if (!feedback.getProtocol().equals(Constants.SUCCESS)){
+                        Command feedback = (Command) client.sendCommandToServer(Constants.CHANNEL_REGISTER, new ChannelInfo(channel.getId(), pwd));
+                        if (!feedback.getProtocol().equals(Constants.SUCCESS)) {
                             alertError("Channel Passsword incorret, try again");
+                            return;
                         }
+                        channel.setPartOf(true);
                     } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
                     }
                 }
                 try {
-                    client.getMessagesFromChannel(channel.getId());
+                    ArrayList<MessageInfo> msgForChannel = client.getMessagesFromChannel(channel.getId());
+                    updateMessageListView(msgForChannel);
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -118,7 +116,7 @@ public class ApplicationController implements Initializable {
         return password.getText();
     }
 
-    public void alertError(String error){
+    public void alertError(String error) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(" ERROR ");
         alert.setHeaderText(null);
@@ -127,11 +125,18 @@ public class ApplicationController implements Initializable {
         alert.showAndWait();
     }
 
+    public void updateMessageListView(ArrayList<MessageInfo> msgList) {
+        msgs.clear();
+        System.out.println(msgList.size());
+        for (MessageInfo item : msgList) {
+            msgs.add(item.getContent());
+        }
+    }
 
 
     public void onClickSend(ActionEvent actionEvent) {
         msgTextField.getText();
-        
+
 
     }
 }
