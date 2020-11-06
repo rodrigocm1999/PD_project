@@ -2,6 +2,8 @@ package pt.Server;
 
 import pt.Common.*;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
@@ -94,7 +96,7 @@ public class ServerUserThread extends Thread {
 						case Constants.CHANNEL_GET_MESSAGES -> {
 							Ids ids = (Ids) protocol.getExtras();
 							protocolChannelGetMessages(ids);
-							//TODO test get messages
+							//TODO test get messages before certain message
 						}
 						
 						case Constants.CHANNEL_ADD -> {
@@ -119,6 +121,7 @@ public class ServerUserThread extends Thread {
 						case Constants.ADD_MESSAGE -> {
 							MessageInfo message = (MessageInfo) protocol.getExtras();
 							protocolAddMessage(message);
+							//TODO test add message
 						}
 						
 						case Constants.CHANNEL_REGISTER -> {
@@ -192,7 +195,7 @@ public class ServerUserThread extends Thread {
 			return;
 		}
 		ArrayList<MessageInfo> channelMessages;
-		if (ids.getMessageId() == -1)
+		if (ids.getMessageId() <= 0)
 			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		else
 			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
@@ -232,14 +235,13 @@ public class ServerUserThread extends Thread {
 				sendCommand(Constants.REGISTER_ERROR, "Username already in use");
 				
 			} else {
-				/*if (!userInfo.getPhotoPath().isEmpty()) {
+				String imagePath = "";
+				if (userInfo.getImageBytes() != null) {
 					//TODO receive image
-					byte[] imageBytes = (byte[]) ois.readObject();
-					ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(imageBytes);
+					ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(userInfo.getImageBytes());
 					BufferedImage image = ImageIO.read(byteArrayInputStream);
-					image = Utils.getCompressedImage(image, 250, 250);
-				}*/
-				if (ServerUserManager.insertUser(userInfo)) {
+				}
+				if (ServerUserManager.insertUser(userInfo,imagePath)) {
 					System.out.println("Added new user");
 					sendCommand(Constants.REGISTER_SUCCESS);
 				} else {

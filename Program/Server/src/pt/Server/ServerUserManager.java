@@ -16,14 +16,14 @@ public class ServerUserManager {
 		return ServerMain.getInstance();
 	}
 	
-	public static boolean insertUser(UserInfo user) throws SQLException, NoSuchAlgorithmException {
+	public static boolean insertUser(UserInfo user,String imagePath) throws SQLException, NoSuchAlgorithmException {
 		// insert the new user into the database ------------------------------------------
 		String insert = "insert into user(name,username,password_hash,photo_path) values(?,?,?,?)";
 		PreparedStatement preparedStatement = ServerMain.getInstance().getPreparedStatement(insert);
 		preparedStatement.setString(1, user.getName());
 		preparedStatement.setString(2, user.getUsername());
 		preparedStatement.setString(3, Utils.hashStringBase36(user.getPassword()));
-		preparedStatement.setString(4, user.getPhotoPath());
+		preparedStatement.setString(4, imagePath);
 		return preparedStatement.executeUpdate() == 1;
 	}
 	
