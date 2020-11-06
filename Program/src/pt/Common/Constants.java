@@ -34,4 +34,6 @@ public class Constants {
 	public static final String ERROR = "ERROR";
 	public static final String INVALID_PROTOCOL = "INVALID_PROTOCOL";
 	public static final String INVALID_REQUEST = "INVALID_REQUEST";
+	
+	public static final int USER_IMAGE_SIZE = 256;
 }

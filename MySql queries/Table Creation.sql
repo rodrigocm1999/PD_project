@@ -56,7 +56,7 @@ create table if not exists Message (
 -- User_Message ----------------------------------
 create table if not exists User_Message(
 	receiver_id int not null,
-	message_id int not null,
+	message_id int not null unique,
 
 	primary key (receiver_id, message_id),
 	foreign key (receiver_id) references User(id),
@@ -65,7 +65,7 @@ create table if not exists User_Message(
 -- Channel_Message ----------------------------------
 create table if not exists Channel_Message(
 	channel_id int not null,
-	message_id int not null,
+	message_id int not null unique,
 
 	primary key (channel_id, message_id),
 	foreign key (channel_id) references Channel(id),

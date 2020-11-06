@@ -238,10 +238,13 @@ public class ServerUserThread extends Thread {
 				String imagePath = "";
 				if (userInfo.getImageBytes() != null) {
 					//TODO receive image
-					ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(userInfo.getImageBytes());
-					BufferedImage image = ImageIO.read(byteArrayInputStream);
+					imagePath = userInfo.getName();
+					File file = new File(imagePath);
+					try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+						fileOutputStream.write(userInfo.getImageBytes());
+					}
 				}
-				if (ServerUserManager.insertUser(userInfo,imagePath)) {
+				if (ServerUserManager.insertUser(userInfo, imagePath)) {
 					System.out.println("Added new user");
 					sendCommand(Constants.REGISTER_SUCCESS);
 				} else {

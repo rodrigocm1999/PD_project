@@ -2,9 +2,14 @@ package pt.Common;
 
 import pt.Server.ServerConstants;
 
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
@@ -48,6 +53,7 @@ public class Utils {
 			img = newImage;
 		}*/
 		//TODO make this work
+		//TODO scare this maybe
 		Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
 		BufferedImage bufferedImage = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
 		
@@ -56,6 +62,21 @@ public class Utils {
 		g2d.dispose();
 		return bufferedImage;
 	}
+	
+	public static byte[] getImageBytes(BufferedImage image) throws IOException {
+		ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+		ImageWriteParam jpgWriteParam = writer.getDefaultWriteParam();
+		jpgWriteParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+		jpgWriteParam.setCompressionQuality(0.90f);
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		writer.setOutput(ImageIO.createImageOutputStream(baos));
+		IIOImage outputImage = new IIOImage(image, null, null);
+		writer.write(null, outputImage, jpgWriteParam);
+		return baos.toByteArray();
+	}
+	
+	
 	
 	public static void printList(ArrayList list) {
 		printList(list, "");
