@@ -41,14 +41,14 @@
                <children>
                   <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
                     <items>
-                        <ListView fx:id="channelsList" />
-                        <ListView fx:id="usersList" />
+                        <ListView fx:id="channelsListView" />
+                        <ListView fx:id="usersListView" />
                     </items>
                   </SplitPane>
                </children></GridPane>
           <GridPane fx:id="msgPane">
                <children>
-                  <ListView fx:id="msgList" layoutX="-5.0" layoutY="-3.0" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS" />
+                  <ListView fx:id="msgListView" layoutX="-5.0" layoutY="-3.0" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS" />
                   <TextField fx:id="msgTextField" alignment="TOP_LEFT" GridPane.valignment="BOTTOM" />
                   <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onClickSend" text="Send" GridPane.halignment="RIGHT" GridPane.valignment="BOTTOM" />
                </children>

@@ -18,9 +18,10 @@
       <PasswordField fx:id="idRepeatPassword" layoutX="14.0" layoutY="188.0" prefHeight="25.0" prefWidth="423.0" />
 
       <Label layoutX="16.0" layoutY="221.0" text="Photo PATH" />
-      <TextField fx:id="idPhotoPath" layoutX="16.0" layoutY="238.0" prefHeight="25.0" prefWidth="423.0" />
+      <TextField fx:id="idPhotoPath" layoutX="16.0" layoutY="238.0" prefHeight="25.0" prefWidth="335.0" />
       
       <Button layoutX="380.0" layoutY="344.0" mnemonicParsing="false" onAction="#onRegister" text="Register" />
       <Label fx:id="errorLabel" alignment="CENTER_RIGHT" layoutX="109.0" layoutY="348.0" prefHeight="17.0" prefWidth="259.0" textFill="RED" />
+      <Button fx:id="btnChoseImage" onAction="#onChoseImg" layoutX="355.0" layoutY="238.0" mnemonicParsing="false" text="Chose Image" />
    </children>
 </AnchorPane>
