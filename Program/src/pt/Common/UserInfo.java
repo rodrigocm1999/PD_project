@@ -38,7 +38,6 @@ public class UserInfo implements Serializable {
 				", name='" + name + '\'' +
 				", username='" + username + '\'' +
 				", password='" + password + '\'' +
-				", photoBytes=" + Arrays.toString(imageBytes) +
 				'}';
 	}
 	
