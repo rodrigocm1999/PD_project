@@ -27,5 +27,5 @@ public class ServerConstants {
 	
 	public static final String PUBLIC_IP_ADDRESS_API = "https://api.ipify.org";
 	
-	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 10;
+	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 25;
 }

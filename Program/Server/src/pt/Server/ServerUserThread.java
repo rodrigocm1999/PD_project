@@ -92,24 +92,28 @@ public class ServerUserThread extends Thread {
 						}
 						
 						case Constants.CHANNEL_GET_MESSAGES -> {
-							int[] arr = (int[]) protocol.getExtras();
-							protocolChannelGetMessages(arr);
+							Ids ids = (Ids) protocol.getExtras();
+							protocolChannelGetMessages(ids);
+							//TODO test get messages
 						}
 						
 						case Constants.CHANNEL_ADD -> {
 							ChannelInfo info = (ChannelInfo) protocol.getExtras();
 							protocolChannelAdd(info);
+							//TODO test channel add
 						}
 						
 						case Constants.CHANNEL_REMOVE -> {
 							int channelId = (int) protocol.getExtras();
 							protocolChannelRemove(channelId);
+							//TODO test channel remove
 						}
 						
 						case Constants.CHANNEL_EDIT -> {
 							ChannelInfo info = (ChannelInfo) protocol.getExtras();
 							//TODO edit channel
 							protocolChannelEdit(info);
+							//TODO test channel edition
 						}
 						
 						case Constants.ADD_MESSAGE -> {
@@ -130,8 +134,14 @@ public class ServerUserThread extends Thread {
 		}
 	}
 	
-	private void protocolChannelEdit(ChannelInfo info) {
-		//ServerChannelManager.updateChannel(info.getId(),info.getName(),info.getPassword(),info.ge);
+	private void protocolChannelEdit(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
+		if (!Utils.checkPasswordFollowsRules(info.getPassword())) {
+			sendCommand(Constants.FAILURE, "Invalid Password");
+			return;
+		}
+		boolean success = ServerChannelManager.updateChannel(info.getId(), info.getName(), info.getPassword(), info.getDescription());
+		if (success) sendCommand(Constants.SUCCESS);
+		else sendCommand(Constants.FAILURE, "Error Updating, channel name might already be in use");
 	}
 	
 	public void protocolChannelRegister(ChannelInfo channelInfo) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -176,22 +186,16 @@ public class ServerUserThread extends Thread {
 		else sendCommand(Constants.FAILURE);
 	}
 	
-	public void protocolChannelGetMessages(int[] arr) throws IOException, SQLException {
-		if (arr.length != 2) {
-			sendCommand(Constants.ERROR, "Client Protocol Error. Get messages should receive a int[] with channel id and message id");
-			return;
-		}
-		int channelId = arr[0];
-		int messageId = arr[1];
-		if (ServerChannelManager.isUserPartOf(userInfo.getUserId(), channelId)) {
+	public void protocolChannelGetMessages(Ids ids) throws IOException, SQLException {
+		if (!ServerChannelManager.isUserPartOf(userInfo.getUserId(), ids.getChannelId())) {
 			sendCommand(Constants.NO_PERMISSIONS);
 			return;
 		}
 		ArrayList<MessageInfo> channelMessages;
-		if (messageId == -1)
-			channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+		if (ids.getMessageId() == -1)
+			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		else
-			channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, messageId, ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		Utils.printList(channelMessages, "channelMessages");
 		sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
 	}

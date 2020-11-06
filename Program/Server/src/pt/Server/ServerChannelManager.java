@@ -62,7 +62,7 @@ public class ServerChannelManager {
 	}
 	
 	public static ArrayList<MessageInfo> getChannelMessagesBefore(int channelId, int amount) throws SQLException {
-		int lastMessageId = getLastChannelMessageId(channelId);
+		int lastMessageId = getLastChannelMessageId(channelId) + 1;
 		return getChannelMessagesBefore(channelId, lastMessageId, amount);
 	}
 	
@@ -79,8 +79,8 @@ public class ServerChannelManager {
 		statement.setInt(2, messageId);
 		statement.setInt(3, amount);
 		ResultSet result = statement.executeQuery();
-		ArrayList<MessageInfo> messages = new ArrayList<>();
 		
+		ArrayList<MessageInfo> messages = new ArrayList<>();
 		while (result.next()) {
 			int id = result.getInt("id");
 			int senderId = result.getInt("sender_id");
@@ -90,7 +90,6 @@ public class ServerChannelManager {
 			
 			messages.add(new MessageInfo(id, senderId, MessageInfo.Recipient.CHANNEL, channelId, utcTime, type, content));
 		}
-		
 		return messages;
 	}
 	
@@ -157,5 +156,13 @@ public class ServerChannelManager {
 		return statement.executeUpdate() == 1;
 	}
 	
-	
+	public static boolean updateChannel(int id, String name, String password, String description) throws SQLException, NoSuchAlgorithmException {
+		String insert = "update channel set name = ?, password_hash = ?, description = ? where id = ?";
+		PreparedStatement statement = getApp().getPreparedStatement(insert);
+		statement.setString(1, name);
+		statement.setString(2, Utils.hashStringBase36(password));
+		statement.setString(3, description);
+		statement.setInt(4, id);
+		return statement.executeUpdate() == 1;
+	}
 }

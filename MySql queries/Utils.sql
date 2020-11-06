@@ -11,13 +11,13 @@ WHERE schema_name = "main";
 
 
 -- insert test users
-insert into user(name,username,password_hash) values('yee','yeet','dwefiogr');
-insert into user(name,username,password_hash) values('yee','yeeeet','dwefiogr');
-insert into user(name,username,password_hash,photo_path) values('yee','dodsrin','dwefiogr','gae');
+insert into user(id,name,username,password_hash) values(3,'yee','yeet','dwefiogr');
+-- insert into user(name,username,password_hash) values('yee','yeeeet','dwefiogr');
+-- insert into user(name,username,password_hash,photo_path) values('yee','dodsrin','dwefiogr','gae');
 insert into user(id,name,username,password_hash,photo_path) values(100,'','rodrigo','5j7irtsx93n2jojxywz09zxecwctwrdqrzkvb8oo2w7drxzmup','');
 -- insert test channels
-insert into channel(id,creator_id,name,description,password_hash) values(15,100,'its free real estate','hmmmm','dsa');
-insert into channel(id,creator_id,name,description,password_hash) values(1,3,'abc ','hmmmm','dsa');
+insert into channel(id,creator_id,name,description,password_hash) values(15,100,'its free real estate','hmmmm','12fpfd2m99l1gsstg61m8o5f0s1y5nkftwo3hxw96pvizb1otr');
+insert into channel(id,creator_id,name,description,password_hash) values(1,3,'abc ','hmmmm','4iigni6ki9sm8k9jp9a7t2h9qsxtf4slsrow9un29vbner8dlz');
 -- insert test channel messages
 insert into message(id,sender_id,content) values (1,100,'only you know what is gonna happen to you next'); 
 insert into channel_message(channel_id,message_id) values (15,1);
@@ -28,11 +28,14 @@ insert into channel_message(channel_id,message_id) values(15,2);
 -- insert user to channel
 insert into channel_user(channel_id,user_id) values(2,2);
 
-update channel set password_hash = '12fpfd2m99l1gsstg61m8o5f0s1y5nkftwo3hxw96pvizb1otr' where id = 15;
+update channel set password_hash = '12fpfd2m99l1gsstg61m8o5f0s1y5nkftwo3hxw96pvizb1otr' where id = 1;
+update channel set name = ?, password_hash = ?, description = ? where id = ?;
 
 select * from channel;
 select * from user;
+select * from channel_message;
 select * from message;
+select * from message,channel_message,channel where message_id = message.id and channel.id = channel_id and channel_id = 15;
 -- get all user messages to channels
 select * from message where id in (select message_id from channel_message where sender_id = 100);
 -- get all messages before certain one on channel
