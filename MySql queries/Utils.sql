@@ -28,6 +28,8 @@ insert into channel_message(channel_id,message_id) values(15,2);
 -- insert user to channel
 insert into channel_user(channel_id,user_id) values(2,2);
 
+update channel set password_hash = '12fpfd2m99l1gsstg61m8o5f0s1y5nkftwo3hxw96pvizb1otr' where id = 15;
+
 select * from channel;
 select * from user;
 select * from message;

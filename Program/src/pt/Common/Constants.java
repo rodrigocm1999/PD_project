@@ -18,10 +18,11 @@ public class Constants {
 	public static final String CHANNEL_GET_ALL = "CHANNEL_GET_ALL";
 	public static final String CHANNEL_GET_MESSAGES = "CHANNEL_GET_MESSAGES";
 	public static final String CHANNEL_ADD = "CHANNEL_ADD";
-	public static final String CHANNEL_ADD_MESSAGE = "CHANNEL_ADD_MESSAGE";
 	public static final String CHANNEL_REMOVE = "CHANNEL_REMOVE";
 	public static final String CHANNEL_EDIT = "CHANNEL_EDIT";
 	public static final String CHANNEL_REGISTER = "CHANNEL_REGISTER";
+	public static final String ADD_MESSAGE = "CHANNEL_ADD_MESSAGE";
+	public static final String NO_PERMISSIONS = "NO_PERMISSIONS";
 	
 	public static final String SUCCESS = "SUCCESS";
 	public static final String FAILURE = "FAILURE";

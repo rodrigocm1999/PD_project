@@ -26,6 +26,7 @@ public class ServerMain {
 	private ServerSyncer serversManager;
 	
 	public static ServerMain getInstance() {
+		assert instance != null;
 		return instance;
 	}
 	
@@ -69,7 +70,7 @@ public class ServerMain {
 							receiveNewUser(receivedPacket, udpSocket);
 						} else {
 							ArrayList<ServerAddress> list = serversManager.getOrderedServerAddresses();
-							Utils.printList(list,"Servers Sent");
+							Utils.printList(list, "Servers Sent");
 							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
 									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
 						}

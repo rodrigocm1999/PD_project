@@ -20,7 +20,7 @@ public class ServerUserThread extends Thread {
 	private boolean keepReceiving = true;
 	private ArrayList<ServerAddress> orderedServerAddresses;
 	
-	private static ServerMain getApp() {
+	private ServerMain getApp() {
 		return ServerMain.getInstance();
 	}
 	
@@ -37,12 +37,13 @@ public class ServerUserThread extends Thread {
 			sendCommand(Constants.SERVERS_LIST, orderedServerAddresses);
 			orderedServerAddresses = null;
 			receiveRequests();
-		} catch (Exception e) {
-			System.out.println("Exception Run method ServerUserThread : " + e.getMessage());
+		} catch (IOException e) {
+			System.out.println("Exception sending servers list : " + e.getMessage());
+			disconnect();
 		}
 	}
 	
-	private void receiveRequests() throws IOException {
+	private void receiveRequests() {
 		try {
 			while (keepReceiving) {
 				Command command;
@@ -54,7 +55,7 @@ public class ServerUserThread extends Thread {
 				} catch (IOException e) {
 					throw new IOException("Connection lost");
 				}
-				
+				System.out.println(command);
 				handleRequest(command);
 			}
 		} catch (IOException e) { // Lost connection
@@ -64,9 +65,8 @@ public class ServerUserThread extends Thread {
 		}
 	}
 	
-	public void disconnect() throws IOException {
+	public void disconnect() {
 		getApp().removeConnected(this);
-		throw new IOException("Lost Connection \tClosing user thread");
 	}
 	
 	private void handleRequest(Command protocol) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -83,82 +83,123 @@ public class ServerUserThread extends Thread {
 			case Constants.DISCONNECTING -> {
 				disconnect();
 			}
-		}
-		if (isLoggedIn()) {
-			switch (protocol.getProtocol()) {
-				case Constants.CHANNEL_GET_ALL -> {
-					ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userInfo.getUserId());
-					Utils.printList(channels, "Channels");
-					sendCommand(Constants.CHANNEL_GET_ALL, channels);
-				}
-				
-				case Constants.CHANNEL_GET_MESSAGES -> {
-					ArrayList<MessageInfo> channelMessages;
-					int[] arr = (int[]) protocol.getExtras();
-					if (arr.length != 2) {
-						sendCommand(Constants.ERROR, "Client Protocol Error. Get messages should receive a int[] with channel id and message id");
-					}
-					int channelId = arr[0];
-					int messageId = arr[1];
-					if (messageId == -1) {
-						channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
-					} else {
-						channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, messageId, ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
-					}
-					Utils.printList(channelMessages, "channelMessages");
-					sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
-				}
-				
-				case Constants.CHANNEL_ADD -> {
-					ChannelInfo info = (ChannelInfo) protocol.getExtras();
-					boolean success = ServerChannelManager.createChannel(
-							userInfo.getUserId(), info.getName(), info.getPassword(), info.getDescription());
-					if (success) sendCommand(Constants.SUCCESS);
-					else sendCommand(Constants.FAILURE);
-				}
-				
-				case Constants.CHANNEL_REMOVE -> {
-					int channelId = (int) protocol.getExtras();
-					if (ServerChannelManager.isUserChannelOwner(userInfo.getUserId(), channelId)) {
-						boolean success = ServerChannelManager.deleteChannel(channelId);
-						if (success) sendCommand(Constants.SUCCESS);
-						else sendCommand(Constants.FAILURE, "Error Removing channel"); // Shouldn't happen
-					} else sendCommand(Constants.FAILURE, "User doesn't have permissions"); // Shouldn't happen
-				}
-				
-				case Constants.CHANNEL_EDIT -> {
-					ChannelInfo info = (ChannelInfo) protocol.getExtras();
-					//TODO edit channel
-				}
-				
-				case Constants.CHANNEL_ADD_MESSAGE -> {
-					MessageInfo message = (MessageInfo) protocol.getExtras();
-					if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
-						ServerChannelManager.insertMessage(message.getSenderId(), message.getRecipientId(), message.getContent());
-					} else {
-						//TODO insert Message
-					}
-				}
-				case Constants.CHANNEL_REGISTER -> {
-					ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
-					if (ServerChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId())) {
-						sendCommand(Constants.SUCCESS, "User is already part of channel");
-					} else {
-						if (ServerChannelManager.isChannelPassword(channelInfo.getId(), channelInfo.getPassword())
-								&& ServerChannelManager.registerUserToChannel(userInfo.getUserId(), channelInfo.getId())) {
-							sendCommand(Constants.SUCCESS);
-						} else {
-							sendCommand(Constants.ERROR, "Error, not supposed to happen");
+			
+			default -> {
+				if (isLoggedIn()) {
+					switch (protocol.getProtocol()) {
+						case Constants.CHANNEL_GET_ALL -> {
+							protocolChannelGetALl();
+						}
+						
+						case Constants.CHANNEL_GET_MESSAGES -> {
+							int[] arr = (int[]) protocol.getExtras();
+							protocolChannelGetMessages(arr);
+						}
+						
+						case Constants.CHANNEL_ADD -> {
+							ChannelInfo info = (ChannelInfo) protocol.getExtras();
+							protocolChannelAdd(info);
+						}
+						
+						case Constants.CHANNEL_REMOVE -> {
+							int channelId = (int) protocol.getExtras();
+							protocolChannelRemove(channelId);
+						}
+						
+						case Constants.CHANNEL_EDIT -> {
+							ChannelInfo info = (ChannelInfo) protocol.getExtras();
+							//TODO edit channel
+							protocolChannelEdit(info);
+						}
+						
+						case Constants.ADD_MESSAGE -> {
+							MessageInfo message = (MessageInfo) protocol.getExtras();
+							protocolAddMessage(message);
+						}
+						
+						case Constants.CHANNEL_REGISTER -> {
+							ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
+							protocolChannelRegister(channelInfo);
+						}
+						case Constants.LOGOUT -> {
+							logout();
 						}
 					}
 				}
-				//TODO edit channel, remove channel,  add message, retrieve messages
-				//TODO verificar se user tem permissoes para receber mensagens
-				case Constants.LOGOUT -> {
-					logout();
-				}
 			}
 		}
+	}
+	
+	private void protocolChannelEdit(ChannelInfo info) {
+		//ServerChannelManager.updateChannel(info.getId(),info.getName(),info.getPassword(),info.ge);
+	}
+	
+	public void protocolChannelRegister(ChannelInfo channelInfo) throws IOException, SQLException, NoSuchAlgorithmException {
+		if (ServerChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId()))
+			sendCommand(Constants.SUCCESS, "User is already part of channel");
+		else {
+			if (ServerChannelManager.isChannelPassword(channelInfo.getId(), channelInfo.getPassword())) {
+				if (ServerChannelManager.registerUserToChannel(userInfo.getUserId(), channelInfo.getId()))
+					sendCommand(Constants.SUCCESS);
+				else
+					sendCommand(Constants.ERROR, "Should never happen. Pls fix");
+			} else sendCommand(Constants.ERROR, "Wrong password");
+		}
+	}
+	
+	public void protocolAddMessage(MessageInfo message) throws IOException, SQLException {
+		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
+			if (ServerChannelManager.insertMessage(message.getSenderId(), message.getRecipientId(), message.getContent()))
+				sendCommand(Constants.SUCCESS);
+			else
+				sendCommand(Constants.ERROR, "Should not happen");
+		} else if (message.getRecipientType().equals(MessageInfo.Recipient.USER)) {
+			if (ServerUserManager.insertMessage(message.getSenderId(), message.getRecipientId(), message.getContent()))
+				sendCommand(Constants.SUCCESS);
+			else
+				sendCommand(Constants.ERROR, "Should not happen");
+		}
+	}
+	
+	public void protocolChannelRemove(int channelId) throws SQLException, IOException {
+		if (ServerChannelManager.isUserChannelOwner(userInfo.getUserId(), channelId)) {
+			boolean success = ServerChannelManager.deleteChannel(channelId);
+			if (success) sendCommand(Constants.SUCCESS);
+			else sendCommand(Constants.FAILURE, "Error Removing channel"); // Shouldn't happen
+		} else sendCommand(Constants.FAILURE, "User doesn't have permissions"); // Shouldn't happen
+	}
+	
+	public void protocolChannelAdd(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
+		boolean success = ServerChannelManager.createChannel(
+				userInfo.getUserId(), info.getName(), info.getPassword(), info.getDescription());
+		if (success) sendCommand(Constants.SUCCESS);
+		else sendCommand(Constants.FAILURE);
+	}
+	
+	public void protocolChannelGetMessages(int[] arr) throws IOException, SQLException {
+		if (arr.length != 2) {
+			sendCommand(Constants.ERROR, "Client Protocol Error. Get messages should receive a int[] with channel id and message id");
+			return;
+		}
+		int channelId = arr[0];
+		int messageId = arr[1];
+		if (ServerChannelManager.isUserPartOf(userInfo.getUserId(), channelId)) {
+			sendCommand(Constants.NO_PERMISSIONS);
+			return;
+		}
+		ArrayList<MessageInfo> channelMessages;
+		if (messageId == -1)
+			channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+		else
+			channelMessages = ServerChannelManager.getChannelMessagesBefore(channelId, messageId, ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+		Utils.printList(channelMessages, "channelMessages");
+		sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
+	}
+	
+	public void protocolChannelGetALl() throws SQLException, IOException {
+		ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userInfo.getUserId());
+		Utils.printList(channels, "Channels");
+		sendCommand(Constants.CHANNEL_GET_ALL, channels);
 	}
 	
 	private void logout() throws IOException {

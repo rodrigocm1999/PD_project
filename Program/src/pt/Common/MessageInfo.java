@@ -1,6 +1,8 @@
 package pt.Common;
 
-public class MessageInfo {
+import java.io.Serializable;
+
+public class MessageInfo implements Serializable {
 	
 	private static final long serialVersionUID = 8574382340L;
 	
