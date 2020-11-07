@@ -1,5 +1,6 @@
 package pt.Client;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -85,7 +86,10 @@ public class ApplicationController implements Initializable {
                 }
                 try {
                     ArrayList<MessageInfo> msgForChannel = client.getMessagesFromChannel(channel.getId());
+                    channel.setMessages(msgForChannel);
                     updateMessageListView(msgForChannel);
+
+                    client.setCurrentChannel(channel);
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -133,10 +137,34 @@ public class ApplicationController implements Initializable {
         }
     }
 
+    public void addMessage(MessageInfo msg, ChannelInfo channel) {
+        ArrayList<MessageInfo> messages = channel.getMessages();
+        messages.add(msg);
+        msgs.add(msg.getContent());
+        updateMessageListView(messages);
+    }
+
 
     public void onClickSend(ActionEvent actionEvent) {
-        msgTextField.getText();
-
+        Thread thread = new Thread(() -> {
+            msgTextField.getText();
+            if(!msgTextField.getText().isBlank()) {
+                ClientMain instance = ClientMain.getInstance();
+                ChannelInfo currentChannel = instance.getCurrentChannel();
+                MessageInfo msg = new MessageInfo(MessageInfo.Recipient.CHANNEL, currentChannel.getId(), MessageInfo.TYPE_TEXT, msgTextField.getText());
+                try {
+                    Command command = (Command) instance.sendCommandToServer(Constants.ADD_MESSAGE, msg);
+                    if (command.getProtocol().equals(Constants.SUCCESS)) {
+                        //addMessage(msg, currentChannel);
+                        Platform.runLater(() -> addMessage(msg, currentChannel));
+                    }
+                    msgTextField.clear();
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
 
     }
 }

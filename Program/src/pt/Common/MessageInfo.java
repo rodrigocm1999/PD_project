@@ -35,7 +35,14 @@ public class MessageInfo implements Serializable {
 		this.type = type;
 		this.content = content;
 	}
-	
+
+	public MessageInfo(Recipient recipientType, int recipientId, String type, String content) {
+		this.recipientType = recipientType;
+		this.recipientId = recipientId;
+		this.type = type;
+		this.content = content;
+	}
+
 	@Override
 	public String toString() {
 		return "MessageInfo{" +

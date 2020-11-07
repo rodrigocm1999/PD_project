@@ -21,6 +21,8 @@ public class ClientMain {
     private ArrayList<ChannelInfo> channels;
     private UserInfo userInfo;
     private File userPhoto;
+    private ChannelInfo currentChannel;
+    private UserInfo currentUser;
 
     public static ClientMain getInstance() {
         return instance;
@@ -127,5 +129,21 @@ public class ClientMain {
 
     public void setUserPhoto(File userPhoto) {
         this.userPhoto = userPhoto;
+    }
+
+    public ChannelInfo getCurrentChannel() {
+        return currentChannel;
+    }
+
+    public void setCurrentChannel(ChannelInfo currentChannel) {
+        this.currentChannel = currentChannel;
+    }
+
+    public UserInfo getCurrentUser() {
+        return currentUser;
+    }
+
+    public void setCurrentUser(UserInfo currentUser) {
+        this.currentUser = currentUser;
     }
 }
