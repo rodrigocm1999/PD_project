@@ -8,13 +8,9 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -35,7 +31,7 @@ public class Utils {
 	}
 	
 	public static boolean checkNameUser(String name) {
-		return name.length() > 3 && name.length() < 50;
+		return name.length() >= 3 && name.length() <= 50;
 	}
 	
 	public static boolean checkUsername(String username) {
@@ -75,7 +71,6 @@ public class Utils {
 	}
 	
 	
-	
 	public static void printList(ArrayList list) {
 		printList(list, "");
 	}
@@ -106,5 +101,19 @@ public class Utils {
 			if (connection != null) connection.disconnect();
 		}
 		return null;
+	}
+	
+	public static void createDirectories(File file) {
+		createDirectories(file, true);
+	}
+	
+	private static void createDirectories(File file, boolean bottom) {
+		System.out.println("file : " + file.getAbsolutePath());
+		if (file.exists()) return;
+		File parent = file.getParentFile();
+		if (parent != null)
+			createDirectories(parent, false);
+		if (!bottom)
+			file.mkdir();
 	}
 }

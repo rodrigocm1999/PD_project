@@ -6,8 +6,8 @@ public class ServerConstants {
 	public static final String MULTICAST_GROUP = "239.234.102.123";
 	
 	public static final String HEARTBEAT = "HEARTBEAT";
-	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 10;
-	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 12;
+	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 8;
+	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 10;
 	
 	public static final String CAME_ONLINE = "CAME_ONLINE";
 	public static final String CAME_OFFLINE = "CAME_OFFLINE";
@@ -29,5 +29,8 @@ public class ServerConstants {
 	
 	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 25;
 	
+	public static final String FILES_PATH = "files";
 	public static final String USER_IMAGES_DIRECTORY = "user_images";
+	public static final String TRANSFERRED_FILES = "transferred_files";
+	//TODO maybe separate channel from user files
 }

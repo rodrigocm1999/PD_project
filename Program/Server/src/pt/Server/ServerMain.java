@@ -153,7 +153,9 @@ public class ServerMain {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		
+		/*System.out.println(File.separatorChar);
+		Object obj = null;
+		obj.toString();*/
 		if (args.length < 3) {
 			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port, OPTIONAL database_name");
 			System.exit(-1);

@@ -79,7 +79,7 @@ public class ServerSyncer extends Thread {
 							status.setHeartbeat(true);
 							//System.out.println("set heartbeat true : " + status);
 						} else {
-							System.out.println("Not yet registered. Not supposed to happen\t Registering now"); // should never happen
+							System.err.println("Not yet registered. Not supposed to happen\t Registering now"); // should never happen
 							serverConnected(new ServerStatus(Integer.MAX_VALUE, otherServerAddress));
 							printAvailableServers();
 						}
@@ -91,7 +91,7 @@ public class ServerSyncer extends Thread {
 						if (status != null) {
 							status.setConnectedUsers(connected);
 						}else{
-							System.out.println("Status == null\t Should never happen");
+							System.err.println("Status == null\t Should never happen");
 						}
 					}
 				}

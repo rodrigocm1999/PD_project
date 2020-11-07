@@ -16,7 +16,7 @@ public class ServerUserThread extends Thread {
 	
 	private boolean isLoggedIn = false;
 	private UserInfo userInfo;
-	private int channelId;
+	private int currentChannelId;
 	
 	private boolean keepReceiving = true;
 	private ArrayList<ServerAddress> orderedServerAddresses;
@@ -75,7 +75,7 @@ public class ServerUserThread extends Thread {
 			case Constants.REGISTER -> {
 				handleRegister((UserInfo) protocol.getExtras());
 			}
-			
+			// TODO login from multiple clients CANNOT HAPPEN
 			case Constants.LOGIN -> {
 				UserInfo userInfo = (UserInfo) protocol.getExtras();
 				login(userInfo.getUsername(), userInfo.getPassword());
@@ -119,7 +119,12 @@ public class ServerUserThread extends Thread {
 						case Constants.ADD_MESSAGE -> {
 							MessageInfo message = (MessageInfo) protocol.getExtras();
 							protocolAddMessage(message);
-							//TODO test add message
+						}
+						
+						case Constants.ADD_FILE -> {
+							MessageInfo message = (MessageInfo) protocol.getExtras();
+							protocolAddFile(message);
+							//TODO test add file
 						}
 						
 						case Constants.CHANNEL_REGISTER -> {
@@ -134,6 +139,57 @@ public class ServerUserThread extends Thread {
 					}
 				}
 			}
+		}
+	}
+	
+	public void protocolAddFile(MessageInfo message) throws IOException, SQLException {
+		if (message.getContent().isBlank()) {
+			sendCommand(Constants.ERROR, "Empty Content");
+			return;
+		}
+		String filePath = ServerConstants.FILES_PATH + File.separator +
+				ServerConstants.TRANSFERRED_FILES + File.separator +
+				message.getContent();
+		
+		File fileFile = new File(filePath);
+		Utils.createDirectories(fileFile);
+		
+		if (fileFile.exists()) {
+			throw new IOException("File already exits");
+			// TODO fix repeated name
+		}
+		
+		Socket fileSocket = new Socket();
+		System.out.println("Went through");
+		sendCommand(Constants.SUCCESS, fileSocket.getPort());
+		
+		FileOutputStream fileStream = new FileOutputStream(fileFile);
+		
+		InputStream inputStream = fileSocket.getInputStream();
+		System.out.println("After get input stream");
+		byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
+		while (true) {
+			System.out.println("Waiting for bytes");
+			int readAmount = inputStream.read(buffer);
+			if (readAmount == 0) { /* Finished transferring file */
+				fileStream.close();
+				break;
+			}
+			
+			fileStream.write(buffer, 0, readAmount);
+		}
+		System.out.println("Finished file transfer");
+		
+		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
+			if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
+				sendCommand(Constants.SUCCESS);
+			else
+				sendCommand(Constants.ERROR, "Should not happen");
+		} else  {
+			if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
+				sendCommand(Constants.SUCCESS);
+			else
+				sendCommand(Constants.ERROR, "Should not happen");
 		}
 	}
 	
@@ -171,7 +227,7 @@ public class ServerUserThread extends Thread {
 				sendCommand(Constants.SUCCESS);
 			else
 				sendCommand(Constants.ERROR, "Should not happen");
-		} else if (message.getRecipientType().equals(MessageInfo.Recipient.USER)) {
+		} else {
 			if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
 				sendCommand(Constants.SUCCESS);
 			else
@@ -207,7 +263,7 @@ public class ServerUserThread extends Thread {
 		Utils.printList(channelMessages, "channelMessages");
 		sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
 		
-		channelId = ids.getChannelId();
+		currentChannelId = ids.getChannelId();
 	}
 	
 	public void protocolChannelGetALl() throws SQLException, IOException {
@@ -235,47 +291,38 @@ public class ServerUserThread extends Thread {
 				sendCommand(Constants.REGISTER_ERROR, "Password doesn't follow rules (needs 8 to 25 characters, a special character, a number and a upper and lower case letter)");
 				
 			} else if (!Utils.checkNameUser(userInfo.getName())) {
-				sendCommand(Constants.REGISTER_ERROR, "Name is invalid (might be too long, 50 characters is the limit)");
+				sendCommand(Constants.REGISTER_ERROR, "Name is invalid (needs to be between 3 and 50 characters long)");
 				
 			} else if (!ServerUserManager.checkUsernameAvailability(userInfo.getUsername())) {
 				sendCommand(Constants.REGISTER_ERROR, "Username already in use");
 				
 			} else {
 				String imagePath = "";
+				File imageFile = null;
 				if (userInfo.getImageBytes() != null) {
-					boolean saveImage = true;
-					File imagesFolder = new File(ServerMain.getInstance().getDatabaseName() + ServerConstants.USER_IMAGES_DIRECTORY);
-					File imageFile = null;
-					if (!imagesFolder.exists()) {
-						if (!imagesFolder.mkdir()) {
-							System.out.println("Error creating image files on path : " + imagesFolder.getAbsolutePath());
-							saveImage = false;
-						}
-					}
-					if (saveImage) {
-						imagePath = imagesFolder + "/" + userInfo.getName() + ".jpg";
-						imageFile = new File(imagePath);
-						if (imageFile.exists()) {
-							System.out.println("Image already exists with path : " + imageFile.getAbsolutePath());
-							saveImage = false;
-						}
-					}
-					if (saveImage) {
-						try (FileOutputStream fileOutputStream = new FileOutputStream(imageFile)) {
-							fileOutputStream.write(userInfo.getImageBytes());
-						}
+					String folderPath = ServerConstants.FILES_PATH + File.separator +
+							ServerMain.getInstance().getDatabaseName() + "_" + ServerConstants.USER_IMAGES_DIRECTORY;
+					imagePath = folderPath + File.separator + userInfo.getUsername() + ".jpg";
+					imageFile = new File(imagePath);
+					Utils.createDirectories(imageFile);
+					
+					try (FileOutputStream fileOutputStream = new FileOutputStream(imageFile)) {
+						fileOutputStream.write(userInfo.getImageBytes());
 					}
 				}
 				if (ServerUserManager.insertUser(userInfo, imagePath)) {
 					System.out.println("Added new user");
 					sendCommand(Constants.REGISTER_SUCCESS);
 				} else {
+					if (imageFile != null)
+						imageFile.delete();
 					System.out.println("No new user added\t Not supposed to happen");
 					sendCommand(Constants.REGISTER_ERROR, "No new user added");
 				}
 			}
-		} catch (Exception e) {
+		} catch (NoSuchAlgorithmException | SQLException e) {
 			System.out.println("Error on User Registration : " + e.getMessage());
+			e.printStackTrace();
 			sendCommand(Constants.REGISTER_ERROR);
 		}
 	}
