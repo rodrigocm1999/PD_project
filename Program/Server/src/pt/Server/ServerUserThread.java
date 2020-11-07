@@ -16,6 +16,7 @@ public class ServerUserThread extends Thread {
 	
 	private boolean isLoggedIn = false;
 	private UserInfo userInfo;
+	private int channelId;
 	
 	private boolean keepReceiving = true;
 	private ArrayList<ServerAddress> orderedServerAddresses;
@@ -138,12 +139,12 @@ public class ServerUserThread extends Thread {
 	
 	public void protocolChannelEdit(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
 		if (!Utils.checkPasswordFollowsRules(info.getPassword())) {
-			sendCommand(Constants.FAILURE, "Invalid Password");
+			sendCommand(Constants.ERROR, "Invalid Password");
 			return;
 		}
 		boolean success = ServerChannelManager.updateChannel(info.getId(), info.getName(), info.getPassword(), info.getDescription());
 		if (success) sendCommand(Constants.SUCCESS);
-		else sendCommand(Constants.FAILURE, "Error Updating, channel name might already be in use");
+		else sendCommand(Constants.ERROR, "Error Updating, channel name might already be in use");
 	}
 	
 	public void protocolChannelRegister(ChannelInfo channelInfo) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -160,6 +161,11 @@ public class ServerUserThread extends Thread {
 	}
 	
 	public void protocolAddMessage(MessageInfo message) throws IOException, SQLException {
+		if (message.getContent().isBlank()) {
+			sendCommand(Constants.ERROR);
+			return;
+		}
+		
 		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
 			if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
 				sendCommand(Constants.SUCCESS);
@@ -177,15 +183,15 @@ public class ServerUserThread extends Thread {
 		if (ServerChannelManager.isUserChannelOwner(userInfo.getUserId(), channelId)) {
 			boolean success = ServerChannelManager.deleteChannel(channelId);
 			if (success) sendCommand(Constants.SUCCESS);
-			else sendCommand(Constants.FAILURE, "Error Removing channel"); // Shouldn't happen
-		} else sendCommand(Constants.FAILURE, "User doesn't have permissions"); // Shouldn't happen
+			else sendCommand(Constants.ERROR, "Error Removing channel"); // Shouldn't happen
+		} else sendCommand(Constants.ERROR, "User doesn't have permissions"); // Shouldn't happen
 	}
 	
 	public void protocolChannelAdd(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
 		boolean success = ServerChannelManager.createChannel(
 				userInfo.getUserId(), info.getName(), info.getPassword(), info.getDescription());
 		if (success) sendCommand(Constants.SUCCESS);
-		else sendCommand(Constants.FAILURE);
+		else sendCommand(Constants.ERROR);
 	}
 	
 	public void protocolChannelGetMessages(Ids ids) throws IOException, SQLException {
@@ -200,6 +206,8 @@ public class ServerUserThread extends Thread {
 			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		Utils.printList(channelMessages, "channelMessages");
 		sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
+		
+		channelId = ids.getChannelId();
 	}
 	
 	public void protocolChannelGetALl() throws SQLException, IOException {
@@ -222,7 +230,7 @@ public class ServerUserThread extends Thread {
 			System.out.println(userInfo);
 			if (!Utils.checkUsername(userInfo.getUsername())) {
 				sendCommand(Constants.REGISTER_ERROR, "Username doesn't follow rules (Between 3 and 25 characters and have no special characters and )");
-
+				
 			} else if (!Utils.checkPasswordFollowsRules(userInfo.getPassword())) {
 				sendCommand(Constants.REGISTER_ERROR, "Password doesn't follow rules (needs 8 to 25 characters, a special character, a number and a upper and lower case letter)");
 				
@@ -247,7 +255,7 @@ public class ServerUserThread extends Thread {
 					if (saveImage) {
 						imagePath = imagesFolder + "/" + userInfo.getName() + ".jpg";
 						imageFile = new File(imagePath);
-						if(imageFile.exists()){
+						if (imageFile.exists()) {
 							System.out.println("Image already exists with path : " + imageFile.getAbsolutePath());
 							saveImage = false;
 						}
