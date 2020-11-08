@@ -71,9 +71,16 @@ delete from user where username = 'dorin';
 
 select * from channel;
 select * from user;
+select * from message;
 insert into channel(creator_ir,name,description,password_hash) values();
  select count(id) from channel where id = 1 and creator_id = 4;
  
+select * from user where photo_path like 'Asdfgtrwe123Asdfgtrwe123%';
+ 
+select content from message where type = 'text' and content like 'filename%';
+
+
+
 select id,(
 	select sender_id from channel_message where message_id = message.id
 )as sender_id,moment_sent,type,content

@@ -93,14 +93,15 @@ public class ServerChannelManager {
 		return messages;
 	}
 	
-	public static boolean insertMessage(int senderId, int channelId, String content) throws SQLException {
-		String insertMessage = "insert into message(id,sender_id,content) values(?,?,?)";
+	public static boolean insertMessage(int senderId, int channelId, String type, String content) throws SQLException {
+		String insertMessage = "insert into message(id,sender_id,type,content) values(?,?,?,?)";
 		String insertChannelMessage = "insert into channel_message(message_id,channel_id) values(?,?)";
 		int newMessageId = getLastMessageId() + 1;
 		PreparedStatement statement = getApp().getPreparedStatement(insertMessage);
 		statement.setInt(1, newMessageId);
 		statement.setInt(2, senderId);
-		statement.setString(3, content);
+		statement.setString(3, type);
+		statement.setString(4, content);
 		boolean added = statement.executeUpdate() == 1;
 		if (!added) return false;
 		

@@ -108,7 +108,6 @@ public class Utils {
 	}
 	
 	private static void createDirectories(File file, boolean bottom) {
-		System.out.println("file : " + file.getAbsolutePath());
 		if (file.exists()) return;
 		File parent = file.getParentFile();
 		if (parent != null)

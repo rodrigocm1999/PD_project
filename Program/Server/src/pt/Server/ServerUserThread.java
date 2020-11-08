@@ -3,12 +3,12 @@ package pt.Server;
 import pt.Common.*;
 
 import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.regex.Pattern;
 
 public class ServerUserThread extends Thread {
 	
@@ -58,7 +58,7 @@ public class ServerUserThread extends Thread {
 				} catch (IOException e) {
 					throw new IOException("Connection lost");
 				}
-				System.out.println(command);
+				System.out.println("Received : " + command);
 				handleRequest(command);
 			}
 		} catch (IOException e) { // Lost connection
@@ -149,48 +149,61 @@ public class ServerUserThread extends Thread {
 			sendCommand(Constants.ERROR, "Empty Content");
 			return;
 		}
-		
-		String fileNameWithTime = addTimestampFile(message.getContent());
+		String fileNameWithTime = addTimestampFileName(message.getContent()); // TODO might receive two files at the exact same time
 		
 		String filePath = ServerConstants.FILES_PATH + File.separator +
 				ServerConstants.TRANSFERRED_FILES + File.separator +
 				fileNameWithTime;
 		
-		File fileFile = new File(filePath);
-		Utils.createDirectories(fileFile);
+		File file = new File(filePath);
+		Utils.createDirectories(file);
 		
-		Socket fileSocket = new Socket();
-		System.out.println("Went through");
-		sendCommand(Constants.SUCCESS, fileSocket.getPort());
+		ServerSocket fileServerSocket = new ServerSocket(0);
+		sendCommand(Constants.SUCCESS, fileServerSocket.getLocalPort());
+		Socket fileSocket = fileServerSocket.accept();
+		fileServerSocket.close();
 		
-		FileOutputStream fileStream = new FileOutputStream(fileFile);
-		
-		InputStream inputStream = fileSocket.getInputStream();
-		System.out.println("After get input stream");
-		byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
-		while (true) {
-			System.out.println("Waiting for bytes");
-			int readAmount = inputStream.read(buffer);
-			if (readAmount == 0) { /* Finished transferring file */
-				fileStream.close();
-				break;
+		Thread receivingFile = new Thread(() -> {
+			try {
+				InputStream socketInputStream = fileSocket.getInputStream();
+				FileOutputStream fileOutputStream = new FileOutputStream(file);
+				byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
+				try {
+					while (true) {
+						int readAmount = socketInputStream.read(buffer);
+						if (readAmount == -1) { /* Reached the end of file */
+							fileOutputStream.close();
+							fileSocket.close();
+							break;
+						}
+						fileOutputStream.write(buffer, 0, readAmount);
+					}
+				} catch (IOException e) {
+					fileOutputStream.close();
+					fileSocket.close();
+					file.delete();
+				}
+				
+				message.setContent(fileNameWithTime);
+				protocolAddMessage(message);
+			} catch (IOException | SQLException e) {
+				e.printStackTrace();
 			}
-			fileStream.write(buffer, 0, readAmount);
-		}
-		System.out.println("Finished file transfer");
-		
-		message.setContent(fileFile.getPath());
-		System.out.println(fileFile.getPath());
-		protocolAddMessage(message);
+		});
+		receivingFile.start();
 	}
 	
-	private String addTimestampFile(String fileName) {
-		long utcTime = new Date().getTime();
+	private String addTimestampFileName(String fileName) {
+		String utcTimeString = "" + new Date().getTime();
+		int timeLength = utcTimeString.length() - 8;
+		
+		utcTimeString = utcTimeString.substring(Math.max(timeLength, 0));
+		
 		int dotIndex = fileName.lastIndexOf(".");
 		if (dotIndex == -1)
-			return fileName + "_" + utcTime;
+			return fileName + "_" + utcTimeString;
 		else
-			return fileName.substring(0, dotIndex) + "_" + utcTime + fileName.substring(dotIndex);
+			return fileName.substring(0, dotIndex) + "_" + utcTimeString + fileName.substring(dotIndex);
 	}
 	
 	public void protocolChannelEdit(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -223,12 +236,12 @@ public class ServerUserThread extends Thread {
 		}
 		
 		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
-			if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
+			if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getType(), message.getContent()))
 				sendCommand(Constants.SUCCESS);
 			else
 				sendCommand(Constants.ERROR, "Should not happen");
 		} else {
-			if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
+			if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getType(), message.getContent()))
 				sendCommand(Constants.SUCCESS);
 			else
 				sendCommand(Constants.ERROR, "Should not happen");
@@ -260,7 +273,7 @@ public class ServerUserThread extends Thread {
 			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		else
 			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
-		Utils.printList(channelMessages, "channelMessages");
+		//Utils.printList(channelMessages, "channelMessages");
 		sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
 		
 		currentChannelId = ids.getChannelId();

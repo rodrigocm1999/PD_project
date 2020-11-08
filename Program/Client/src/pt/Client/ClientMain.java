@@ -1,11 +1,9 @@
 package pt.Client;
 
+import javafx.application.Platform;
 import pt.Common.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 
@@ -83,9 +81,10 @@ public class ClientMain {
 	}
 	
 	public Object sendCommandToServer(String protocol, Object object) throws IOException, ClassNotFoundException {
-		oOS.writeObject(new Command(protocol, object));
+		Command command = new Command(protocol, object);
+		oOS.writeObject(command);
 		Object ob = oIS.readObject();
-		System.out.println(ob);
+		System.out.println("Sent : " + command + "\nReceived : " + ob);
 		return ob;
 	}
 	
@@ -147,5 +146,49 @@ public class ClientMain {
 	
 	public void setCurrentUser(UserInfo currentUser) {
 		this.currentUser = currentUser;
+	}
+	
+	public void sendFile(File file) throws IOException, ClassNotFoundException {
+		ChannelInfo channel = getCurrentChannel();
+		UserInfo userInfo = getCurrentUser();
+		
+		MessageInfo message;
+		if (channel != null) {
+			message = new MessageInfo(MessageInfo.Recipient.CHANNEL, channel.getId(), MessageInfo.TYPE_FILE, file.getName());
+		} else {
+			message = new MessageInfo(MessageInfo.Recipient.USER, userInfo.getUserId(), MessageInfo.TYPE_FILE, file.getName());
+		}
+		
+		Command command = (Command) sendCommandToServer(Constants.ADD_FILE, message);
+		if (!command.getProtocol().equals(Constants.SUCCESS)) {
+			System.out.println("Error File not  Success before send");
+			return;
+		}
+		
+		Thread thread = new Thread(() -> {
+			try {
+				int fileTransferPort = (int) command.getExtras();
+				System.out.println("Server IP : " + serverIPAddress + ":" + fileTransferPort);
+				Socket socket = new Socket(serverIPAddress, fileTransferPort);
+				
+				OutputStream outputStream = socket.getOutputStream();
+				try (FileInputStream fileInputStream = new FileInputStream(file.getAbsolutePath())) {
+					
+					byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
+					while (true) {
+						int readAmount = fileInputStream.read(buffer);
+						if (readAmount == -1) { /* Reached the end of file */
+							outputStream.close();
+							socket.close();
+							break;
+						}
+						outputStream.write(buffer, 0, readAmount);
+					}
+				}
+				Platform.runLater(() -> ApplicationController.get().addMessage(message, channel));
+			} catch (IOException e) {
+			}
+		});
+		thread.start();
 	}
 }

@@ -41,20 +41,18 @@ public class RegistrationController {
         String name = idName.getText();
         String photoPath = idPhotoPath.getText();
 
-
         if (!password.equals(repeatPwd)) {
             errorLabel.setText("PASSWORD MUST BE THE SAME");
             return;
         }
 
-
         ClientMain instance = ClientMain.getInstance();
-        Command command;
         File file = instance.getUserPhoto();
         BufferedImage buffImg = ImageIO.read(file);
         BufferedImage compressedImage = Utils.getCompressedImage(buffImg, Constants.USER_IMAGE_SIZE, Constants.USER_IMAGE_SIZE);
         byte[] imageBytes = Utils.getImageBytes(compressedImage);
         UserInfo user = new UserInfo(name, username, password,imageBytes);
+        Command command;
         try {
             command = (Command) instance.sendCommandToServer(Constants.REGISTER, user);
         } catch (IOException | ClassNotFoundException e) {
@@ -88,6 +86,5 @@ public class RegistrationController {
         File file = fileChooser.showOpenDialog(ClientWindow.getInstance().getStage());
         ClientMain.getInstance().setUserPhoto(file);
         idPhotoPath.setText(file.getAbsolutePath());
-
     }
 }

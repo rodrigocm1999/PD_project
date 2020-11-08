@@ -26,7 +26,7 @@ public class Constants {
 	public static final String NO_PERMISSIONS = "NO_PERMISSIONS";
 	
 	public static final String ADD_FILE = "ADD_FILE";
-	public static final int CLIENT_FILE_CHUNK_SIZE = 64 * 1024;
+	public static final int CLIENT_FILE_CHUNK_SIZE = 128 * 1024;
 	
 	public static final String SUCCESS = "SUCCESS";
 	public static final String FAILURE = "FAILURE";

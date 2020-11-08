@@ -16,7 +16,7 @@ public class ServerUserManager {
 		return ServerMain.getInstance();
 	}
 	
-	public static boolean insertUser(UserInfo user,String imagePath) throws SQLException, NoSuchAlgorithmException {
+	public static boolean insertUser(UserInfo user, String imagePath) throws SQLException, NoSuchAlgorithmException {
 		// insert the new user into the database ------------------------------------------
 		String insert = "insert into user(name,username,password_hash,photo_path) values(?,?,?,?)";
 		PreparedStatement preparedStatement = ServerMain.getInstance().getPreparedStatement(insert);
@@ -73,14 +73,15 @@ public class ServerUserManager {
 		return result.getString(1);
 	}
 	
-	public static boolean insertMessage(int senderId, int receiverId, String content) throws SQLException {
-		String insertMessage = "insert into message(id,sender_id,content) values(?,?,?)";
+	public static boolean insertMessage(int senderId, int receiverId, String type, String content) throws SQLException {
+		String insertMessage = "insert into message(id,sender_id,type,content) values(?,?,?,?)";
 		String insertUserMessage = "insert into user_message(message_id,receiver_id) values(?,?)";
 		int newMessageId = ServerChannelManager.getLastMessageId() + 1;
 		PreparedStatement statement = getApp().getPreparedStatement(insertMessage);
 		statement.setInt(1, newMessageId);
 		statement.setInt(2, senderId);
-		statement.setString(3, content);
+		statement.setString(3, type);
+		statement.setString(4, content);
 		boolean added = statement.executeUpdate() == 1;
 		if (!added) return false;
 		

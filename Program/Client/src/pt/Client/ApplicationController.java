@@ -1,5 +1,6 @@
 package pt.Client;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -9,9 +10,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
+import javafx.stage.FileChooser;
 import pt.Common.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,14 +32,19 @@ public class ApplicationController implements Initializable {
 	public Button btnSend;
 	public TextField msgTextField;
 	
-	private ObservableList<String> channelsObsList = FXCollections.observableArrayList();
-	private ObservableList<String> usersObsList = FXCollections.observableArrayList();
-	private ObservableList<String> msgsObsList = FXCollections.observableArrayList();
+	private final ObservableList<String> channelsObsList = FXCollections.observableArrayList();
+	private final ObservableList<String> usersObsList = FXCollections.observableArrayList();
+	private final ObservableList<String> msgsObsList = FXCollections.observableArrayList();
 	
+	private static ApplicationController instance;
+	
+	public static ApplicationController get() {
+		return instance;
+	}
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		
+		instance = this;
 		ClientWindow window = ClientWindow.getInstance();
 		window.getStage().setMaximized(true);
 		
@@ -45,6 +52,7 @@ public class ApplicationController implements Initializable {
 		updateChannelsListView(client);
 		channelsListView.setItems(channelsObsList);
 		msgListView.setItems(msgsObsList);
+		usersListView.setItems(usersObsList);
 	}
 	
 	public void updateChannelsListView(ClientMain client) {
@@ -103,7 +111,6 @@ public class ApplicationController implements Initializable {
 		}
 	}
 	
-	
 	private String openPasswordDialog(String channelName) {
 		TextInputDialog dialog = new TextInputDialog();
 		dialog.setTitle(channelName);
@@ -146,7 +153,6 @@ public class ApplicationController implements Initializable {
 		updateMessageListView(messages);
 	}
 	
-	
 	public void onClickSend(ActionEvent actionEvent) {
 		String messageText = msgTextField.getText();
 		msgTextField.clear();
@@ -168,5 +174,11 @@ public class ApplicationController implements Initializable {
 			});
 			thread.start();
 		}
+	}
+	
+	public void onSendFile(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
+		FileChooser fileChooser = new FileChooser();
+		File file = fileChooser.showOpenDialog(ClientWindow.getInstance().getStage());
+		ClientMain.getInstance().sendFile(file);
 	}
 }
