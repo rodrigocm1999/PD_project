@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.regex.Pattern;
 
 public class ServerUserThread extends Thread {
 	
@@ -147,17 +149,15 @@ public class ServerUserThread extends Thread {
 			sendCommand(Constants.ERROR, "Empty Content");
 			return;
 		}
+		
+		String fileNameWithTime = addTimestampFile(message.getContent());
+		
 		String filePath = ServerConstants.FILES_PATH + File.separator +
 				ServerConstants.TRANSFERRED_FILES + File.separator +
-				message.getContent();
+				fileNameWithTime;
 		
 		File fileFile = new File(filePath);
 		Utils.createDirectories(fileFile);
-		
-		if (fileFile.exists()) {
-			throw new IOException("File already exits");
-			// TODO fix repeated name
-		}
 		
 		Socket fileSocket = new Socket();
 		System.out.println("Went through");
@@ -175,22 +175,22 @@ public class ServerUserThread extends Thread {
 				fileStream.close();
 				break;
 			}
-			
 			fileStream.write(buffer, 0, readAmount);
 		}
 		System.out.println("Finished file transfer");
 		
-		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
-			if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
-				sendCommand(Constants.SUCCESS);
-			else
-				sendCommand(Constants.ERROR, "Should not happen");
-		} else  {
-			if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getContent()))
-				sendCommand(Constants.SUCCESS);
-			else
-				sendCommand(Constants.ERROR, "Should not happen");
-		}
+		message.setContent(fileFile.getPath());
+		System.out.println(fileFile.getPath());
+		protocolAddMessage(message);
+	}
+	
+	private String addTimestampFile(String fileName) {
+		long utcTime = new Date().getTime();
+		int dotIndex = fileName.lastIndexOf(".");
+		if (dotIndex == -1)
+			return fileName + "_" + utcTime;
+		else
+			return fileName.substring(0, dotIndex) + "_" + utcTime + fileName.substring(dotIndex);
 	}
 	
 	public void protocolChannelEdit(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -297,12 +297,13 @@ public class ServerUserThread extends Thread {
 				sendCommand(Constants.REGISTER_ERROR, "Username already in use");
 				
 			} else {
-				String imagePath = "";
+				String imageName = "";
 				File imageFile = null;
 				if (userInfo.getImageBytes() != null) {
 					String folderPath = ServerConstants.FILES_PATH + File.separator +
 							ServerMain.getInstance().getDatabaseName() + "_" + ServerConstants.USER_IMAGES_DIRECTORY;
-					imagePath = folderPath + File.separator + userInfo.getUsername() + ".jpg";
+					imageName = userInfo.getUsername() + ".jpg";
+					String imagePath = folderPath + File.separator + imageName;
 					imageFile = new File(imagePath);
 					Utils.createDirectories(imageFile);
 					
@@ -310,7 +311,7 @@ public class ServerUserThread extends Thread {
 						fileOutputStream.write(userInfo.getImageBytes());
 					}
 				}
-				if (ServerUserManager.insertUser(userInfo, imagePath)) {
+				if (ServerUserManager.insertUser(userInfo, imageName)) {
 					System.out.println("Added new user");
 					sendCommand(Constants.REGISTER_SUCCESS);
 				} else {

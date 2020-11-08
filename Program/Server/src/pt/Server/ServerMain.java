@@ -9,6 +9,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class ServerMain {
 	
@@ -153,9 +154,10 @@ public class ServerMain {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		/*System.out.println(File.separatorChar);
-		Object obj = null;
+		
+		/*Object obj = null;
 		obj.toString();*/
+		
 		if (args.length < 3) {
 			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port, OPTIONAL database_name");
 			System.exit(-1);
