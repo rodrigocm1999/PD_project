@@ -6,10 +6,12 @@ import java.io.Serializable;
 
 public class ServerCommand implements Serializable {
 	
+	private static long idCounter = 0;
+	
 	private String protocol;
 	private ServerAddress serverAddress;
+	private long id;
 	private Object extras;
-	
 	
 	public ServerCommand(String protocol, ServerAddress serverAddress, Object extras) {
 		this.protocol = protocol;

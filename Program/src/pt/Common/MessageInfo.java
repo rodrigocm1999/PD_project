@@ -42,13 +42,15 @@ public class MessageInfo implements Serializable {
 		this.type = type;
 		this.content = content;
 	}
-
+	
 	@Override
 	public String toString() {
 		return "MessageInfo{" +
 				"id=" + id +
+				", senderId=" + senderId +
+				", recipientType=" + recipientType +
+				", recipientId=" + recipientId +
 				", type='" + type + '\'' +
-				", momentSent=" + momentSent +
 				", content='" + content + '\'' +
 				'}';
 	}

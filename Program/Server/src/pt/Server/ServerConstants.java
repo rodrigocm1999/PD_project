@@ -1,5 +1,7 @@
 package pt.Server;
 
+import java.io.File;
+
 public class ServerConstants {
 	
 	public static final int MULTICAST_PORT = 5432;
@@ -29,8 +31,12 @@ public class ServerConstants {
 	
 	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 25;
 	
-	public static final String FILES_PATH = "files";
+	private static final String FILES_PATH = "files";
+	
+	public static String getFilesPath() {
+		return ServerMain.getInstance().getDatabaseName() + "_" + FILES_PATH;
+	}
+	
 	public static final String USER_IMAGES_DIRECTORY = "user_images";
 	public static final String TRANSFERRED_FILES = "transferred_files";
-	//TODO maybe separate channel from user files
 }

@@ -84,7 +84,13 @@ public class ClientMain {
 		Command command = new Command(protocol, object);
 		oOS.writeObject(command);
 		Object ob = oIS.readObject();
-		System.out.println("Sent : " + command + "\nReceived : " + ob);
+		System.out.println("Sent : " + command + "\n\tReceived : " + ob);
+		return ob;
+	}
+	
+	public Object receiveCommand() throws IOException, ClassNotFoundException {
+		Object ob = oIS.readObject();
+		System.out.println("Received : " + ob);
 		return ob;
 	}
 	
@@ -160,15 +166,14 @@ public class ClientMain {
 		}
 		
 		Command command = (Command) sendCommandToServer(Constants.ADD_FILE, message);
-		if (!command.getProtocol().equals(Constants.SUCCESS)) {
-			System.out.println("Error File not  Success before send");
+		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
+			System.err.println("Error File not  Success before send");
 			return;
 		}
 		
 		Thread thread = new Thread(() -> {
 			try {
 				int fileTransferPort = (int) command.getExtras();
-				System.out.println("Server IP : " + serverIPAddress + ":" + fileTransferPort);
 				Socket socket = new Socket(serverIPAddress, fileTransferPort);
 				
 				OutputStream outputStream = socket.getOutputStream();
@@ -185,8 +190,11 @@ public class ClientMain {
 						outputStream.write(buffer, 0, readAmount);
 					}
 				}
+				Command newNameCommand = (Command) receiveCommand();
+				String newFileName = (String) newNameCommand.getExtras();
+				message.setContent(newFileName);
 				Platform.runLater(() -> ApplicationController.get().addMessage(message, channel));
-			} catch (IOException e) {
+			} catch (IOException | ClassNotFoundException e) {
 			}
 		});
 		thread.start();

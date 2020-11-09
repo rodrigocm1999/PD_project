@@ -41,7 +41,6 @@ public class ServerSyncer extends Thread {
 		try {
 			startHeartbeatChecker();
 			startHeartbeatSender();
-			//TODO fix outside IP instead of local
 			//TODO make everything reliable
 			
 			receiveUpdates();
@@ -209,7 +208,7 @@ public class ServerSyncer extends Thread {
 			if (!alreadyAddedSelf) {
 				list.add(ownPublicAddress);
 			}
-			return list;//TODO fix duplicated servers bug, not in this function though
+			return list;
 		}
 	}
 	

@@ -15,7 +15,9 @@ public class ServerMain {
 	
 	private final int listeningUDPPort;
 	private final int listeningTCPPort;
+	private final int listeningFilePort;
 	private ServerSocket serverSocket;
+	private ServerSocket serverFileSocket;
 	
 	private final String databaseAddress;
 	private final String databaseName;
@@ -31,7 +33,7 @@ public class ServerMain {
 		return instance;
 	}
 	
-	public ServerMain(String databaseAddress, String databaseName, int listeningUDPPort, int listeningTCPPort) throws Exception {
+	public ServerMain(String databaseAddress, String databaseName, int listeningUDPPort, int listeningTCPPort, int listeningFilePort) throws Exception {
 		if (instance != null) {
 			throw new Exception("Server Already Running");
 		}
@@ -41,11 +43,13 @@ public class ServerMain {
 		connectedMachines = new ArrayList<>();
 		this.listeningUDPPort = listeningUDPPort;
 		this.listeningTCPPort = listeningTCPPort;
+		this.listeningFilePort = listeningFilePort;
 	}
 	
 	public void start() throws Exception {
 		DatagramSocket udpSocket = new DatagramSocket(listeningUDPPort);
 		serverSocket = new ServerSocket(listeningTCPPort);
+		serverFileSocket = new ServerSocket(listeningFilePort);
 		
 		connectDatabase();
 		serversManager = createServerSyncer();
@@ -81,6 +85,11 @@ public class ServerMain {
 				}
 			}
 		}
+	}
+	
+	public synchronized Socket acceptFileConnection(ServerUserThread user) throws IOException {
+		user.sendCommand(Constants.FILE_ACCEPT_CONNECTION, listeningFilePort);
+		return serverFileSocket.accept();
 	}
 	
 	private ServerSyncer createServerSyncer() throws IOException {
@@ -158,26 +167,29 @@ public class ServerMain {
 		/*Object obj = null;
 		obj.toString();*/
 		
-		if (args.length < 3) {
-			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port, OPTIONAL database_name");
+		if (args.length < 4) {
+			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port, fileTransfer tcp port, OPTIONAL database_name");
 			System.exit(-1);
 		}
 		String databaseAddress = args[0];
-		int listeningUDPPort = 0, listeningTCPPort = 0;
+		int listeningUDPPort = 0;
+		int listeningTCPPort = 0;
+		int listeningFilePort = 0;
 		try {
 			listeningUDPPort = Integer.parseInt(args[1]);
 			listeningTCPPort = Integer.parseInt(args[2]);
+			listeningFilePort = Integer.parseInt(args[3]);
 		} catch (NumberFormatException e) {
 			System.out.println("Invalid Port number(s)");
 			System.exit(-1);
 		}
 		
 		String databaseName = ServerConstants.DATABASE_NAME;
-		if (args.length == 4) {
-			databaseName = args[3];
+		if (args.length == 5) {
+			databaseName = args[4];
 		}
 		
-		ServerMain serverMain = new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort);
+		ServerMain serverMain = new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort, listeningFilePort);
 		serverMain.start();
 		
 		//TODO use this --> Runtime.getRuntime().addShutdownHook();

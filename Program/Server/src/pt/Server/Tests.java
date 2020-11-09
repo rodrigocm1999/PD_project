@@ -23,7 +23,7 @@ public class Tests {
 	
 	public static void main(String[] args) throws Exception {
 		
-		ServerMain main = new ServerMain("localhost", "main", 3213, 54312);
+		ServerMain main = new ServerMain("localhost", "main", 3213, 54312,53212);
 		Socket socketUser = new Socket("localhost",3123);
 		
 		Socket socketTester = new Socket("localhost",3123);

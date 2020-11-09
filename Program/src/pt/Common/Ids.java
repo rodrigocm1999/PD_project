@@ -16,6 +16,15 @@ public class Ids implements Serializable {
 		this.messageId = messageId;
 	}
 	
+	@Override
+	public String toString() {
+		return "Ids{" +
+				"userId=" + userId +
+				", channelId=" + channelId +
+				", messageId=" + messageId +
+				'}';
+	}
+	
 	public int getUserId() {
 		return userId;
 	}
@@ -38,5 +47,15 @@ public class Ids implements Serializable {
 	
 	public void setMessageId(int messageId) {
 		this.messageId = messageId;
+	}
+	
+	public void setChannelOnly(int channelId) {
+		this.channelId = channelId;
+		this.userId = -1;
+	}
+	
+	public void setUserOnly(int userId) {
+		this.userId = userId;
+		this.channelId = -1;
 	}
 }

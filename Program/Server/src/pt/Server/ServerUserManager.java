@@ -127,4 +127,22 @@ public class ServerUserManager {
 		result.next();
 		return result.getInt(1);
 	}
+	
+	public static ArrayList<UserInfo> getUsersLike(String username, int thisUserId) throws SQLException {
+		String select = "select id,name,username from user where username like ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setString(1, "%" + username + "%");
+		ResultSet result = statement.executeQuery();
+		
+		ArrayList<UserInfo> usersLike = new ArrayList<>();
+		
+		while (result.next()) {
+			usersLike.add(new UserInfo(
+					result.getInt("id"),
+					result.getString("name"),
+					result.getString("username")
+			));
+		}
+		return usersLike;
+	}
 }

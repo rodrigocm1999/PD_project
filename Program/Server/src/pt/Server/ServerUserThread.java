@@ -3,7 +3,6 @@ package pt.Server;
 import pt.Common.*;
 
 import java.io.*;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -18,7 +17,7 @@ public class ServerUserThread extends Thread {
 	
 	private boolean isLoggedIn = false;
 	private UserInfo userInfo;
-	private int currentChannelId;
+	private Ids currentPlace;
 	
 	private boolean keepReceiving = true;
 	private ArrayList<ServerAddress> orderedServerAddresses;
@@ -34,6 +33,7 @@ public class ServerUserThread extends Thread {
 		this.orderedServerAddresses = orderedServerAddresses;
 	}
 	
+	// TODO TODO super important, fiz server address have random port. make it static so all users can access it
 	@Override
 	public void run() {
 		try {
@@ -126,7 +126,6 @@ public class ServerUserThread extends Thread {
 						case Constants.ADD_FILE -> {
 							MessageInfo message = (MessageInfo) protocol.getExtras();
 							protocolAddFile(message);
-							//TODO test add file
 						}
 						
 						case Constants.CHANNEL_REGISTER -> {
@@ -134,6 +133,16 @@ public class ServerUserThread extends Thread {
 							protocolChannelRegister(channelInfo);
 						}
 						//TODO add same shit but for user messages
+						case Constants.USER_GET_LIKE -> {
+							String username = (String) protocol.getExtras();
+							protocolUserGetLike(username);
+							//TODO test this
+						}
+						case Constants.USER_GET_MESSAGES -> {
+							Ids ids = (Ids) protocol.getExtras();
+							protocolUserGetMessages(ids);
+							// TODO Test messages before
+						}
 						
 						case Constants.LOGOUT -> {
 							logout();
@@ -144,24 +153,39 @@ public class ServerUserThread extends Thread {
 		}
 	}
 	
-	public void protocolAddFile(MessageInfo message) throws IOException, SQLException {
+	private void protocolUserGetMessages(Ids ids) throws SQLException, IOException {
+		ArrayList<MessageInfo> userMessages;
+		if (ids.getMessageId() <= 0)
+			userMessages = ServerChannelManager.getChannelMessagesBefore(ids.getUserId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+		else
+			userMessages = ServerChannelManager.getChannelMessagesBefore(ids.getUserId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+		Utils.printList(userMessages, "UserMessages");
+		sendCommand(Constants.CHANNEL_GET_MESSAGES, userMessages);
+		
+		currentPlace.setUserOnly(ids.getUserId());
+	}
+	
+	private void protocolUserGetLike(String username) throws SQLException, IOException {
+		if (username == null) username = "";
+		ArrayList<UserInfo> usersLike = ServerUserManager.getUsersLike(username, userInfo.getUserId());
+		sendCommand(Constants.SUCCESS, usersLike);
+	}
+	
+	public void protocolAddFile(MessageInfo message) throws IOException {
 		if (message.getContent().isBlank()) {
 			sendCommand(Constants.ERROR, "Empty Content");
 			return;
 		}
 		String fileNameWithTime = addTimestampFileName(message.getContent()); // TODO might receive two files at the exact same time
 		
-		String filePath = ServerConstants.FILES_PATH + File.separator +
+		String filePath = ServerConstants.getFilesPath() + File.separator +
 				ServerConstants.TRANSFERRED_FILES + File.separator +
 				fileNameWithTime;
 		
 		File file = new File(filePath);
 		Utils.createDirectories(file);
 		
-		ServerSocket fileServerSocket = new ServerSocket(0);
-		sendCommand(Constants.SUCCESS, fileServerSocket.getLocalPort());
-		Socket fileSocket = fileServerSocket.accept();
-		fileServerSocket.close();
+		Socket fileSocket = getApp().acceptFileConnection(this);
 		
 		Thread receivingFile = new Thread(() -> {
 			try {
@@ -179,13 +203,25 @@ public class ServerUserThread extends Thread {
 						fileOutputStream.write(buffer, 0, readAmount);
 					}
 				} catch (IOException e) {
-					fileOutputStream.close();
 					fileSocket.close();
+					fileOutputStream.close();
 					file.delete();
 				}
 				
 				message.setContent(fileNameWithTime);
-				protocolAddMessage(message);
+				
+				if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
+					if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getType(), message.getContent()))
+						sendCommand(Constants.SUCCESS, fileNameWithTime);
+					else
+						sendCommand(Constants.ERROR, "Should not happen");
+				} else {
+					if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getType(), message.getContent()))
+						sendCommand(Constants.SUCCESS, fileNameWithTime);
+					else
+						sendCommand(Constants.ERROR, "Should not happen");
+				}
+				
 			} catch (IOException | SQLException e) {
 				e.printStackTrace();
 			}
@@ -276,7 +312,7 @@ public class ServerUserThread extends Thread {
 		//Utils.printList(channelMessages, "channelMessages");
 		sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
 		
-		currentChannelId = ids.getChannelId();
+		currentPlace.setChannelOnly(ids.getChannelId());
 	}
 	
 	public void protocolChannelGetALl() throws SQLException, IOException {
@@ -313,7 +349,7 @@ public class ServerUserThread extends Thread {
 				String imageName = "";
 				File imageFile = null;
 				if (userInfo.getImageBytes() != null) {
-					String folderPath = ServerConstants.FILES_PATH + File.separator +
+					String folderPath = ServerConstants.getFilesPath() + File.separator +
 							ServerMain.getInstance().getDatabaseName() + "_" + ServerConstants.USER_IMAGES_DIRECTORY;
 					imageName = userInfo.getUsername() + ".jpg";
 					String imagePath = folderPath + File.separator + imageName;
