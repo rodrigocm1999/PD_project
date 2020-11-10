@@ -7,6 +7,7 @@ public class ServerConstants {
 	public static final int MULTICAST_PORT = 5432;
 	public static final String MULTICAST_GROUP = "239.234.102.123";
 	
+	
 	public static final String HEARTBEAT = "HEARTBEAT";
 	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 8;
 	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 10;
@@ -14,6 +15,7 @@ public class ServerConstants {
 	public static final String CAME_ONLINE = "CAME_ONLINE";
 	public static final String CAME_OFFLINE = "CAME_OFFLINE";
 	public static final String AM_ONLINE = "AM_ONLINE";
+	public static final String NEW_MESSAGE = "NEW_MESSAGE";
 	
 	public static final String UPDATE_USER_COUNT = "UPDATE_USER_COUNT";
 	public static final float ACCEPT_PERCENTAGE_THRESHOLD = 0.5f;

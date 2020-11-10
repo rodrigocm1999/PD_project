@@ -9,7 +9,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class ServerMain {
 	
@@ -26,7 +25,7 @@ public class ServerMain {
 	private static ServerMain instance;
 	
 	private final ArrayList<ServerUserThread> connectedMachines;
-	private ServerSyncer serversManager;
+	private ServerNetwork serversManager;
 	
 	public static ServerMain getInstance() {
 		assert instance != null;
@@ -64,24 +63,28 @@ public class ServerMain {
 			Command command = (Command) UDPHelper.receiveUDPObject(udpSocket, receivedPacket);
 			System.out.println(command);
 			
-			switch (command.getProtocol()) {
-				case Constants.ESTABLISH_CONNECTION -> {
-					System.out.println("Establish Connection --> can accept user: " + !serversManager.checkIfBetterServer());
-					try {
-						if (!serversManager.checkIfBetterServer()) {
-							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
-									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-							//TODO garantir entrega MAYBE, if so, then make this non blocking, and add syncronized on connectedMachines
-							receiveNewUser(receivedPacket, udpSocket);
-						} else {
-							ArrayList<ServerAddress> list = serversManager.getOrderedServerAddresses();
-							Utils.printList(list, "Servers Sent");
-							UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
-									udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
+			handleCommand(command, receivedPacket, udpSocket);
+		}
+	}
+	
+	private void handleCommand(Command command, DatagramPacket receivedPacket, DatagramSocket udpSocket) {
+		switch (command.getProtocol()) {
+			case Constants.ESTABLISH_CONNECTION -> {
+				System.out.println("Establish Connection --> can accept user: " + !serversManager.checkIfBetterServer());
+				try {
+					if (!serversManager.checkIfBetterServer()) {
+						UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
+								udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
+						//TODO garantir entrega MAYBE, if so, then make this non blocking, and add syncronized on connectedMachines
+						receiveNewUser(receivedPacket, udpSocket);
+					} else {
+						ArrayList<ServerAddress> list = serversManager.getOrderedServerAddresses();
+						Utils.printList(list, "Servers Sent");
+						UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
+								udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
 					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}
@@ -92,20 +95,21 @@ public class ServerMain {
 		return serverFileSocket.accept();
 	}
 	
-	private ServerSyncer createServerSyncer() throws IOException {
+	private ServerNetwork createServerSyncer() throws IOException {
 		InetAddress group = InetAddress.getByName(ServerConstants.MULTICAST_GROUP);
 		int port = ServerConstants.MULTICAST_PORT;
-		return new ServerSyncer(this, group, port, listeningUDPPort);
+		return new ServerNetwork(this, group, port, listeningUDPPort);
 	}
 	
-	private void synchronizeDatabase() {
+	private void synchronizeDatabase() throws SQLException {
 		//TODO get all of the new information
 		System.out.println("Syncing Database ----------------------------------------------");
-		//Connect to the server with the least load at the moment
-		
+		//Connect to the server with the least user load at the moment
+		ServerAddress server = serversManager.getOrderedServerAddresses().get(0);
+		Synchronizer synchronizer = new Synchronizer(server);
+		synchronizer.start();
+		//Get all of the info after list ID of the table that I have
 		//Have to use reliable UDP and break files into 5KB chunks
-		
-		// get all of the info after list ID of the table that I have
 	}
 	
 	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
@@ -162,7 +166,61 @@ public class ServerMain {
 		return databaseName;
 	}
 	
+	public void propagateNewMessage(MessageInfo message, ServerUserThread adder) throws IOException {
+		for (ServerUserThread user : connectedMachines) {
+			if (user != adder) {
+				user.receivedPropagatedMessage(message);
+			}
+		}
+		serversManager.propagateNewMessage(message);
+	}
+	
+	public void propagateNewMessage(MessageInfo message) throws IOException {
+		System.out.println("Received propagation");
+		for (ServerUserThread user : connectedMachines) {
+			user.receivedPropagatedMessage(message);
+		}
+	}
+	
 	public static void main(String[] args) throws Exception {
+		
+		/*String IP = "239.4.5.6";
+		int Port = 5432;
+		
+		try (MulticastSocket mS = new MulticastSocket(Port)) {
+			InetAddress address = InetAddress.getByName(IP);
+			NetworkInterface nI = NetworkInterface.getByInetAddress(InetAddress.getByName("25.63.62.45"));
+			mS.joinGroup(new InetSocketAddress(address, 5432), nI);
+			//mS.joinGroup(InetAddress.getByName(IP));
+			Scanner sc = new Scanner(System.in);
+			System.out.println("Username: ");
+			String username = sc.nextLine();
+			
+			new Thread(() -> {
+				DatagramPacket dP = new DatagramPacket(new byte[1024], 1024);
+				try {
+					while (true) {
+						dP.setLength(1024);
+						mS.receive(dP);
+						String raw = new String(dP.getData(), 0, dP.getLength());
+						System.out.println(dP.getAddress().getHostName() + ":" + dP.getPort() + ": " + raw);
+					}
+				} catch (IOException ex) {
+					ex.printStackTrace();
+				}
+			}).start();
+			
+			while (true) {
+				String msg = sc.nextLine();
+				if (msg.equals("exit"))
+					break;
+				msg = "[" + username + "]: " + msg;
+				DatagramPacket dP = new DatagramPacket(msg.getBytes(), msg.getBytes().length, address, Port);
+				mS.send(dP);
+			}
+			mS.leaveGroup(address);
+		}*/
+		
 		
 		/*Object obj = null;
 		obj.toString();*/

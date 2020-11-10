@@ -17,7 +17,7 @@ public class ServerUserThread extends Thread {
 	
 	private boolean isLoggedIn = false;
 	private UserInfo userInfo;
-	private Ids currentPlace;
+	private final Ids currentPlace = new Ids(0, 0, 0);
 	
 	private boolean keepReceiving = true;
 	private ArrayList<ServerAddress> orderedServerAddresses;
@@ -33,7 +33,6 @@ public class ServerUserThread extends Thread {
 		this.orderedServerAddresses = orderedServerAddresses;
 	}
 	
-	// TODO TODO super important, fiz server address have random port. make it static so all users can access it
 	@Override
 	public void run() {
 		try {
@@ -77,6 +76,7 @@ public class ServerUserThread extends Thread {
 			case Constants.REGISTER -> {
 				handleRegister((UserInfo) protocol.getExtras());
 			}
+			
 			// TODO login from multiple clients CANNOT HAPPEN
 			case Constants.LOGIN -> {
 				UserInfo userInfo = (UserInfo) protocol.getExtras();
@@ -103,13 +103,11 @@ public class ServerUserThread extends Thread {
 						case Constants.CHANNEL_ADD -> {
 							ChannelInfo info = (ChannelInfo) protocol.getExtras();
 							protocolChannelAdd(info);
-							//TODO test channel add
 						}
 						
 						case Constants.CHANNEL_REMOVE -> {
 							int channelId = (int) protocol.getExtras();
 							protocolChannelRemove(channelId);
-							//TODO test channel remove
 						}
 						
 						case Constants.CHANNEL_EDIT -> {
@@ -120,7 +118,8 @@ public class ServerUserThread extends Thread {
 						
 						case Constants.ADD_MESSAGE -> {
 							MessageInfo message = (MessageInfo) protocol.getExtras();
-							protocolAddMessage(message);
+							if (protocolAddMessage(message))
+								getApp().propagateNewMessage(message, this);
 						}
 						
 						case Constants.ADD_FILE -> {
@@ -132,7 +131,6 @@ public class ServerUserThread extends Thread {
 							ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
 							protocolChannelRegister(channelInfo);
 						}
-						//TODO add same shit but for user messages
 						case Constants.USER_GET_LIKE -> {
 							String username = (String) protocol.getExtras();
 							protocolUserGetLike(username);
@@ -156,9 +154,9 @@ public class ServerUserThread extends Thread {
 	private void protocolUserGetMessages(Ids ids) throws SQLException, IOException {
 		ArrayList<MessageInfo> userMessages;
 		if (ids.getMessageId() <= 0)
-			userMessages = ServerChannelManager.getChannelMessagesBefore(ids.getUserId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+			userMessages = MessageManager.getUserMessages(ids.getUserId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		else
-			userMessages = ServerChannelManager.getChannelMessagesBefore(ids.getUserId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+			userMessages = MessageManager.getUserMessagesBefore(ids.getUserId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		Utils.printList(userMessages, "UserMessages");
 		sendCommand(Constants.CHANNEL_GET_MESSAGES, userMessages);
 		
@@ -167,7 +165,7 @@ public class ServerUserThread extends Thread {
 	
 	private void protocolUserGetLike(String username) throws SQLException, IOException {
 		if (username == null) username = "";
-		ArrayList<UserInfo> usersLike = ServerUserManager.getUsersLike(username, userInfo.getUserId());
+		ArrayList<UserInfo> usersLike = UserManager.getUsersLike(username, userInfo.getUserId());
 		sendCommand(Constants.SUCCESS, usersLike);
 	}
 	
@@ -210,17 +208,10 @@ public class ServerUserThread extends Thread {
 				
 				message.setContent(fileNameWithTime);
 				
-				if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
-					if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getType(), message.getContent()))
-						sendCommand(Constants.SUCCESS, fileNameWithTime);
-					else
-						sendCommand(Constants.ERROR, "Should not happen");
-				} else {
-					if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getType(), message.getContent()))
-						sendCommand(Constants.SUCCESS, fileNameWithTime);
-					else
-						sendCommand(Constants.ERROR, "Should not happen");
-				}
+				if (MessageManager.insertMessage(message))
+					sendCommand(Constants.SUCCESS, fileNameWithTime);
+				else
+					sendCommand(Constants.ERROR, "Should not happen");
 				
 			} catch (IOException | SQLException e) {
 				e.printStackTrace();
@@ -242,22 +233,22 @@ public class ServerUserThread extends Thread {
 			return fileName.substring(0, dotIndex) + "_" + utcTimeString + fileName.substring(dotIndex);
 	}
 	
-	public void protocolChannelEdit(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (!Utils.checkPasswordFollowsRules(info.getPassword())) {
+	public void protocolChannelEdit(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
+		if (!Utils.checkPasswordFollowsRules(channel.getPassword())) {
 			sendCommand(Constants.ERROR, "Invalid Password");
 			return;
 		}
-		boolean success = ServerChannelManager.updateChannel(info.getId(), info.getName(), info.getPassword(), info.getDescription());
+		boolean success = ChannelManager.updateChannel(channel);
 		if (success) sendCommand(Constants.SUCCESS);
 		else sendCommand(Constants.ERROR, "Error Updating, channel name might already be in use");
 	}
 	
 	public void protocolChannelRegister(ChannelInfo channelInfo) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (ServerChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId()))
+		if (ChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId()))
 			sendCommand(Constants.SUCCESS, "User is already part of channel");
 		else {
-			if (ServerChannelManager.isChannelPassword(channelInfo.getId(), channelInfo.getPassword())) {
-				if (ServerChannelManager.registerUserToChannel(userInfo.getUserId(), channelInfo.getId()))
+			if (ChannelManager.isChannelPassword(channelInfo.getId(), channelInfo.getPassword())) {
+				if (ChannelManager.registerUserToChannel(userInfo.getUserId(), channelInfo.getId()))
 					sendCommand(Constants.SUCCESS);
 				else
 					sendCommand(Constants.ERROR, "Should never happen. Pls fix");
@@ -265,58 +256,60 @@ public class ServerUserThread extends Thread {
 		}
 	}
 	
-	public void protocolAddMessage(MessageInfo message) throws IOException, SQLException {
+	public boolean protocolAddMessage(MessageInfo message) throws IOException, SQLException {
 		if (message.getContent().isBlank()) {
 			sendCommand(Constants.ERROR);
-			return;
+			return false;
 		}
+		message.setSenderId(userInfo.getUserId());
 		
-		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
-			if (ServerChannelManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getType(), message.getContent()))
-				sendCommand(Constants.SUCCESS);
-			else
-				sendCommand(Constants.ERROR, "Should not happen");
+		if (MessageManager.insertMessage(message)) {
+			sendCommand(Constants.SUCCESS);
+			return true;
 		} else {
-			if (ServerUserManager.insertMessage(userInfo.getUserId(), message.getRecipientId(), message.getType(), message.getContent()))
-				sendCommand(Constants.SUCCESS);
-			else
-				sendCommand(Constants.ERROR, "Should not happen");
+			sendCommand(Constants.ERROR, "Should not happen");
+			return false;
 		}
 	}
 	
 	public void protocolChannelRemove(int channelId) throws SQLException, IOException {
-		if (ServerChannelManager.isUserChannelOwner(userInfo.getUserId(), channelId)) {
-			boolean success = ServerChannelManager.deleteChannel(channelId);
+		if (ChannelManager.isUserChannelOwner(userInfo.getUserId(), channelId)) {
+			boolean success = ChannelManager.deleteChannel(channelId);
 			if (success) sendCommand(Constants.SUCCESS);
 			else sendCommand(Constants.ERROR, "Error Removing channel"); // Shouldn't happen
 		} else sendCommand(Constants.ERROR, "User doesn't have permissions"); // Shouldn't happen
 	}
 	
-	public void protocolChannelAdd(ChannelInfo info) throws IOException, SQLException, NoSuchAlgorithmException {
-		boolean success = ServerChannelManager.createChannel(
-				userInfo.getUserId(), info.getName(), info.getPassword(), info.getDescription());
-		if (success) sendCommand(Constants.SUCCESS);
-		else sendCommand(Constants.ERROR);
+	public void protocolChannelAdd(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
+		if (channel.getPassword().length() < 3 || channel.getPassword().length() > 50) {
+			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 50 characters)");
+			return;
+		}
+		channel.setCreatorId(userInfo.getUserId());
+		boolean success = ChannelManager.createChannel(channel);
+		if (success) {
+			sendCommand(Constants.SUCCESS);
+			ChannelManager.registerUserToChannel(userInfo.getUserId(), channel.getId());
+		} else sendCommand(Constants.ERROR, "Something went wrong (Username might already be in use)");
 	}
 	
 	public void protocolChannelGetMessages(Ids ids) throws IOException, SQLException {
-		if (!ServerChannelManager.isUserPartOf(userInfo.getUserId(), ids.getChannelId())) {
+		if (!ChannelManager.isUserPartOf(userInfo.getUserId(), ids.getChannelId())) {
 			sendCommand(Constants.NO_PERMISSIONS);
 			return;
 		}
 		ArrayList<MessageInfo> channelMessages;
 		if (ids.getMessageId() <= 0)
-			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+			channelMessages = MessageManager.getChannelMessages(ids.getChannelId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		else
-			channelMessages = ServerChannelManager.getChannelMessagesBefore(ids.getChannelId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
-		//Utils.printList(channelMessages, "channelMessages");
+			channelMessages = MessageManager.getChannelMessagesBefore(ids.getChannelId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		sendCommand(Constants.CHANNEL_GET_MESSAGES, channelMessages);
 		
 		currentPlace.setChannelOnly(ids.getChannelId());
 	}
 	
 	public void protocolChannelGetALl() throws SQLException, IOException {
-		ArrayList<ChannelInfo> channels = ServerChannelManager.getChannels(userInfo.getUserId());
+		ArrayList<ChannelInfo> channels = ChannelManager.getChannels(userInfo.getUserId());
 		sendCommand(Constants.CHANNEL_GET_ALL, channels);
 	}
 	
@@ -342,7 +335,7 @@ public class ServerUserThread extends Thread {
 			} else if (!Utils.checkNameUser(userInfo.getName())) {
 				sendCommand(Constants.REGISTER_ERROR, "Name is invalid (needs to be between 3 and 50 characters long)");
 				
-			} else if (!ServerUserManager.checkUsernameAvailability(userInfo.getUsername())) {
+			} else if (!UserManager.checkUsernameAvailability(userInfo.getUsername())) {
 				sendCommand(Constants.REGISTER_ERROR, "Username already in use");
 				
 			} else {
@@ -360,7 +353,7 @@ public class ServerUserThread extends Thread {
 						fileOutputStream.write(userInfo.getImageBytes());
 					}
 				}
-				if (ServerUserManager.insertUser(userInfo, imageName)) {
+				if (UserManager.insertUser(userInfo, imageName)) {
 					System.out.println("Added new user");
 					sendCommand(Constants.REGISTER_SUCCESS);
 				} else {
@@ -382,29 +375,37 @@ public class ServerUserThread extends Thread {
 			sendCommand(Constants.LOGIN_ERROR, "Already Logged In");
 			return;
 		}
-		if (!ServerUserManager.doesUsernameExist(username)) {
+		if (!UserManager.doesUsernameExist(username)) {
 			sendCommand(Constants.LOGIN_ERROR, "Username does not exist");
 			return;
 		}
-		if (!ServerUserManager.doesPasswordMatchUsername(username, password)) {
+		if (!UserManager.doesPasswordMatchUsername(username, password)) {
 			sendCommand(Constants.LOGIN_ERROR, "Password is incorrect");
 			return;
 		}
-		int userId = ServerUserManager.getUserId(username);
-		String nameUser = ServerUserManager.getNameUser(userId);
+		int userId = UserManager.getUserId(username);
+		String nameUser = UserManager.getNameUser(userId);
 		userInfo = new UserInfo(userId, username, nameUser);
 		sendCommand(Constants.LOGIN_SUCCESS, userInfo);
 		System.out.println("Login success : " + userInfo);
 		isLoggedIn = true;
 	}
 	
-	public void sendCommand(String command) throws IOException {
+	public void receivedPropagatedMessage(MessageInfo message) throws IOException {
+		if (isLoggedIn) {
+			if (currentPlace.getChannelId() == message.getRecipientId() || currentPlace.getMessageId() == message.getRecipientId()) {
+				sendCommand(Constants.NEW_MESSAGE, message);
+			}
+		}
+	}
+	
+	public synchronized void sendCommand(String command) throws IOException {
 		sendCommand(command, null);
 	}
 	
-	public void sendCommand(String command, Object extra) throws IOException {
+	public synchronized void sendCommand(String command, Object extra) throws IOException {
 		Command obj = new Command(command, extra);
-		System.out.println(obj);
+		System.out.println("Sent : " + obj);
 		oos.writeUnshared(obj);
 	}
 	

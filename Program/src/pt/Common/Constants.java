@@ -24,6 +24,7 @@ public class Constants {
 	public static final String CHANNEL_REGISTER = "CHANNEL_REGISTER";
 	
 	public static final String ADD_MESSAGE = "ADD_MESSAGE";
+	public static final String NEW_MESSAGE = "NEW_MESSAGE";
 	
 	public static final String USER_GET_LIKE = "USER_GET_LIKE";
 	public static final String USER_GET_MESSAGES = "USER_GET_MESSAGES";

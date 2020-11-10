@@ -87,7 +87,7 @@ public class ApplicationController implements Initializable {
 		String selectedItem = (String) channelsListView.getSelectionModel().getSelectedItem();
 		ChannelInfo channel = client.getChannelByName(selectedItem);
 		
-		if (!channel.isPartOf()) {
+		if (channel != null && !channel.isPartOf()) {
 			String pwd = openPasswordDialog(channel.getName());
 			Command feedback = (Command) client.sendCommandToServer(Constants.CHANNEL_REGISTER, new ChannelInfo(channel.getId(), pwd));
 			

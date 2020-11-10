@@ -1,15 +1,17 @@
 package pt.Server;
 
 import pt.Common.Constants;
+import pt.Common.MessageInfo;
 import pt.Common.ServerAddress;
 import pt.Common.Utils;
 
 import java.io.IOException;
 import java.net.*;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class ServerSyncer extends Thread {
+public class ServerNetwork extends Thread {
 	
 	private final ServerMain serverMain;
 	private MulticastSocket socket;
@@ -21,7 +23,7 @@ public class ServerSyncer extends Thread {
 	private boolean stop;
 	private final MulticastManager multiMan;
 	
-	ServerSyncer(ServerMain serverMain, InetAddress group, int port, int serverUDPPort) throws IOException {
+	ServerNetwork(ServerMain serverMain, InetAddress group, int port, int serverUDPPort) throws IOException {
 		this.serverMain = serverMain;
 		serversList = new ArrayList<>();
 		stop = false;
@@ -65,23 +67,12 @@ public class ServerSyncer extends Thread {
 					
 					case ServerConstants.CAME_ONLINE -> {
 						ServerAddress serverAddress = command.getServerAddress();
-						ServerStatus server = new ServerStatus(0,serverAddress);
-						serverConnected(server);
-						multiMan.sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getConnectedUsers());
-						System.out.println("Came Online : " + server);
+						newServerOnline(serverAddress);
 					}
 					
 					case ServerConstants.HEARTBEAT -> {
-						//System.out.println("got heartbeat -> address : " + otherAddress);
 						ServerStatus status = getServerStatus(otherServerAddress);
-						if (status != null) {
-							status.setHeartbeat(true);
-							//System.out.println("set heartbeat true : " + status);
-						} else {
-							System.err.println("Not yet registered. Not supposed to happen\t Registering now"); // should never happen
-							serverConnected(new ServerStatus(Integer.MAX_VALUE, otherServerAddress));
-							printAvailableServers();
-						}
+						receivedHeartbeat(status);
 					}
 					
 					case ServerConstants.UPDATE_USER_COUNT -> {
@@ -89,9 +80,15 @@ public class ServerSyncer extends Thread {
 						ServerStatus status = getServerStatus(otherServerAddress);
 						if (status != null) {
 							status.setConnectedUsers(connected);
-						}else{
+						} else {
 							System.err.println("Status == null\t Should never happen");
 						}
+					}
+					
+					case ServerConstants.NEW_MESSAGE -> {
+						MessageInfo message = (MessageInfo) command.getExtras();
+						System.out.println("Received propagated : " + message);
+						protocolNewMessage(message);
 					}
 				}
 			} catch (Exception e) {
@@ -100,8 +97,39 @@ public class ServerSyncer extends Thread {
 		}
 	}
 	
+	private void protocolNewMessage(MessageInfo message) throws IOException, SQLException {
+		MessageManager.insertMessage(message);
+		serverMain.propagateNewMessage(message);
+	}
+	
+	private void newServerOnline(ServerAddress serverAddress) throws IOException {
+		ServerStatus server = new ServerStatus(0, serverAddress);
+		serverConnected(server);
+		multiMan.sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getConnectedUsers());
+		System.out.println("Came Online : " + server);
+	}
+	
+	private void receivedHeartbeat(ServerStatus status) {
+		if (status != null) {
+			status.setHeartbeat(true);
+			//System.out.println("set heartbeat true : " + status);
+		} else {
+			System.err.println("Not yet registered. Not supposed to happen\t Registering now"); // should never happen
+			serverConnected(new ServerStatus(Integer.MAX_VALUE, status.getServerAddress()));
+			printAvailableServers();
+		}
+	}
+	
 	private void warnEveryone() throws IOException {
-		multiMan.sendServerCommand(ServerConstants.CAME_ONLINE);
+		sendAllCommand(ServerConstants.CAME_ONLINE);
+	}
+	
+	private void sendAllCommand(String protocol) throws IOException {
+		multiMan.sendServerCommand(protocol, null);
+	}
+	
+	private void sendAllCommand(String protocol, Object extras) throws IOException {
+		multiMan.sendServerCommand(protocol, extras);
 	}
 	
 	private void startMulticastSocket() throws IOException {
@@ -172,11 +200,9 @@ public class ServerSyncer extends Thread {
 	}
 	
 	private void printAvailableServers() {
-		System.out.println("Available Servers ---------------------------------------------");
 		synchronized (serversList) {
-			for (var server : serversList) System.out.println(server);
+			Utils.printList(serversList, "Available Servers");
 		}
-		System.out.println("---------------------------------------------------------------");
 	}
 	
 	private ServerStatus getServerStatus(ServerAddress address) {
@@ -228,7 +254,7 @@ public class ServerSyncer extends Thread {
 		System.out.println("Server Discovery ----------------------------------------------");
 		warnEveryone();
 		
-		socket.setSoTimeout(1500);
+		socket.setSoTimeout(1000);
 		try {
 			while (true) {
 				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
@@ -251,4 +277,10 @@ public class ServerSyncer extends Thread {
 	public void updateUserCount(int count) throws IOException {
 		multiMan.sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count);
 	}
+	
+	public void propagateNewMessage(MessageInfo newMessage) throws IOException {
+		sendAllCommand(ServerConstants.NEW_MESSAGE, newMessage);
+	}
+	
+	//TODO propagate all changes
 }

@@ -70,14 +70,13 @@ public class Utils {
 		return baos.toByteArray();
 	}
 	
-	
 	public static void printList(ArrayList list) {
 		printList(list, "");
 	}
 	
 	public static void printList(ArrayList list, String prefix) {
 		System.out.println(prefix + "----------------------------");
-		for (Object asd : list) System.out.println(asd);
+		for (Object asd : list) System.out.println("\t" + asd);
 		System.out.println("----------------------------");
 	}
 	
