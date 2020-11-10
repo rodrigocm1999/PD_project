@@ -21,6 +21,7 @@ public class ClientMain {
 	private File userPhoto;
 	private ChannelInfo currentChannel;
 	private UserInfo currentUser;
+	private ApplicationController applicationController;
 	
 	public static ClientMain getInstance() {
 		return instance;
@@ -198,5 +199,16 @@ public class ClientMain {
 			}
 		});
 		thread.start();
+	}
+
+	public ApplicationController getApplicationController() {
+		return applicationController;
+	}
+
+	public ArrayList<ChannelInfo> getChannelsFromServer() throws IOException, ClassNotFoundException {
+		Command command = (Command) sendCommandToServer(Constants.CHANNEL_GET_ALL, null);
+		ArrayList<ChannelInfo> list = (ArrayList<ChannelInfo>) command.getExtras();
+		channels = list;
+		return channels;
 	}
 }

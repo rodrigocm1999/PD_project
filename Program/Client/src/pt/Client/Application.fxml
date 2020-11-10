@@ -14,12 +14,11 @@
           </Menu>
           <Menu mnemonicParsing="false" text="Channels">
             <items>
-              <MenuItem mnemonicParsing="false" text="Create" />
-                  <MenuItem mnemonicParsing="false" text="Enter" />
+              <MenuItem mnemonicParsing="false" text="Create" onAction="#onClickCreateChannel"/>
                   <MenuItem mnemonicParsing="false" text="Add User" />
                   <MenuItem mnemonicParsing="false" text="Remove user" />
                   <MenuItem mnemonicParsing="false" text="Leave" />
-                  <MenuItem mnemonicParsing="false" text="Delete" />
+                  <MenuItem mnemonicParsing="false" text="Delete" onAction="#onClickDeleteChannel" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Help">

@@ -16,7 +16,7 @@ public class LoginController {
 	public void onClickLogin(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
 		ClientMain instance = ClientMain.getInstance();
 		//UserInfo user = new UserInfo(idUsername.getText(), idPassword.getText());
-		UserInfo user = new UserInfo("dorin", "Dorin12345");
+		UserInfo user = new UserInfo("dorin", "Dorin1234");
 
 		
 		Command command = (Command) instance.sendCommandToServer(Constants.LOGIN, user);

@@ -49,6 +49,7 @@ public class RegistrationController {
         ClientMain instance = ClientMain.getInstance();
         File file = instance.getUserPhoto();
         BufferedImage buffImg = ImageIO.read(file);
+        //TODO MAKE SURE FILE EXISTS
         BufferedImage compressedImage = Utils.getCompressedImage(buffImg, Constants.USER_IMAGE_SIZE, Constants.USER_IMAGE_SIZE);
         byte[] imageBytes = Utils.getImageBytes(compressedImage);
         UserInfo user = new UserInfo(name, username, password,imageBytes);

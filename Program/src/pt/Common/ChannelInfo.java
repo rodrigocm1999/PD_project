@@ -29,7 +29,13 @@ public class ChannelInfo implements Serializable {
 		this.password = password;
 		this.description = description;
 	}
-	
+
+	public ChannelInfo(String name, String password, String description) {
+		this.name = name;
+		this.password = password;
+		this.description = description;
+	}
+
 	public ChannelInfo(int id, String password) {
 		this.id = id;
 		this.password = password;

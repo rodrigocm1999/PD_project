@@ -7,6 +7,8 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.net.*;
+import java.util.Scanner;
 
 public class ClientWindow extends Application {
 	
@@ -48,12 +50,12 @@ public class ClientWindow extends Application {
 		scene.setRoot(loadParent(fileName));
 	}
 	
-	private Parent loadParent(String fileName) throws IOException {
+	public Parent loadParent(String fileName) throws IOException {
 		return FXMLLoader.load(getClass().getResource(fileName));
 	}
 	
 	public static void main(String[] args) {
-		
+
 		if (args.length != 2) {
 			System.out.println("Invalid arguments: server_address, server_UDP_port");
 		}
@@ -69,5 +71,6 @@ public class ClientWindow extends Application {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 	}
 }

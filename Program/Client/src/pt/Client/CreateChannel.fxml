@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
+   <children>
+      <Pane prefWidth="418.0" VBox.vgrow="ALWAYS">
+         <children>
+            <Label layoutX="22.0" layoutY="25.0" text="Channel Name" />
+            <TextField id="name" fx:id="nameField" layoutX="22.0" layoutY="42.0" />
+            <Label layoutX="22.0" layoutY="73.0" text="Password" />
+            <PasswordField id="password" fx:id="passwordField" layoutX="22.0" layoutY="90.0" />
+            <Label layoutX="22.0" layoutY="121.0" text="Description" />
+            <TextArea id="description" fx:id="descriptionField" layoutX="22.0" layoutY="145.0" prefHeight="75.0" prefWidth="374.0" />
+            <Button fx:id="btn" layoutX="338.0" layoutY="244.0" mnemonicParsing="false" onAction="#onCreate" text="Create" />
+            <Label fx:id="errorLabel" layoutX="269.0" layoutY="248.0" text="ErrorLabel" textFill="RED" />
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </Pane>
+   </children>
+</VBox>

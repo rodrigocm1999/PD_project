@@ -6,11 +6,16 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import pt.Common.*;
 
 import java.io.File;
@@ -56,10 +61,9 @@ public class ApplicationController implements Initializable {
 	}
 	
 	public void updateChannelsListView(ClientMain client) {
-		channelsObsList.removeAll();
+		channelsObsList.clear();
 		try {
-			Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_GET_ALL, null);
-			ArrayList<ChannelInfo> list = (ArrayList<ChannelInfo>) command.getExtras();
+			ArrayList<ChannelInfo> list = client.getChannelsFromServer();
 			client.setChannels(list);
 			for (var item : list) {
 				channelsObsList.add(item.getName());
@@ -180,5 +184,31 @@ public class ApplicationController implements Initializable {
 		FileChooser fileChooser = new FileChooser();
 		File file = fileChooser.showOpenDialog(ClientWindow.getInstance().getStage());
 		ClientMain.getInstance().sendFile(file);
+	}
+
+	public void onClickCreateChannel(ActionEvent actionEvent) {
+		ClientWindow instance = ClientWindow.getInstance();
+		try {
+			Stage stage =  new Stage();
+			Parent parent = instance.loadParent("CreateChannel.fxml");
+			stage.setScene(new Scene(parent,500,400));
+			stage.showAndWait();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		updateChannelsListView(ClientMain.getInstance());
+	}
+
+	public void onClickDeleteChannel(ActionEvent actionEvent) {
+		ClientWindow instance = ClientWindow.getInstance();
+		try {
+			Stage stage =  new Stage();
+			Parent parent = instance.loadParent("DeleteChannel.fxml");
+			stage.setScene(new Scene(parent,500,400));
+			stage.showAndWait();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		updateChannelsListView(ClientMain.getInstance());
 	}
 }
