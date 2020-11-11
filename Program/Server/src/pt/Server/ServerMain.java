@@ -24,7 +24,7 @@ public class ServerMain {
 	
 	private static ServerMain instance;
 	
-	private final ArrayList<ServerUserThread> connectedMachines;
+	private final ArrayList<UserThread> connectedMachines;
 	private ServerNetwork serversManager;
 	
 	public static ServerMain getInstance() {
@@ -65,6 +65,7 @@ public class ServerMain {
 			
 			handleCommand(command, receivedPacket, udpSocket);
 		}
+		
 	}
 	
 	private void handleCommand(Command command, DatagramPacket receivedPacket, DatagramSocket udpSocket) {
@@ -90,7 +91,7 @@ public class ServerMain {
 		}
 	}
 	
-	public synchronized Socket acceptFileConnection(ServerUserThread user) throws IOException {
+	public synchronized Socket acceptFileConnection(UserThread user) throws IOException {
 		user.sendCommand(Constants.FILE_ACCEPT_CONNECTION, listeningFilePort);
 		return serverFileSocket.accept();
 	}
@@ -116,9 +117,9 @@ public class ServerMain {
 		try {
 			serverSocket.setSoTimeout(Constants.CONNECTION_TIMEOUT);
 			Socket socket = serverSocket.accept();
-			ServerUserThread serverUserThread = new ServerUserThread(socket, serversManager.getOrderedServerAddresses());
-			serverUserThread.start();
-			connectedMachines.add(serverUserThread);
+			UserThread userThread = new UserThread(socket, serversManager.getOrderedServerAddresses());
+			userThread.start();
+			connectedMachines.add(userThread);
 			serversManager.updateUserCount(getConnectedUsers());
 			System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket);
 		} catch (Exception e) {
@@ -128,7 +129,7 @@ public class ServerMain {
 	
 	private void printConnected() {
 		System.out.println("Connected : ");
-		for (ServerUserThread conn : connectedMachines) {
+		for (UserThread conn : connectedMachines) {
 			System.out.println(conn.getSocketInformation());
 		}
 		System.out.println("--------------");
@@ -142,7 +143,7 @@ public class ServerMain {
 		return connectedMachines.size();
 	}
 	
-	public void removeConnected(ServerUserThread user) {
+	public void removeConnected(UserThread user) {
 		synchronized (connectedMachines) {
 			connectedMachines.remove(user);
 		}
@@ -166,8 +167,8 @@ public class ServerMain {
 		return databaseName;
 	}
 	
-	public void propagateNewMessage(MessageInfo message, ServerUserThread adder) throws IOException {
-		for (ServerUserThread user : connectedMachines) {
+	public void propagateNewMessage(MessageInfo message, UserThread adder) throws IOException {
+		for (UserThread user : connectedMachines) {
 			if (user != adder) {
 				user.receivedPropagatedMessage(message);
 			}
@@ -177,7 +178,7 @@ public class ServerMain {
 	
 	public void propagateNewMessage(MessageInfo message) throws IOException {
 		System.out.println("Received propagation");
-		for (ServerUserThread user : connectedMachines) {
+		for (UserThread user : connectedMachines) {
 			user.receivedPropagatedMessage(message);
 		}
 	}

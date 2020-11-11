@@ -39,6 +39,12 @@ public class ServerConstants {
 		return ServerMain.getInstance().getDatabaseName() + "_" + FILES_PATH;
 	}
 	
+	public static String getTransferredFilesPath() {
+		return ServerConstants.getFilesPath() + File.separator + ServerConstants.TRANSFERRED_FILES;
+	}
+	
+	
 	public static final String USER_IMAGES_DIRECTORY = "user_images";
+	
 	public static final String TRANSFERRED_FILES = "transferred_files";
 }

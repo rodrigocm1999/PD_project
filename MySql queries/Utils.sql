@@ -35,6 +35,7 @@ update channel set name = ?, password_hash = ?, description = ? where id = ?;
 select * from channel;
 select * from user;
 select * from channel_message;
+select * from user_message;
 select * from message;
 select * from message,channel_message,channel where message_id = message.id and channel.id = channel_id and channel_id = 15;
 -- get all user messages to channels
@@ -51,10 +52,12 @@ limit 10;
 select id,type,content,moment_sent, sender_id
 from message,user_message
 where message.id = user_message.message_id
-and (sender_id = 100 or receiver_id = 100)
-and id < 6
+and (sender_id = 100 and receiver_id = 2 or sender_id = 2 and receiver_id = 100 )
+and id < 1000
 order by moment_sent
 limit 10;
+-- delete all messages
+delete from message where id != -1;
 
 select max(id) from message,channel_message where message_id = id and channel_id = 1;
 
@@ -83,3 +86,6 @@ select id,(
 from message where (select channel_id from channel_message where channel_id = 3 and channel_message.message_id = message.id) = 2;
 
 select * from user where username like '%channel%'; 
+
+select count(id) from message,user_message where message.id = message_id && receiver_id = 2;
+select id,name,username from user where username like '%%' order by (select count(id) from message,user_message where message.id = message_id && receiver_id = user.id), username limit 30;

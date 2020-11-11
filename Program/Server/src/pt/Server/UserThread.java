@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class ServerUserThread extends Thread {
+public class UserThread extends Thread {
 	
 	private final Socket socket;
 	private final ObjectOutputStream oos;
@@ -26,7 +26,10 @@ public class ServerUserThread extends Thread {
 		return ServerMain.getInstance();
 	}
 	
-	public ServerUserThread(Socket socket, ArrayList<ServerAddress> orderedServerAddresses) throws IOException {
+	//TODO send passwords encrypted
+	//TODO add file downloads
+	//TODO add get user images
+	public UserThread(Socket socket, ArrayList<ServerAddress> orderedServerAddresses) throws IOException {
 		this.socket = socket;
 		oos = new ObjectOutputStream(socket.getOutputStream());
 		ois = new ObjectInputStream(socket.getInputStream());
@@ -134,12 +137,15 @@ public class ServerUserThread extends Thread {
 						case Constants.USER_GET_LIKE -> {
 							String username = (String) protocol.getExtras();
 							protocolUserGetLike(username);
-							//TODO test this
 						}
 						case Constants.USER_GET_MESSAGES -> {
 							Ids ids = (Ids) protocol.getExtras();
 							protocolUserGetMessages(ids);
 							// TODO Test messages before
+						}
+						case Constants.GET_FILE -> {
+							MessageInfo message = (MessageInfo) protocol.getExtras();
+							protocolGetFile(message);
 						}
 						
 						case Constants.LOGOUT -> {
@@ -154,11 +160,11 @@ public class ServerUserThread extends Thread {
 	private void protocolUserGetMessages(Ids ids) throws SQLException, IOException {
 		ArrayList<MessageInfo> userMessages;
 		if (ids.getMessageId() <= 0)
-			userMessages = MessageManager.getUserMessages(ids.getUserId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+			userMessages = MessageManager.getUserMessages(userInfo.getUserId(), ids.getUserId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		else
-			userMessages = MessageManager.getUserMessagesBefore(ids.getUserId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
+			userMessages = MessageManager.getUserMessagesBefore(userInfo.getUserId(), ids.getUserId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		Utils.printList(userMessages, "UserMessages");
-		sendCommand(Constants.CHANNEL_GET_MESSAGES, userMessages);
+		sendCommand(Constants.SUCCESS, userMessages);
 		
 		currentPlace.setUserOnly(ids.getUserId());
 	}
@@ -169,6 +175,27 @@ public class ServerUserThread extends Thread {
 		sendCommand(Constants.SUCCESS, usersLike);
 	}
 	
+	public void protocolGetFile(MessageInfo message) throws SQLException, IOException {
+		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
+			
+			String fileName = message.getContent();
+			String path = ServerConstants.getFilesPath() + File.separator + fileName;
+			System.out.println(path);
+			File file = new File(path);
+			
+			byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
+			OutputStream outputStream = socket.getOutputStream();
+			
+			try (FileInputStream fileStream = new FileInputStream(file)) {
+				int amountRead = fileStream.read(buffer);
+				outputStream.write(buffer, 0, amountRead);
+			}
+			
+		} else {
+			sendCommand(Constants.ERROR, "Invalid Message for download");
+		}
+	}
+	
 	public void protocolAddFile(MessageInfo message) throws IOException {
 		if (message.getContent().isBlank()) {
 			sendCommand(Constants.ERROR, "Empty Content");
@@ -176,8 +203,7 @@ public class ServerUserThread extends Thread {
 		}
 		String fileNameWithTime = addTimestampFileName(message.getContent()); // TODO might receive two files at the exact same time
 		
-		String filePath = ServerConstants.getFilesPath() + File.separator +
-				ServerConstants.TRANSFERRED_FILES + File.separator +
+		String filePath = ServerConstants.getTransferredFilesPath() + File.separator +
 				fileNameWithTime;
 		
 		File file = new File(filePath);
@@ -285,6 +311,8 @@ public class ServerUserThread extends Thread {
 			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 50 characters)");
 			return;
 		}
+		//TODO check name is not already in use by an user
+		//TODO check name is not already in use by an channel
 		channel.setCreatorId(userInfo.getUserId());
 		boolean success = ChannelManager.createChannel(channel);
 		if (success) {

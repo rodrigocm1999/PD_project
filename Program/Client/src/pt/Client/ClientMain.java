@@ -2,6 +2,7 @@ package pt.Client;
 
 import javafx.application.Platform;
 import pt.Common.*;
+import pt.Common.MessageInfo.Recipient;
 
 import java.io.*;
 import java.net.*;
@@ -20,10 +21,12 @@ public class ClientMain {
 	private ArrayList<UserInfo> users;
 	private UserInfo userInfo;
 	private File userPhoto;
-	private ChannelInfo currentChannel;
-	private UserInfo currentUser;
+	//private ChannelInfo currentChannel;
+	//private UserInfo currentUser;
 	private ApplicationController applicationController;
-
+	
+	private ArrayList<MessageInfo> messages = null;
+	private MessageInfo messageTemplate = null;
 	
 	public static ClientMain getInstance() {
 		return instance;
@@ -119,6 +122,7 @@ public class ClientMain {
 		}
 		return null;
 	}
+	
 	public UserInfo getUserByUsername(String name) {
 		System.out.println(users);
 		for (var user : users) {
@@ -150,32 +154,12 @@ public class ClientMain {
 		this.userPhoto = userPhoto;
 	}
 	
-	public ChannelInfo getCurrentChannel() {
-		return currentChannel;
-	}
-	
-	public void setCurrentChannel(ChannelInfo currentChannel) {
-		this.currentChannel = currentChannel;
-	}
-	
-	public UserInfo getCurrentUser() {
-		return currentUser;
-	}
-	
-	public void setCurrentUser(UserInfo currentUser) {
-		this.currentUser = currentUser;
-	}
-	
 	public void sendFile(File file) throws IOException, ClassNotFoundException {
-		ChannelInfo channel = getCurrentChannel();
-		UserInfo userInfo = getCurrentUser();
 		
-		MessageInfo message;
-		if (channel != null) {
-			message = new MessageInfo(MessageInfo.Recipient.CHANNEL, channel.getId(), MessageInfo.TYPE_FILE, file.getName());
-		} else {
-			message = new MessageInfo(MessageInfo.Recipient.USER, userInfo.getUserId(), MessageInfo.TYPE_FILE, file.getName());
-		}
+		Recipient recipientType = messages.get(0).getRecipientType();
+		int recipientId = messages.get(0).getRecipientId();
+		
+		MessageInfo message = new MessageInfo(recipientType, recipientId, MessageInfo.TYPE_FILE, file.getName());
 		
 		Command command = (Command) sendCommandToServer(Constants.ADD_FILE, message);
 		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
@@ -205,29 +189,49 @@ public class ClientMain {
 				Command newNameCommand = (Command) receiveCommand();
 				String newFileName = (String) newNameCommand.getExtras();
 				message.setContent(newFileName);
-				Platform.runLater(() -> ApplicationController.get().addMessage(message, channel));
+				Platform.runLater(() -> ApplicationController.get().addMessageToScreen(message));
 			} catch (IOException | ClassNotFoundException e) {
 			}
 		});
 		thread.start();
 	}
-
+	
 	public ArrayList<UserInfo> getUsers() {
 		return users;
 	}
-
+	
 	public void setUsers(ArrayList<UserInfo> users) {
 		this.users = users;
 	}
-
+	
 	public ApplicationController getApplicationController() {
 		return applicationController;
 	}
-
+	
 	public ArrayList<ChannelInfo> getChannelsFromServer() throws IOException, ClassNotFoundException {
 		Command command = (Command) sendCommandToServer(Constants.CHANNEL_GET_ALL, null);
 		ArrayList<ChannelInfo> list = (ArrayList<ChannelInfo>) command.getExtras();
 		channels = list;
 		return channels;
+	}
+	
+	public int getMessagesRecipientId() {
+		return messageTemplate.getRecipientId();
+	}
+	
+	public Recipient getMessagesRecipientType() {
+		return messageTemplate.getRecipientType();
+	}
+	
+	public ArrayList<MessageInfo> getMessages() {
+		return messages;
+	}
+	
+	public void setMessages(ArrayList<MessageInfo> messages) {
+		this.messages = messages;
+	}
+	
+	public void defineMessageTemplate(Recipient recipientType, int recipientId) {
+		messageTemplate = new MessageInfo(recipientType, recipientId);
 	}
 }

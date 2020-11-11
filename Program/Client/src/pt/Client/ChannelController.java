@@ -33,8 +33,6 @@ public class ChannelController implements Initializable {
         errorLabel.setText("");
     }
 
-
-
     public void onCreate(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
         String name = nameField.getText();
         ClientMain instance = ClientMain.getInstance();
@@ -46,7 +44,7 @@ public class ChannelController implements Initializable {
                 return;
             }
         }
-
+    //TODO check if atualiza lista de canais
         Command command = (Command) instance.sendCommandToServer(Constants.CHANNEL_ADD, new ChannelInfo(name, passwordField.getText(), descriptionField.getText()));
         if (command.getProtocol().equals(Constants.SUCCESS)){
             errorLabel.setText("Created successfully");

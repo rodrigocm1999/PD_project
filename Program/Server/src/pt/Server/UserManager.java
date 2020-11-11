@@ -73,7 +73,9 @@ public class UserManager {
 	}
 	
 	public static ArrayList<UserInfo> getUsersLike(String username, int thisUserId) throws SQLException {
-		String select = "select id,name,username from user where username like ?";
+		String select = "select id,name,username from user where username like ? order by " +
+				"(select count(id) from message,user_message where message.id = message_id && receiver_id = user.id), username " +
+				" limit 30";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setString(1, "%" + username + "%");
 		ResultSet result = statement.executeQuery();

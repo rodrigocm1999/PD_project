@@ -43,6 +43,11 @@ public class MessageInfo implements Serializable {
 		this.content = content;
 	}
 	
+	public MessageInfo(Recipient recipientType, int recipientId) {
+		this.recipientType = recipientType;
+		this.recipientId = recipientId;
+	}
+	
 	@Override
 	public String toString() {
 		return "MessageInfo{" +

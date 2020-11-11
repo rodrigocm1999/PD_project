@@ -28,7 +28,7 @@ public class Tests {
 		
 		Socket socketTester = new Socket("localhost",3123);
 		
-		ServerUserThread user = new ServerUserThread(socketUser, null);
+		UserThread user = new UserThread(socketUser, null);
 		user.start();
 		
 		Tests tester = new Tests(socketTester);

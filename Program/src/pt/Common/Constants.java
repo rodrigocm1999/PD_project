@@ -32,6 +32,7 @@ public class Constants {
 	public static final String NO_PERMISSIONS = "NO_PERMISSIONS";
 	
 	public static final String ADD_FILE = "ADD_FILE";
+	public static final String GET_FILE = "GET_FILE";
 	public static final String FILE_ACCEPT_CONNECTION = "FILE_ACCEPT_CONNECTION";
 	public static final int CLIENT_FILE_CHUNK_SIZE = 128 * 1024;
 	

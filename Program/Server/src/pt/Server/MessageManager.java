@@ -62,24 +62,26 @@ public class MessageManager {
 		return messages;
 	}
 	
-	public static ArrayList<MessageInfo> getUserMessages(int userId, int amount) throws SQLException {
+	public static ArrayList<MessageInfo> getUserMessages(int thisUserId, int otherUserId, int amount) throws SQLException {
 		int lastMessageId = getLastMessageId() + 1;
-		return getUserMessagesBefore(userId, lastMessageId, amount);
+		return getUserMessagesBefore(thisUserId, otherUserId, lastMessageId, amount);
 	}
 	
-	public static ArrayList<MessageInfo> getUserMessagesBefore(int userId, int messageId, int amount) throws SQLException {
+	public static ArrayList<MessageInfo> getUserMessagesBefore(int thisUserId, int otherUserId, int messageId, int amount) throws SQLException {
 		String select = "select id,type,content,moment_sent, sender_id " +
 				"from message,user_message " +
 				"where message.id = user_message.message_id " +
-				"and (sender_id = ? or receiver_id = ?) " +
+				"and (sender_id = ? and receiver_id = ? or sender_id = ? and receiver_id = ?) " +
 				"and id < ? " +
 				"order by moment_sent " +
 				"limit ? ;";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
-		statement.setInt(1, userId);
-		statement.setInt(2, userId);
-		statement.setInt(3, messageId);
-		statement.setInt(4, amount);
+		statement.setInt(1, thisUserId);
+		statement.setInt(2, otherUserId);
+		statement.setInt(3, otherUserId);
+		statement.setInt(4, thisUserId);
+		statement.setInt(5, messageId);
+		statement.setInt(6, amount);
 		ResultSet result = statement.executeQuery();
 		ArrayList<MessageInfo> messages = new ArrayList<>();
 		
@@ -90,7 +92,7 @@ public class MessageManager {
 			String type = result.getString("type");
 			String content = result.getString("content");
 			
-			messages.add(new MessageInfo(id, senderId, MessageInfo.Recipient.USER, userId, utcTime, type, content));
+			messages.add(new MessageInfo(id, senderId, MessageInfo.Recipient.USER, thisUserId, utcTime, type, content));
 		}
 		return messages;
 	}

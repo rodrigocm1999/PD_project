@@ -52,6 +52,71 @@ public class ServerNetwork extends Thread {
 		}
 	}
 	
+	public ArrayList<ServerAddress> getOrderedServerAddresses() {
+		synchronized (serversList) {
+			boolean alreadyAddedSelf = false;
+			Collections.sort(serversList);
+			ArrayList<ServerAddress> list = new ArrayList<>(serversList.size() + 1);
+			for (int i = 0; i < serversList.size(); i++) {
+				ServerStatus server = serversList.get(i);
+				list.add(server.getServerAddress());
+				if (!alreadyAddedSelf && i != 0 && serverMain.getConnectedUsers() > server.getConnectedUsers()) {
+					list.add(ownPublicAddress);
+					alreadyAddedSelf = true;
+				}
+			}
+			if (!alreadyAddedSelf) {
+				list.add(ownPublicAddress);
+			}
+			return list;
+		}
+	}
+	
+	public boolean checkIfBetterServer() {
+		//TODO test this
+		synchronized (serversList) {
+			if (serversList.size() == 0) return false;
+			Collections.sort(serversList);
+			ServerStatus smol = serversList.get(0);
+			//System.out.println("smol: " + smol.getConnectedUsers() + "\tthis: " + serverMain.getConnectedUsers());
+			return ((float) smol.getConnectedUsers() < // If has less then it half of this one, then it is a better server
+					(float) serverMain.getConnectedUsers() * ServerConstants.ACCEPT_PERCENTAGE_THRESHOLD);
+		}
+	}
+	
+	public void discoverServers() throws ClassNotFoundException, IOException {
+		System.out.println("Server Discovery ----------------------------------------------");
+		warnEveryone();
+		
+		socket.setSoTimeout(1000);
+		try {
+			while (true) {
+				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+				ServerCommand command = (ServerCommand) multiMan.receiveObject(packet);
+				
+				if (command.getProtocol().equals(ServerConstants.AM_ONLINE)) {
+					int nConnected = (int) command.getExtras();
+					ServerAddress serverAddress = command.getServerAddress();
+					if (!isOwnAddress(serverAddress))
+						serverConnected(new ServerStatus(nConnected, serverAddress));
+				}
+			}
+		} catch (IOException e) {
+			// Needed for timeout
+		}
+		printAvailableServers();
+		socket.setSoTimeout(0);
+	}
+	
+	public void updateUserCount(int count) throws IOException {
+		multiMan.sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count);
+	}
+	
+	public void propagateNewMessage(MessageInfo newMessage) throws IOException {
+		sendAllCommand(ServerConstants.NEW_MESSAGE, newMessage);
+	}
+	//TODO propagate all changes
+	
 	private void receiveUpdates() throws IOException, ClassNotFoundException {
 		while (!stop) {
 			DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
@@ -62,7 +127,6 @@ public class ServerNetwork extends Thread {
 				continue;
 			
 			try {
-				
 				switch (command.getProtocol()) {
 					
 					case ServerConstants.CAME_ONLINE -> {
@@ -218,69 +282,5 @@ public class ServerNetwork extends Thread {
 		return ownPublicAddress.equals(other);
 	}
 	
-	public ArrayList<ServerAddress> getOrderedServerAddresses() {
-		synchronized (serversList) {
-			boolean alreadyAddedSelf = false;
-			Collections.sort(serversList);
-			ArrayList<ServerAddress> list = new ArrayList<>(serversList.size() + 1);
-			for (int i = 0; i < serversList.size(); i++) {
-				ServerStatus server = serversList.get(i);
-				list.add(server.getServerAddress());
-				if (!alreadyAddedSelf && i != 0 && serverMain.getConnectedUsers() > server.getConnectedUsers()) {
-					list.add(ownPublicAddress);
-					alreadyAddedSelf = true;
-				}
-			}
-			if (!alreadyAddedSelf) {
-				list.add(ownPublicAddress);
-			}
-			return list;
-		}
-	}
 	
-	public boolean checkIfBetterServer() {
-		//TODO test this
-		synchronized (serversList) {
-			if (serversList.size() == 0) return false;
-			Collections.sort(serversList);
-			ServerStatus smol = serversList.get(0);
-			//System.out.println("smol: " + smol.getConnectedUsers() + "\tthis: " + serverMain.getConnectedUsers());
-			return ((float) smol.getConnectedUsers() < // If has less then it half of this one, then it is a better server
-					(float) serverMain.getConnectedUsers() * ServerConstants.ACCEPT_PERCENTAGE_THRESHOLD);
-		}
-	}
-	
-	public void discoverServers() throws ClassNotFoundException, IOException {
-		System.out.println("Server Discovery ----------------------------------------------");
-		warnEveryone();
-		
-		socket.setSoTimeout(1000);
-		try {
-			while (true) {
-				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-				ServerCommand command = (ServerCommand) multiMan.receiveObject(packet);
-				
-				if (command.getProtocol().equals(ServerConstants.AM_ONLINE)) {
-					int nConnected = (int) command.getExtras();
-					ServerAddress serverAddress = command.getServerAddress();
-					if (!isOwnAddress(serverAddress))
-						serverConnected(new ServerStatus(nConnected, serverAddress));
-				}
-			}
-		} catch (IOException e) {
-			// Needed for timeout
-		}
-		printAvailableServers();
-		socket.setSoTimeout(0);
-	}
-	
-	public void updateUserCount(int count) throws IOException {
-		multiMan.sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count);
-	}
-	
-	public void propagateNewMessage(MessageInfo newMessage) throws IOException {
-		sendAllCommand(ServerConstants.NEW_MESSAGE, newMessage);
-	}
-	
-	//TODO propagate all changes
 }
