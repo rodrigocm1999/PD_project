@@ -26,11 +26,12 @@ insert into channel_message(channel_id,message_id) values(15,2);
 -- insert test between user messages
 
 -- insert user to channel
-insert into channel_user(channel_id,user_id) values(2,2);
+insert into channel_user(channel_id,user_id) values(15,100);
 
 update channel set password_hash = '12fpfd2m99l1gsstg61m8o5f0s1y5nkftwo3hxw96pvizb1otr' where id = 1;
 update channel set name = ?, password_hash = ?, description = ? where id = ?;
 
+-- Selects
 select * from channel;
 select * from user;
 select * from channel_message;
@@ -57,7 +58,6 @@ limit 10;
 
 select max(id) from message,channel_message where message_id = id and channel_id = 1;
 
-
 insert into channel_user() values(1,2);
 
 select id,creator_id,name,description,(
@@ -66,12 +66,10 @@ select id,creator_id,name,description,(
  from channel 
  order by name asc;
 
+delete from channel where id = 17;
 delete from channel_user where user_id = (select id from user where username =  'dorin');
 delete from user where username = 'dorin';
 
-select * from channel;
-select * from user;
-select * from message;
 insert into channel(creator_ir,name,description,password_hash) values();
  select count(id) from channel where id = 1 and creator_id = 4;
  
@@ -79,11 +77,9 @@ select * from user where photo_path like 'Asdfgtrwe123Asdfgtrwe123%';
  
 select content from message where type = 'text' and content like 'filename%';
 
-
-
 select id,(
 	select sender_id from channel_message where message_id = message.id
 )as sender_id,moment_sent,type,content
 from message where (select channel_id from channel_message where channel_id = 3 and channel_message.message_id = message.id) = 2;
- 
- 
+
+select * from user where username like '%channel%'; 
