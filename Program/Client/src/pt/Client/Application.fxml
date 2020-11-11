@@ -14,11 +14,11 @@
           </Menu>
           <Menu mnemonicParsing="false" text="Channels">
             <items>
-              <MenuItem mnemonicParsing="false" text="Create" onAction="#onClickCreateChannel"/>
+              <MenuItem mnemonicParsing="false" onAction="#onClickCreateChannel" text="Create" />
                   <MenuItem mnemonicParsing="false" text="Add User" />
                   <MenuItem mnemonicParsing="false" text="Remove user" />
                   <MenuItem mnemonicParsing="false" text="Leave" />
-                  <MenuItem mnemonicParsing="false" text="Delete" onAction="#onClickDeleteChannel" />
+                  <MenuItem mnemonicParsing="false" onAction="#onClickDeleteChannel" text="Delete" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Help">
@@ -41,7 +41,12 @@
                   <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
                     <items>
                         <ListView fx:id="channelsListView" />
-                        <ListView fx:id="usersListView" />
+                        <VBox prefHeight="200.0" prefWidth="100.0">
+                           <children>
+                              <TextField fx:id="searchTextField"  onKeyPressed="#searchUserByKey" />
+                              <ListView fx:id="usersListView" />
+                           </children>
+                        </VBox>
                     </items>
                   </SplitPane>
                </children></GridPane>
@@ -54,7 +59,7 @@
                            <children>
                               <TextField fx:id="msgTextField" alignment="TOP_LEFT" HBox.hgrow="ALWAYS" />
                               <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#onSendFile" text="File" />
-                              <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onClickSend" text="Send" />
+                              <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onClickSend" onKeyPressed="#sendMessageBykey" text="Send" />
                            </children>
                         </HBox>
                      </children>

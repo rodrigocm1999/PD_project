@@ -17,11 +17,13 @@ public class ClientMain {
 	private ArrayList<ServerAddress> serversList;
 	private static ClientMain instance;
 	private ArrayList<ChannelInfo> channels;
+	private ArrayList<UserInfo> users;
 	private UserInfo userInfo;
 	private File userPhoto;
 	private ChannelInfo currentChannel;
 	private UserInfo currentUser;
 	private ApplicationController applicationController;
+
 	
 	public static ClientMain getInstance() {
 		return instance;
@@ -117,6 +119,15 @@ public class ClientMain {
 		}
 		return null;
 	}
+	public UserInfo getUserByUsername(String name) {
+		System.out.println(users);
+		for (var user : users) {
+			if (name.equals(user.getUsername())) {
+				return user;
+			}
+		}
+		return null;
+	}
 	
 	public ArrayList<MessageInfo> getMessagesFromChannel(int id) throws IOException, ClassNotFoundException {
 		Command command = (Command) sendCommandToServer(Constants.CHANNEL_GET_MESSAGES, new Ids(-1, id, -1));
@@ -199,6 +210,14 @@ public class ClientMain {
 			}
 		});
 		thread.start();
+	}
+
+	public ArrayList<UserInfo> getUsers() {
+		return users;
+	}
+
+	public void setUsers(ArrayList<UserInfo> users) {
+		this.users = users;
 	}
 
 	public ApplicationController getApplicationController() {

@@ -5,12 +5,17 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.InputMethodEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -23,6 +28,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ApplicationController implements Initializable {
 	
@@ -36,6 +43,7 @@ public class ApplicationController implements Initializable {
 	public GridPane msgPane;
 	public Button btnSend;
 	public TextField msgTextField;
+	public TextField searchTextField;
 	
 	private final ObservableList<String> channelsObsList = FXCollections.observableArrayList();
 	private final ObservableList<String> usersObsList = FXCollections.observableArrayList();
@@ -150,10 +158,17 @@ public class ApplicationController implements Initializable {
 		}
 	}
 	
-	public void addMessage(MessageInfo msg, ChannelInfo channel) {
-		ArrayList<MessageInfo> messages = channel.getMessages();
-		messages.add(msg);
-		msgsObsList.add(msg.getContent());
+	public void addMessage(MessageInfo msg, Object object) {
+		ArrayList<MessageInfo> messages =  null;
+		if (object instanceof ChannelInfo){
+			ChannelInfo channel = (ChannelInfo) object;
+			messages = channel.getMessages();
+			messages.add(msg);
+		}else {
+			messages.add(msg);
+		}
+		System.out.println(messages);
+		//msgsObsList.add(msg.getContent());
 		updateMessageListView(messages);
 	}
 	
@@ -163,7 +178,20 @@ public class ApplicationController implements Initializable {
 		if (!messageText.isBlank()) {
 			ClientMain instance = ClientMain.getInstance();
 			ChannelInfo currentChannel = instance.getCurrentChannel();
-			MessageInfo messageInfo = new MessageInfo(MessageInfo.Recipient.CHANNEL, currentChannel.getId(), MessageInfo.TYPE_TEXT, messageText);
+			UserInfo currentUser = instance.getCurrentUser();
+			int id;
+			MessageInfo.Recipient recipient;
+			if (currentChannel != null){
+				id = currentChannel.getId();
+				recipient = MessageInfo.Recipient.CHANNEL;
+			}else {
+				id = currentUser.getUserId();
+				recipient = MessageInfo.Recipient.USER;
+			}
+
+			System.out.println(currentUser);
+			System.out.println(currentChannel);
+			MessageInfo messageInfo = new MessageInfo(recipient, id, MessageInfo.TYPE_TEXT, messageText);
 			Thread thread = new Thread(() -> {
 				Command command;
 				try {
@@ -173,7 +201,13 @@ public class ApplicationController implements Initializable {
 					return;
 				}
 				if (command.getProtocol().equals(Constants.SUCCESS)) {
-					Platform.runLater(() -> addMessage(messageInfo, currentChannel));
+					System.out.println("Cheguei aqui");
+					if (currentChannel != null){
+						Platform.runLater(() -> addMessage(messageInfo, currentChannel));
+					}else {
+						Platform.runLater(() -> addMessage(messageInfo, currentUser ));
+					}
+
 				}
 			});
 			thread.start();
@@ -210,5 +244,47 @@ public class ApplicationController implements Initializable {
 			e.printStackTrace();
 		}
 		updateChannelsListView(ClientMain.getInstance());
+	}
+
+	public void updateUsersListView(ArrayList<UserInfo> users){
+		usersObsList.clear();
+		for (var item: users ) {
+			usersObsList.add(item.getUsername());
+		}
+		usersListView.setOnMouseClicked(event -> {
+			usersListViewOnClick();
+		});
+
+	}
+
+	private void usersListViewOnClick() {
+		String selectedItem = (String) usersListView.getSelectionModel().getSelectedItem();
+		ClientMain instance = ClientMain.getInstance();
+		UserInfo user = instance.getUserByUsername(selectedItem);
+		System.out.println(selectedItem);
+		try {
+			Command command = (Command) instance.sendCommandToServer(Constants.USER_GET_MESSAGES, new Ids(user.getUserId(), 0, 0));
+			updateMessageListView((ArrayList<MessageInfo>) command.getExtras());
+			setCurrent(user);
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void searchUserByKey(KeyEvent keyEvent) throws IOException, ClassNotFoundException {
+		if (keyEvent.getCode() == KeyCode.ENTER){
+			ClientMain instance = ClientMain.getInstance();
+			Command command = (Command) instance.sendCommandToServer(Constants.USER_GET_LIKE, searchTextField.getText());
+			ArrayList<UserInfo> usersFound = (ArrayList<UserInfo>) command.getExtras();
+			instance.setUsers(usersFound);
+			System.out.println(instance.getUsers());
+			updateUsersListView(usersFound);
+		}
+	}
+
+	public void sendMessageBykey(KeyEvent keyEvent) {
+		if (keyEvent.getCode() == KeyCode.ENTER){
+			onClickSend(null);
+		}
 	}
 }

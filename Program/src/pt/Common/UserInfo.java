@@ -1,6 +1,7 @@
 package pt.Common;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class UserInfo implements Serializable {
@@ -12,6 +13,7 @@ public class UserInfo implements Serializable {
 	private String username;
 	private String password;
 	private byte[] imageBytes;
+
 	
 	public UserInfo(String username, String password) {
 		this.username = username;
