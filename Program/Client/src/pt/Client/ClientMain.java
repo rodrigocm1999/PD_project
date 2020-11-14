@@ -234,4 +234,7 @@ public class ClientMain {
 	public void defineMessageTemplate(Recipient recipientType, int recipientId) {
 		messageTemplate = new MessageInfo(recipientType, recipientId);
 	}
+	public void waitForMessage(){
+
+	}
 }

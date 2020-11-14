@@ -41,9 +41,9 @@
                   <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
                     <items>
                         <ListView fx:id="channelsListView" />
-                        <VBox prefHeight="200.0" prefWidth="100.0">
+                        <VBox>
                            <children>
-                              <TextField fx:id="searchTextField"  onKeyPressed="#searchUserByKey" />
+                              <TextField fx:id="searchTextField" onKeyPressed="#searchUserByKey" />
                               <ListView fx:id="usersListView" />
                            </children>
                         </VBox>
@@ -54,7 +54,7 @@
                <children>
                   <VBox alignment="TOP_CENTER" nodeOrientation="LEFT_TO_RIGHT" prefHeight="200.0" prefWidth="100.0" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS" GridPane.valignment="TOP" GridPane.vgrow="ALWAYS">
                      <children>
-                        <ListView fx:id="msgListView" VBox.vgrow="ALWAYS" />
+                        <ListView fx:id="msgListView" style="-fx-background-color: E2FAB5;" VBox.vgrow="ALWAYS" />
                         <HBox prefHeight="26.0" prefWidth="787.0" VBox.vgrow="NEVER">
                            <children>
                               <TextField fx:id="msgTextField" alignment="TOP_LEFT" HBox.hgrow="ALWAYS" />
