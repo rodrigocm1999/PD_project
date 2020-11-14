@@ -3,6 +3,9 @@ package pt.Common;
 import java.io.Serializable;
 
 public class Command implements Serializable {
+	
+	public static final long serialVersionUID = 54893972L;
+	
 	private String protocol;
 	private Object extras;
 	
