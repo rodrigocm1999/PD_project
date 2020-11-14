@@ -13,7 +13,7 @@ public class LoginController {
 	public TextField idUsername;
 	public PasswordField idPassword;
 	
-	public void onClickLogin(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
+	public void onClickLogin(ActionEvent actionEvent) throws IOException, InterruptedException {
 		ClientMain instance = ClientMain.getInstance();
 		UserInfo user = new UserInfo(idUsername.getText(), idPassword.getText());
 		//UserInfo user = new UserInfo("dorin", "Dorin1234");

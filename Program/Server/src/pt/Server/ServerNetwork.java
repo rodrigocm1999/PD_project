@@ -276,7 +276,7 @@ public class ServerNetwork extends Thread {
 			while (!stop) {
 				try {
 					multiMan.sendServerCommand(ServerConstants.HEARTBEAT);
-					System.out.println("Heartbeat Sent");
+					//System.out.println("Heartbeat Sent");
 					Thread.sleep(ServerConstants.HEARTBEAT_SEND_INTERVAL);
 				} catch (InterruptedException | IOException e) {
 					System.out.println("startHeartbeatSender : " + e.getLocalizedMessage());

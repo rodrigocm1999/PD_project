@@ -28,6 +28,7 @@ public class ClientMain {
 	private ArrayList<MessageInfo> messages = null;
 	private MessageInfo messageTemplate = null;
 	
+	
 	public static ClientMain getInstance() {
 		return instance;
 	}
@@ -48,6 +49,7 @@ public class ClientMain {
 			System.out.println(serverIPAddress + ":" + portUDPServer);
 			boolean success = tryConnectServer(serverIPAddress, portUDPServer, datagramSocket);
 			if (success) {
+				
 				return;
 			} else {
 				ServerAddress serverAddress = serversList.get(0);
@@ -71,11 +73,17 @@ public class ClientMain {
 			oOS = new ObjectOutputStream(socket.getOutputStream());
 			oIS = new ObjectInputStream(socket.getInputStream());
 			
+			
 			command = (Command) oIS.readObject();
 			if (!command.getProtocol().equals(Constants.SERVERS_LIST)) {
 				throw new Exception("Should not happen");
 			}
 			serversList = (ArrayList<ServerAddress>) command.getExtras();
+			
+			//----------------------------------------------------------------------------------------------------------
+			receiver = new Receiver(oIS);
+			receiver.start();
+			
 			return true;
 		} else if (protocol.equals(Constants.CONNECTION_REFUSED)) {
 			// TODO Garantir que recebe
@@ -86,21 +94,30 @@ public class ClientMain {
 		}
 	}
 	
-	public Object sendCommandToServer(String protocol, Object object) throws IOException, ClassNotFoundException {
+	private Receiver receiver;
+	
+	public Object sendCommandToServer(String protocol, Object object) throws IOException, InterruptedException {
 		Command command = new Command(protocol, object);
 		oOS.writeObject(command);
-		Object ob = oIS.readObject();
-		System.out.println("Sent : " + command + "\n\tReceived : " + ob);
+		
+		Object ob = receiveCommand();
+		System.out.print("Sent : " + command + "\n\t");
 		return ob;
 	}
 	
-	public Object receiveCommand() throws IOException, ClassNotFoundException {
-		Object ob = oIS.readObject();
+	public Object receiveCommand() throws InterruptedException {
+		Waiter waiter = new Waiter();
+		System.out.println("stopped to wait");
+		receiver.waitForCommand(waiter);
+		System.out.println("Received something");
+		
+		Command ob = (Command) waiter.getResult();
+		//Object ob = oIS.readObject();
 		System.out.println("Received : " + ob);
 		return ob;
 	}
 	
-	public boolean logout() throws IOException, ClassNotFoundException {
+	public boolean logout() throws IOException, ClassNotFoundException, InterruptedException {
 		Command command = (Command) sendCommandToServer(Constants.LOGOUT, null);
 		// wait for response
 		return true;
@@ -133,7 +150,7 @@ public class ClientMain {
 		return null;
 	}
 	
-	public ArrayList<MessageInfo> getMessagesFromChannel(int id) throws IOException, ClassNotFoundException {
+	public ArrayList<MessageInfo> getMessagesFromChannel(int id) throws IOException, ClassNotFoundException, InterruptedException {
 		Command command = (Command) sendCommandToServer(Constants.CHANNEL_GET_MESSAGES, new Ids(-1, id, -1));
 		return (ArrayList<MessageInfo>) command.getExtras();
 	}
@@ -154,7 +171,7 @@ public class ClientMain {
 		this.userPhoto = userPhoto;
 	}
 	
-	public void sendFile(File file) throws IOException, ClassNotFoundException {
+	public void sendFile(File file) throws IOException, InterruptedException {
 		
 		Recipient recipientType = messages.get(0).getRecipientType();
 		int recipientId = messages.get(0).getRecipientId();
@@ -190,7 +207,7 @@ public class ClientMain {
 				String newFileName = (String) newNameCommand.getExtras();
 				message.setContent(newFileName);
 				Platform.runLater(() -> ApplicationController.get().addMessageToScreen(message));
-			} catch (IOException | ClassNotFoundException e) {
+			} catch (IOException  | InterruptedException e) {
 			}
 		});
 		thread.start();
@@ -208,7 +225,7 @@ public class ClientMain {
 		return applicationController;
 	}
 	
-	public ArrayList<ChannelInfo> getChannelsFromServer() throws IOException, ClassNotFoundException {
+	public ArrayList<ChannelInfo> getChannelsFromServer() throws IOException, ClassNotFoundException, InterruptedException {
 		Command command = (Command) sendCommandToServer(Constants.CHANNEL_GET_ALL, null);
 		ArrayList<ChannelInfo> list = (ArrayList<ChannelInfo>) command.getExtras();
 		channels = list;
@@ -234,7 +251,8 @@ public class ClientMain {
 	public void defineMessageTemplate(Recipient recipientType, int recipientId) {
 		messageTemplate = new MessageInfo(recipientType, recipientId);
 	}
-	public void waitForMessage(){
-
+	
+	public void waitForMessage() {
+	
 	}
 }

@@ -57,9 +57,9 @@
                         <ListView fx:id="msgListView" style="-fx-background-color: E2FAB5;" VBox.vgrow="ALWAYS" />
                         <HBox prefHeight="26.0" prefWidth="787.0" VBox.vgrow="NEVER">
                            <children>
-                              <TextField fx:id="msgTextField" alignment="TOP_LEFT" HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="msgTextField" alignment="TOP_LEFT" HBox.hgrow="ALWAYS" onKeyPressed="#sendMessageByKey" />
                               <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#onSendFile" text="File" />
-                              <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onMessageSend" onKeyPressed="#sendMessageByKey" text="Send" />
+                              <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onMessageSend" text="Send" />
                            </children>
                         </HBox>
                      </children>

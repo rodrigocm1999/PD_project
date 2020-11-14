@@ -7,8 +7,6 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.net.*;
-import java.util.Scanner;
 
 public class ClientWindow extends Application {
 	
@@ -21,7 +19,6 @@ public class ClientWindow extends Application {
 	public static ClientWindow getInstance() {
 		return instance;
 	}
-	
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {

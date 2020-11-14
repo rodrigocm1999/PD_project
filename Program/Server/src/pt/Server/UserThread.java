@@ -215,7 +215,7 @@ public class UserThread extends Thread {
 			sendCommand(Constants.ERROR, "Empty Content");
 			return;
 		}
-		String fileNameWithTime = addTimestampFileName(message.getContent()); // TODO might receive two files at the exact same time
+		String fileNameWithTime = addTimestampFileName(message.getContent());
 		
 		String filePath = ServerConstants.getTransferredFilesPath() + File.separator +
 				fileNameWithTime;
@@ -425,6 +425,7 @@ public class UserThread extends Thread {
 	public void receivedPropagatedMessage(MessageInfo message) throws IOException {
 		System.out.println("Propagated message : " + message);
 		if (isLoggedIn) {
+			sendCommand(Constants.NEW_MESSAGE, message);
 			if (currentPlace.getChannelId() == message.getRecipientId() || currentPlace.getMessageId() == message.getRecipientId()) {
 				System.out.println("Send propagated message : " + message);
 				sendCommand(Constants.NEW_MESSAGE, message);

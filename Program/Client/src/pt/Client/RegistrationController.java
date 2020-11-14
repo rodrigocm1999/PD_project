@@ -56,7 +56,7 @@ public class RegistrationController {
         Command command;
         try {
             command = (Command) instance.sendCommandToServer(Constants.REGISTER, user);
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             return;
         }

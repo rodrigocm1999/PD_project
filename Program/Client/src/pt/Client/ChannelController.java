@@ -33,7 +33,7 @@ public class ChannelController implements Initializable {
         errorLabel.setText("");
     }
 
-    public void onCreate(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
+    public void onCreate(ActionEvent actionEvent) throws IOException, InterruptedException {
         String name = nameField.getText();
         ClientMain instance = ClientMain.getInstance();
         ArrayList<ChannelInfo> list = instance.getChannels();
@@ -56,7 +56,7 @@ public class ChannelController implements Initializable {
         }
     }
 
-    public void onDelete(ActionEvent actionEvent) throws IOException, ClassNotFoundException {
+    public void onDelete(ActionEvent actionEvent) throws IOException, InterruptedException {
         String name = nameField.getText();
         ClientMain instance = ClientMain.getInstance();
         ArrayList<ChannelInfo> list = instance.getChannels();
