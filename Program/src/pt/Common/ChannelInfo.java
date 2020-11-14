@@ -1,7 +1,6 @@
 package pt.Common;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
 public class ChannelInfo implements Serializable {
 	
@@ -12,8 +11,8 @@ public class ChannelInfo implements Serializable {
 	private String name;
 	private String password;
 	private String description;
+	private long creationMoment;
 	private boolean isPartOf;
-	private ArrayList<MessageInfo> messages;
 	
 	public ChannelInfo(int id, int creatorId, String name, String description, boolean isPartOf) {
 		this.id = id;
@@ -35,7 +34,16 @@ public class ChannelInfo implements Serializable {
 		this.password = password;
 		this.description = description;
 	}
-
+	
+	public ChannelInfo(int id, int creatorId, String name, String password, String description, long creationMoment) {
+		this.id = id;
+		this.creatorId = creatorId;
+		this.name = name;
+		this.password = password;
+		this.description = description;
+		this.creationMoment = creationMoment;
+	}
+	
 	public ChannelInfo(int id, String password) {
 		this.id = id;
 		this.password = password;
@@ -97,6 +105,14 @@ public class ChannelInfo implements Serializable {
 		this.description = description;
 	}
 	
+	public long getCreationMoment() {
+		return creationMoment;
+	}
+	
+	public void setCreationMoment(long creationMoment) {
+		this.creationMoment = creationMoment;
+	}
+	
 	public boolean isPartOf() {
 		return isPartOf;
 	}
@@ -105,11 +121,4 @@ public class ChannelInfo implements Serializable {
 		isPartOf = partOf;
 	}
 	
-	public ArrayList<MessageInfo> getMessages() {
-		return messages;
-	}
-	
-	public void setMessages(ArrayList<MessageInfo> messages) {
-		this.messages = messages;
-	}
 }

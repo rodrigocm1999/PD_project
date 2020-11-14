@@ -74,7 +74,7 @@ delete from channel_user where user_id = (select id from user where username =  
 delete from user where username = 'dorin';
 
 insert into channel(creator_ir,name,description,password_hash) values();
- select count(id) from channel where id = 1 and creator_id = 4;
+select count(id) from channel where id = 1 and creator_id = 4;
  
 select * from user where photo_path like 'Asdfgtrwe123Asdfgtrwe123%';
  
@@ -89,3 +89,29 @@ select * from user where username like '%channel%';
 
 select count(id) from message,user_message where message.id = message_id && receiver_id = 2;
 select id,name,username from user where username like '%%' order by (select count(id) from message,user_message where message.id = message_id && receiver_id = user.id), username limit 30;
+
+select id,name,username,password_hash,photo_path,user_creation from user where id>2;
+insert into user(id,name,username,password_hash,photo_path,user_creation) values(?,?,?,?,?,?);
+select id,creator_id,name,password_hash,description,creation_moment from channel where id>0;
+insert into channel(id,creator_id,name,password_hash,description,creation_moment) values(?,?,?,?,?,?);
+
+select id,sender_id,moment_sent,type,content from message,channel_message,user_message 
+where id > 0 and (id = channel_message.message_id or id = user_message.message_id) 
+order by id;
+
+insert into message(id,sender_id,moment_sent,type,content) values(?,?,?,?,?);
+
+
+select channel_id,user_id from channel_user where id > 0;
+
+select id,sender_id,moment_sent,type,content, 
+	(select channel_id from channel_message where message.id = message_id) as channel_id, 
+	(select receiver_id from user_message where message.id = message_id) as receiver_id
+from message
+where id > 0;
+
+select id,name,username,(select count(id) from message,user_message where message.id = message_id && receiver_id = user.id) as mensagens
+from user 
+where username like '%' 
+order by (select count(id) from message,user_message where message.id = message_id && receiver_id = user.id) desc, username 
+limit 30;

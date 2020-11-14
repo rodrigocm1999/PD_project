@@ -53,7 +53,10 @@ public class ServerMain {
 		connectDatabase();
 		serversManager = createServerSyncer();
 		serversManager.discoverServers();
-		synchronizeDatabase();
+		serversManager.synchronizeDatabase();
+		
+		Runtime.getRuntime().addShutdownHook(new shutdownHook());
+		
 		serversManager.start();
 		
 		System.out.println("Server Running ------------------------------------------------");
@@ -65,7 +68,6 @@ public class ServerMain {
 			
 			handleCommand(command, receivedPacket, udpSocket);
 		}
-		
 	}
 	
 	private void handleCommand(Command command, DatagramPacket receivedPacket, DatagramSocket udpSocket) {
@@ -79,7 +81,7 @@ public class ServerMain {
 						//TODO garantir entrega MAYBE, if so, then make this non blocking, and add syncronized on connectedMachines
 						receiveNewUser(receivedPacket, udpSocket);
 					} else {
-						ArrayList<ServerAddress> list = serversManager.getOrderedServerAddresses();
+						ArrayList<ServerAddress> list = serversManager.getOrderedServerAddressesThisLast();
 						Utils.printList(list, "Servers Sent");
 						UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
 								udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
@@ -102,25 +104,14 @@ public class ServerMain {
 		return new ServerNetwork(this, group, port, listeningUDPPort);
 	}
 	
-	private void synchronizeDatabase() throws SQLException {
-		//TODO get all of the new information
-		System.out.println("Syncing Database ----------------------------------------------");
-		//Connect to the server with the least user load at the moment
-		ServerAddress server = serversManager.getOrderedServerAddresses().get(0);
-		Synchronizer synchronizer = new Synchronizer(server);
-		synchronizer.start();
-		//Get all of the info after list ID of the table that I have
-		//Have to use reliable UDP and break files into 5KB chunks
-	}
-	
 	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
 		try {
 			serverSocket.setSoTimeout(Constants.CONNECTION_TIMEOUT);
 			Socket socket = serverSocket.accept();
-			UserThread userThread = new UserThread(socket, serversManager.getOrderedServerAddresses());
+			UserThread userThread = new UserThread(socket, serversManager.getOrderedServerAddressesThisLast());
 			userThread.start();
 			connectedMachines.add(userThread);
-			serversManager.updateUserCount(getConnectedUsers());
+			serversManager.updateUserCount(getNConnectedUsers());
 			System.out.println(Constants.CONNECTION_ACCEPTED + " : " + socket);
 		} catch (Exception e) {
 			System.out.println("Catch Establish Connection : " + e.getMessage());
@@ -139,13 +130,16 @@ public class ServerMain {
 		return listeningUDPPort;
 	}
 	
-	public int getConnectedUsers() {
+	public int getNConnectedUsers() {
 		return connectedMachines.size();
 	}
 	
-	public void removeConnected(UserThread user) {
+	public void removeConnected(UserThread user) throws IOException {
 		synchronized (connectedMachines) {
 			connectedMachines.remove(user);
+			if (serversManager != null) {
+				serversManager.updateUserCount(getNConnectedUsers());
+			}
 		}
 	}
 	
@@ -176,7 +170,7 @@ public class ServerMain {
 		serversManager.propagateNewMessage(message);
 	}
 	
-	public void propagateNewMessage(MessageInfo message) throws IOException {
+	public void propagatedNewMessage(MessageInfo message) throws IOException {
 		System.out.println("Received propagation");
 		for (UserThread user : connectedMachines) {
 			user.receivedPropagatedMessage(message);
@@ -252,5 +246,21 @@ public class ServerMain {
 		serverMain.start();
 		
 		//TODO use this --> Runtime.getRuntime().addShutdownHook();
+	}
+	
+	public void shutdown() {
+		serversManager.sendShutdown();
+		serversManager = null;
+		
+		for (var connection : connectedMachines) {
+			connection.disconnect();
+		}
+	}
+	
+	private static class shutdownHook extends Thread {
+		@Override
+		public void run() {
+			ServerMain.getInstance().shutdown();
+		}
 	}
 }

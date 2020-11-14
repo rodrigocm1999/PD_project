@@ -14,19 +14,18 @@ import java.util.Collections;
 public class ServerNetwork extends Thread {
 	
 	private final ServerMain serverMain;
-	private MulticastSocket socket;
+	private MulticastSocket multicastSocket;
 	private final ServerAddress ownPublicAddress;
 	private final ServerAddress ownAddress;
-	private final ArrayList<ServerStatus> serversList;
+	private final ArrayList<ServerStatus> serversList = new ArrayList<>();
 	private Thread heartbeatSend;
 	private Thread heartbeatCheck;
-	private boolean stop;
+	private boolean stop = false;
 	private final MulticastManager multiMan;
+	private int synchronizationFakeUsers;
 	
 	ServerNetwork(ServerMain serverMain, InetAddress group, int port, int serverUDPPort) throws IOException {
 		this.serverMain = serverMain;
-		serversList = new ArrayList<>();
-		stop = false;
 		InetAddress publicIPAddress = Utils.getPublicIp();
 		if (publicIPAddress == null)
 			publicIPAddress = InetAddress.getLocalHost();
@@ -35,7 +34,15 @@ public class ServerNetwork extends Thread {
 		ownAddress = new ServerAddress(InetAddress.getLocalHost(), serverUDPPort);
 		System.out.println("Own Local Address : " + ownAddress + "\t Own Public Address" + ownPublicAddress);
 		startMulticastSocket();
-		multiMan = new MulticastManager(socket, ownPublicAddress, group, port);
+		multiMan = new MulticastManager(multicastSocket, ownPublicAddress, group, port);
+	}
+	
+	public MulticastSocket getMulticastSocket() {
+		return multicastSocket;
+	}
+	
+	public ServerAddress getServerAddress() {
+		return ownPublicAddress;
 	}
 	
 	@Override
@@ -52,35 +59,34 @@ public class ServerNetwork extends Thread {
 		}
 	}
 	
-	public ArrayList<ServerAddress> getOrderedServerAddresses() {
+	public ArrayList<ServerAddress> getOrderedServerAddressesThisLast() {
 		synchronized (serversList) {
-			boolean alreadyAddedSelf = false;
 			Collections.sort(serversList);
 			ArrayList<ServerAddress> list = new ArrayList<>(serversList.size() + 1);
-			for (int i = 0; i < serversList.size(); i++) {
-				ServerStatus server = serversList.get(i);
+			for (var server : serversList) {
 				list.add(server.getServerAddress());
-				if (!alreadyAddedSelf && i != 0 && serverMain.getConnectedUsers() > server.getConnectedUsers()) {
-					list.add(ownPublicAddress);
-					alreadyAddedSelf = true;
-				}
 			}
-			if (!alreadyAddedSelf) {
-				list.add(ownPublicAddress);
-			}
+			list.add(ownPublicAddress);
 			return list;
 		}
 	}
 	
+	public ServerAddress getLeastLoadServer() {
+		ArrayList<ServerAddress> servers = getOrderedServerAddressesThisLast();
+		if (servers.size() == 1) {
+			return null;
+		}
+		return servers.get(1);
+	}
+	
 	public boolean checkIfBetterServer() {
-		//TODO test this
 		synchronized (serversList) {
 			if (serversList.size() == 0) return false;
 			Collections.sort(serversList);
-			ServerStatus smol = serversList.get(0);
+			ServerStatus smallest = serversList.get(0);
 			//System.out.println("smol: " + smol.getConnectedUsers() + "\tthis: " + serverMain.getConnectedUsers());
-			return ((float) smol.getConnectedUsers() < // If has less then it half of this one, then it is a better server
-					(float) serverMain.getConnectedUsers() * ServerConstants.ACCEPT_PERCENTAGE_THRESHOLD);
+			return ((float) smallest.getConnectedUsers() < // If has less then it half of this one, then it is a better server
+					(float) serverMain.getNConnectedUsers() * ServerConstants.ACCEPT_PERCENTAGE_THRESHOLD);
 		}
 	}
 	
@@ -88,7 +94,7 @@ public class ServerNetwork extends Thread {
 		System.out.println("Server Discovery ----------------------------------------------");
 		warnEveryone();
 		
-		socket.setSoTimeout(1000);
+		multicastSocket.setSoTimeout(1000);
 		try {
 			while (true) {
 				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
@@ -105,11 +111,11 @@ public class ServerNetwork extends Thread {
 			// Needed for timeout
 		}
 		printAvailableServers();
-		socket.setSoTimeout(0);
+		multicastSocket.setSoTimeout(0);
 	}
 	
 	public void updateUserCount(int count) throws IOException {
-		multiMan.sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count);
+		multiMan.sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count + synchronizationFakeUsers);
 	}
 	
 	public void propagateNewMessage(MessageInfo newMessage) throws IOException {
@@ -131,7 +137,11 @@ public class ServerNetwork extends Thread {
 					
 					case ServerConstants.CAME_ONLINE -> {
 						ServerAddress serverAddress = command.getServerAddress();
-						newServerOnline(serverAddress);
+						serverConnected(serverAddress);
+					}
+					case ServerConstants.CAME_OFFLINE -> {
+						ServerAddress serverAddress = command.getServerAddress();
+						serverDisconnected(getServerStatus(serverAddress));
 					}
 					
 					case ServerConstants.HEARTBEAT -> {
@@ -149,11 +159,17 @@ public class ServerNetwork extends Thread {
 						}
 					}
 					
+					case ServerConstants.ASK_SYNCHRONIZER -> {
+						System.out.println("ASK_SYNCHRONIZER");
+						receivedSynchronizationRequest(command.getServerAddress());
+					}
+					
 					case ServerConstants.NEW_MESSAGE -> {
 						MessageInfo message = (MessageInfo) command.getExtras();
 						System.out.println("Received propagated : " + message);
 						protocolNewMessage(message);
 					}
+					
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -161,15 +177,39 @@ public class ServerNetwork extends Thread {
 		}
 	}
 	
-	private void protocolNewMessage(MessageInfo message) throws IOException, SQLException {
-		MessageManager.insertMessage(message);
-		serverMain.propagateNewMessage(message);
+	public void synchronizeDatabase() throws Exception {
+		//TODO get all of the new information
+		//Connect to the server with the least user load at the moment
+		ServerAddress server = getLeastLoadServer();
+		if (server == null) {
+			System.out.println("No others servers running. Skipping synchronization");
+			return;
+		}
+		
+		System.out.println("Syncing Database ----------------------------------------------");
+		Synchronizer synchronizer = new Synchronizer(server, getServerAddress(), getMulticastSocket());
+		synchronizer.receiveData();
+		//Get all of the info after list ID of the table that I have
+		//Have to use reliable UDP and break files into 5KB chunks
 	}
 	
-	private void newServerOnline(ServerAddress serverAddress) throws IOException {
+	private void receivedSynchronizationRequest(ServerAddress serverAddress) throws Exception {
+		synchronizationFakeUsers += ServerConstants.FAKE_USER_SYNC_COUNT;
+		updateUserCount(serverMain.getNConnectedUsers());
+		System.out.println("updated user count");
+		Synchronizer synchronizer = new Synchronizer(serverAddress, getServerAddress(), multicastSocket);
+		synchronizer.sendData();
+	}
+	
+	private void protocolNewMessage(MessageInfo message) throws IOException, SQLException {
+		MessageManager.insertMessage(message);
+		serverMain.propagatedNewMessage(message);
+	}
+	
+	private void serverConnected(ServerAddress serverAddress) throws IOException {
 		ServerStatus server = new ServerStatus(0, serverAddress);
 		serverConnected(server);
-		multiMan.sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getConnectedUsers());
+		multiMan.sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getNConnectedUsers());
 		System.out.println("Came Online : " + server);
 	}
 	
@@ -189,7 +229,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	private void sendAllCommand(String protocol) throws IOException {
-		multiMan.sendServerCommand(protocol, null);
+		sendAllCommand(protocol, null);
 	}
 	
 	private void sendAllCommand(String protocol, Object extras) throws IOException {
@@ -199,10 +239,10 @@ public class ServerNetwork extends Thread {
 	private void startMulticastSocket() throws IOException {
 		InetAddress group = InetAddress.getByName(ServerConstants.MULTICAST_GROUP);
 		int port = ServerConstants.MULTICAST_PORT;
-		socket = new MulticastSocket(port);
+		multicastSocket = new MulticastSocket(port);
 		SocketAddress socketAddress = new InetSocketAddress(group, port);
 		NetworkInterface networkInterface = NetworkInterface.getByInetAddress(group);
-		socket.joinGroup(socketAddress, networkInterface);
+		multicastSocket.joinGroup(socketAddress, networkInterface);
 	}
 	
 	private void startHeartbeatChecker() {
@@ -236,7 +276,7 @@ public class ServerNetwork extends Thread {
 			while (!stop) {
 				try {
 					multiMan.sendServerCommand(ServerConstants.HEARTBEAT);
-					//System.out.println("Heartbeat Sent");
+					System.out.println("Heartbeat Sent");
 					Thread.sleep(ServerConstants.HEARTBEAT_SEND_INTERVAL);
 				} catch (InterruptedException | IOException e) {
 					System.out.println("startHeartbeatSender : " + e.getLocalizedMessage());
@@ -271,10 +311,15 @@ public class ServerNetwork extends Thread {
 	
 	private ServerStatus getServerStatus(ServerAddress address) {
 		synchronized (serversList) {
-			for (var server : serversList)
-				if (server.getServerAddress().equals(address))
-					return server;
-			return null;
+			ServerStatus serverStatus = null;
+			for (var server : serversList) {
+				if (server.getServerAddress().equals(address)) {
+					serverStatus = server;
+					break;
+				}
+			}
+			if (serverStatus == null) System.err.println("Status == null\t Should never happen");
+			return serverStatus;
 		}
 	}
 	
@@ -282,5 +327,10 @@ public class ServerNetwork extends Thread {
 		return ownPublicAddress.equals(other);
 	}
 	
-	
+	public void sendShutdown() {
+		try {
+			multiMan.sendServerCommand(ServerConstants.CAME_OFFLINE);
+		} catch (Exception ignore) {
+		}
+	}
 }

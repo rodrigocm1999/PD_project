@@ -1,5 +1,6 @@
 package pt.Server;
 
+import pt.Common.ChannelInfo;
 import pt.Common.MessageInfo;
 
 import java.sql.PreparedStatement;
@@ -97,23 +98,34 @@ public class MessageManager {
 		return messages;
 	}
 	
-	
 	public static boolean insertMessage(MessageInfo message) throws SQLException {
 		synchronized (messageLock) {
+			String insertMessage = "insert into message(id,sender_id,type,content) values(?,?,?,?)";
+			message.setId(getLastMessageId() + 1);
+			PreparedStatement statement = getApp().getPreparedStatement(insertMessage);
+			statement.setInt(1, message.getId());
+			statement.setInt(2, message.getSenderId());
+			statement.setString(3, message.getType());
+			statement.setString(4, message.getContent());
+			boolean added = statement.executeUpdate() == 1;
+			if (!added) return false;
+			
+			String tableInsert = "";
 			if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
-				return insertChannelMessage(message);
+				tableInsert = "insert into channel_message(message_id,channel_id) values(?,?)";
 			} else {
-				return insertUserMessage(message);
+				tableInsert = "insert into user_message(message_id,receiver_id) values(?,?)";
 			}
+			statement = getApp().getPreparedStatement(tableInsert);
+			statement.setInt(1, message.getId());
+			statement.setInt(2, message.getRecipientId());
+			return statement.executeUpdate() == 1;
 		}
 	}
 	
-	private static boolean insertUserMessage(MessageInfo message) throws SQLException {
-		String insertMessage = "insert into message(id,sender_id,type,content) values(?,?,?,?)";
-		String insertUserMessage = "insert into user_message(message_id,receiver_id) values(?,?)";
-		message.setId(getLastMessageId() + 1);
-		
-		PreparedStatement statement = getApp().getPreparedStatement(insertMessage);
+	public static boolean insertFull(MessageInfo message) throws SQLException {
+		String insert = "insert into message(id,sender_id,moment_sent,type,content) values(?,?,?,?,?)";
+		PreparedStatement statement = getApp().getPreparedStatement(insert);
 		statement.setInt(1, message.getId());
 		statement.setInt(2, message.getSenderId());
 		statement.setString(3, message.getType());
@@ -121,30 +133,17 @@ public class MessageManager {
 		boolean added = statement.executeUpdate() == 1;
 		if (!added) return false;
 		
-		statement = getApp().getPreparedStatement(insertUserMessage);
+		String tableInsert = "";
+		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
+			tableInsert = "insert into channel_message(message_id,channel_id) values(?,?)";
+		} else {
+			tableInsert = "insert into user_message(message_id,receiver_id) values(?,?)";
+		}
+		statement = getApp().getPreparedStatement(tableInsert);
 		statement.setInt(1, message.getId());
 		statement.setInt(2, message.getRecipientId());
 		return statement.executeUpdate() == 1;
 	}
-	
-	private static boolean insertChannelMessage(MessageInfo message) throws SQLException {
-		String insertMessage = "insert into message(id,sender_id,type,content) values(?,?,?,?)";
-		String insertChannelMessage = "insert into channel_message(message_id,channel_id) values(?,?)";
-		message.setId(getLastMessageId() + 1);
-		PreparedStatement statement = getApp().getPreparedStatement(insertMessage);
-		statement.setInt(1, message.getId());
-		statement.setInt(2, message.getSenderId());
-		statement.setString(3, message.getType());
-		statement.setString(4, message.getContent());
-		boolean added = statement.executeUpdate() == 1;
-		if (!added) return false;
-		
-		statement = getApp().getPreparedStatement(insertChannelMessage);
-		statement.setInt(1, message.getId());
-		statement.setInt(2, message.getRecipientId());
-		return statement.executeUpdate() == 1;
-	}
-	
 	
 	private static int getLastChannelMessageId(int channelId) throws SQLException {
 		String select = "select max(id) from message,channel_message where message_id = id and channel_id = ?";
@@ -170,5 +169,32 @@ public class MessageManager {
 		ResultSet result = statement.executeQuery();
 		result.next();
 		return result.getInt(1);
+	}
+	
+	public static ArrayList<MessageInfo> getAfterId(int lastMessageId) throws SQLException {
+		String select = "select id,sender_id,moment_sent,type,content, " +
+				" (select channel_id from channel_message where message.id = message_id) as channel_id, " +
+				" (select receiver_id from user_message where message.id = message_id) as receiver_id " +
+				"from message " +
+				"where id > ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, lastMessageId);
+		ResultSet result = statement.executeQuery();
+		
+		ArrayList<MessageInfo> list = new ArrayList<>();
+		
+		while (result.next()) {
+			MessageInfo.Recipient recipientType = result.getString("channel_id") != null ? MessageInfo.Recipient.CHANNEL : MessageInfo.Recipient.USER;
+			int recipientId = recipientType == MessageInfo.Recipient.CHANNEL ? result.getInt("channel_id") : result.getInt("receiver_id");
+			
+			list.add(new MessageInfo(result.getInt("id"),
+					result.getInt("sender_id"),
+					recipientType,
+					recipientId,
+					result.getDate("moment_sent").getTime(),
+					result.getString("type"),
+					result.getString("content")));
+		}
+		return list;
 	}
 }

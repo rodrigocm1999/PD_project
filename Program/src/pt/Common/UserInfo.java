@@ -1,8 +1,6 @@
 package pt.Common;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class UserInfo implements Serializable {
 	
@@ -12,6 +10,7 @@ public class UserInfo implements Serializable {
 	private String name;
 	private String username;
 	private String password;
+	private long creationMoment;
 	private byte[] imageBytes;
 
 	
@@ -31,6 +30,14 @@ public class UserInfo implements Serializable {
 		this.username = username;
 		this.password = password;
 		this.imageBytes = imageBytes;
+	}
+	
+	public UserInfo(int userId, String name, String username, String password, long creationMoment) {
+		this.userId = userId;
+		this.name = name;
+		this.username = username;
+		this.password = password;
+		this.creationMoment = creationMoment;
 	}
 	
 	@Override
@@ -73,6 +80,14 @@ public class UserInfo implements Serializable {
 	
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	
+	public long getCreationMoment() {
+		return creationMoment;
+	}
+	
+	public void setCreationMoment(long creationMoment) {
+		this.creationMoment = creationMoment;
 	}
 	
 	public byte[] getImageBytes() {

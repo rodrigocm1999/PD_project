@@ -36,15 +36,18 @@ public class ServerConstants {
 	private static final String FILES_PATH = "files";
 	
 	public static String getFilesPath() {
-		return ServerMain.getInstance().getDatabaseName() + "_" + FILES_PATH;
+		return FILES_PATH + "_" + ServerMain.getInstance().getDatabaseName();
 	}
 	
 	public static String getTransferredFilesPath() {
-		return ServerConstants.getFilesPath() + File.separator + ServerConstants.TRANSFERRED_FILES;
+		return getFilesPath() + File.separator + ServerConstants.TRANSFERRED_FILES;
 	}
 	
 	
 	public static final String USER_IMAGES_DIRECTORY = "user_images";
 	
 	public static final String TRANSFERRED_FILES = "transferred_files";
+	
+	public static final int FAKE_USER_SYNC_COUNT = 25;
+	public static final String ASK_SYNCHRONIZER = "ASK_SYNCHRONIZER";
 }

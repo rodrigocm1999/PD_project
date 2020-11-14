@@ -6,11 +6,10 @@ import java.io.Serializable;
 
 public class ServerCommand implements Serializable {
 	
-	private static long idCounter = 0;
+	private static final long serialVersionUID = 54307128L;
 	
 	private String protocol;
 	private ServerAddress serverAddress;
-	private long id;
 	private Object extras;
 	
 	public ServerCommand(String protocol, ServerAddress serverAddress, Object extras) {
@@ -22,6 +21,15 @@ public class ServerCommand implements Serializable {
 	public ServerCommand(String protocol, ServerAddress serverAddress) {
 		this.protocol = protocol;
 		this.serverAddress = serverAddress;
+	}
+	
+	@Override
+	public String toString() {
+		return "ServerCommand{" +
+				"protocol='" + protocol + '\'' +
+				", serverAddress=" + serverAddress +
+				", extras=" + extras +
+				'}';
 	}
 	
 	public ServerAddress getServerAddress() {

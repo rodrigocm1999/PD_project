@@ -71,7 +71,13 @@ public class UserThread extends Thread {
 	}
 	
 	public void disconnect() {
-		getApp().removeConnected(this);
+		try {
+			if (socket.isConnected()) {
+				socket.close();
+			}
+			getApp().removeConnected(this);
+		} catch (Exception ignore) {
+		}
 	}
 	
 	private void handleRequest(Command protocol) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -80,7 +86,7 @@ public class UserThread extends Thread {
 				handleRegister((UserInfo) protocol.getExtras());
 			}
 			
-			// TODO login from multiple clients CANNOT HAPPEN
+			// TODO login from multiple clients CANNOT HAPPEN maybe
 			case Constants.LOGIN -> {
 				UserInfo userInfo = (UserInfo) protocol.getExtras();
 				login(userInfo.getUsername(), userInfo.getPassword());
@@ -171,25 +177,33 @@ public class UserThread extends Thread {
 	
 	private void protocolUserGetLike(String username) throws SQLException, IOException {
 		if (username == null) username = "";
-		ArrayList<UserInfo> usersLike = UserManager.getUsersLike(username, userInfo.getUserId());
+		ArrayList<UserInfo> usersLike = UserManager.getUsersLike(username);
 		sendCommand(Constants.SUCCESS, usersLike);
 	}
 	
-	public void protocolGetFile(MessageInfo message) throws SQLException, IOException {
+	public void protocolGetFile(MessageInfo message) throws IOException {
 		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 			
-			String fileName = message.getContent();
-			String path = ServerConstants.getFilesPath() + File.separator + fileName;
+			String path = ServerConstants.getFilesPath() + File.separator + message.getContent();
 			System.out.println(path);
 			File file = new File(path);
+			//TODO test file Download
 			
-			byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
-			OutputStream outputStream = socket.getOutputStream();
-			
-			try (FileInputStream fileStream = new FileInputStream(file)) {
-				int amountRead = fileStream.read(buffer);
-				outputStream.write(buffer, 0, amountRead);
-			}
+			Thread sendingFile = new Thread(() -> {
+				try {
+					Socket fileSocket = getApp().acceptFileConnection(this);
+					
+					byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
+					OutputStream outputStream = fileSocket.getOutputStream();
+					
+					try (FileInputStream fileStream = new FileInputStream(file)) {
+						int amountRead = fileStream.read(buffer);
+						outputStream.write(buffer, 0, amountRead);
+					}
+				} catch (Exception e) {
+				}
+			});
+			sendingFile.start();
 			
 		} else {
 			sendCommand(Constants.ERROR, "Invalid Message for download");
@@ -209,10 +223,9 @@ public class UserThread extends Thread {
 		File file = new File(filePath);
 		Utils.createDirectories(file);
 		
-		Socket fileSocket = getApp().acceptFileConnection(this);
-		
 		Thread receivingFile = new Thread(() -> {
 			try {
+				Socket fileSocket = getApp().acceptFileConnection(this);
 				InputStream socketInputStream = fileSocket.getInputStream();
 				FileOutputStream fileOutputStream = new FileOutputStream(file);
 				byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
@@ -368,25 +381,15 @@ public class UserThread extends Thread {
 				
 			} else {
 				String imageName = "";
-				File imageFile = null;
 				if (userInfo.getImageBytes() != null) {
-					String folderPath = ServerConstants.getFilesPath() + File.separator +
-							ServerMain.getInstance().getDatabaseName() + "_" + ServerConstants.USER_IMAGES_DIRECTORY;
-					imageName = userInfo.getUsername() + ".jpg";
-					String imagePath = folderPath + File.separator + imageName;
-					imageFile = new File(imagePath);
-					Utils.createDirectories(imageFile);
-					
-					try (FileOutputStream fileOutputStream = new FileOutputStream(imageFile)) {
-						fileOutputStream.write(userInfo.getImageBytes());
-					}
+					imageName = UserManager.saveImage(userInfo);
 				}
 				if (UserManager.insertUser(userInfo, imageName)) {
 					System.out.println("Added new user");
 					sendCommand(Constants.REGISTER_SUCCESS);
 				} else {
-					if (imageFile != null)
-						imageFile.delete();
+					if (imageName != null)
+						new File(imageName).delete();
 					System.out.println("No new user added\t Not supposed to happen");
 					sendCommand(Constants.REGISTER_ERROR, "No new user added");
 				}
@@ -420,8 +423,10 @@ public class UserThread extends Thread {
 	}
 	
 	public void receivedPropagatedMessage(MessageInfo message) throws IOException {
+		System.out.println("Propagated message : " + message);
 		if (isLoggedIn) {
 			if (currentPlace.getChannelId() == message.getRecipientId() || currentPlace.getMessageId() == message.getRecipientId()) {
+				System.out.println("Send propagated message : " + message);
 				sendCommand(Constants.NEW_MESSAGE, message);
 			}
 		}

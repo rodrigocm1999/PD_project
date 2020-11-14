@@ -1,14 +1,9 @@
 package pt.Server;
 
-import pt.Common.ChannelInfo;
-import pt.Common.MessageInfo;
-import pt.Common.Utils;
+import pt.Common.*;
 
 import java.security.NoSuchAlgorithmException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class ChannelManager {
@@ -45,6 +40,18 @@ public class ChannelManager {
 		statement.setString(3, channel.getName());
 		statement.setString(4, Utils.hashStringBase36(channel.getPassword()));
 		statement.setString(5, channel.getDescription());
+		return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
+	}
+	
+	public static boolean insertChannel(ChannelInfo channel) throws SQLException {
+		String insert = "insert into channel(id,creator_id,name,password_hash,description,creation_moment) values(?,?,?,?,?,?)";
+		PreparedStatement statement = getApp().getPreparedStatement(insert);
+		statement.setInt(1, channel.getId());
+		statement.setInt(2, channel.getCreatorId());
+		statement.setString(3, channel.getName());
+		statement.setString(4, channel.getPassword());
+		statement.setString(5, channel.getDescription());
+		statement.setDate(6, new Date(channel.getCreationMoment()));
 		return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
 	}
 	
@@ -109,5 +116,49 @@ public class ChannelManager {
 		ResultSet result = statement.executeQuery();
 		result.next();
 		return result.getInt(1);
+	}
+	
+	public static ArrayList<ChannelInfo> getAfterId(int id) throws SQLException {
+		String select = "select id,creator_id,name,password_hash,description,creation_moment from channel where id > ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, id);
+		ResultSet result = statement.executeQuery();
+		
+		ArrayList<ChannelInfo> list = new ArrayList<>();
+		
+		while (result.next()) {
+			list.add(new ChannelInfo(result.getInt("id"),
+					result.getString("name"),
+					result.getString("username"),
+					result.getString(("password_hash"))));
+		}
+		return list;
+	}
+	
+	
+	public static ArrayList<Ids> getChannelUsersAfterIds(int lastConnectionId) throws SQLException {
+		String select = "select channel_id,user_id from channel_user where id > ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, lastConnectionId);
+		ResultSet result = statement.executeQuery();
+		
+		ArrayList<Ids> list = new ArrayList<>();
+		
+		while (result.next()) {
+			list.add(new Ids(
+					result.getInt("user_id"),
+					result.getInt("channel_id"),
+					-1));
+		}
+		
+		return list;
+	}
+	
+	public static int getLastUserChannelId() throws SQLException {
+		String select = "select max(id) from channel_user";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		ResultSet result = statement.executeQuery();
+		result.next();
+		return result.getInt("id");
 	}
 }
