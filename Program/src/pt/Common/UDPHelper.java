@@ -1,13 +1,13 @@
 package pt.Common;
 
+import pt.Server.MulticastManager;
 import pt.Server.ServerCommand;
+import pt.Server.ServerConstants;
+import pt.Server.ServerMain;
 
 import java.io.*;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
+import java.net.*;
+import java.sql.SQLOutput;
 
 public class UDPHelper {
 	
@@ -31,19 +31,10 @@ public class UDPHelper {
 	
 	//TODO test reliable ones
 	static final int RETRY_LIMIT = 3;
-	static final int RECEIVE_TIMEOUT = 5000;
-	
-	/*public static DatagramSocket sendUDPObjectReliably(Object object, InetAddress address, int port) throws Exception {
-		DatagramSocket socket = new DatagramSocket();
-		sendUDPObjectReliably(object, socket, address, port);
-		return socket;
-	}*/
+	static final int RECEIVE_TIMEOUT = 60000;
 	
 	public static void sendUDPObject(Object obj, DatagramSocket socket, InetAddress address, int port) throws IOException {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-		objectOutputStream.writeObject(obj);
-		byte[] bytes = byteArrayOutputStream.toByteArray();
+		byte[] bytes = writeObjectToArray(obj);
 		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address, port);
 		socket.send(packet);
 	}
@@ -61,22 +52,23 @@ public class UDPHelper {
 		return receiveUDPObject(socket, packet);
 	}
 	
-	/*public static void sendUDPObjectReliably(Object object, DatagramSocket socket, InetAddress address, int port) throws IOException {
-		Wrapper wrap = new Wrapper(object);
-		System.out.println(wrap);
+	public static void sendUDPObjectReliably(String protocol, Object object, ServerAddress address, int port, DatagramSocket socket) throws IOException {
+		Wrapper wrapperToSend = new Wrapper(object);
+		long sentAckId = wrapperToSend.id;
+		ServerCommand command = new ServerCommand(protocol, address, wrapperToSend);
+		System.out.println("Send reliably : " + command);
 		
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-		objectOutputStream.writeObject(wrap);
-		byte[] bytes = byteArrayOutputStream.toByteArray();
+		byte[] bytes = UDPHelper.writeObjectToArray(command);
 		
-		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address, port);
+		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address.getAddress(), port);
 		
 		int timeout = socket.getSoTimeout();
 		socket.setSoTimeout(RECEIVE_TIMEOUT);
 		int tryNumber = 0;
 		
-		while (true) {
+		boolean receivedAck = false;
+		
+		while (!receivedAck) {
 			if (++tryNumber > RETRY_LIMIT) {
 				//Time to give up
 				break;
@@ -84,61 +76,47 @@ public class UDPHelper {
 			try {
 				// Send the stuff
 				socket.send(packet);
-				System.out.println("Sent packet");
 				DatagramPacket acknowledge = new DatagramPacket(
 						new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 				//Receive ACK. If timeout, then try again a couple more times
+				
 				System.out.println("waiting for ACK");
-				socket.receive(acknowledge);
 				
-				byte[] idArr = acknowledge.getData();
-				int idArrLength = acknowledge.getLength();
-				ByteBuffer buffer = ByteBuffer.wrap(idArr, 0, idArrLength);
-				long idACK = buffer.getLong();
-				
-				System.out.println(idACK);
-				if (idACK != wrap.id) {
-					throw new IOException("Invalid ID ACK\nThis is not supposed to EVER happen");
+				while (true) {
+					acknowledge.setLength(Constants.UDP_PACKET_SIZE);
+					//DatagramPacket acknowledge = new DatagramPacket(
+					//		new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE,address.getAddress(),port);
+					socket.receive(acknowledge);
+					ServerCommand ackCommand = (ServerCommand) readObjectFromPacket(acknowledge);
+					System.out.println("waiting for ACK, received : " + ackCommand);
+					
+					if (ackCommand.getProtocol().equals(ServerConstants.ACKNOWLEDGE)) {
+						
+						ServerAddress ownServerAddress = ServerMain.getInstance().getServersManager().getServerAddress();
+						if (ackCommand.getServerAddress().equals(ownServerAddress)) { // this ACK is for me
+							
+							long ackId = (long) ackCommand.getExtras();
+							if (ackId == sentAckId) {
+								System.out.println("received right ACK : " + ackCommand);
+								receivedAck = true;
+								break;
+							}
+						}
+					}
 				}
-				break;
-			} catch (SocketTimeoutException ignored) {
+			} catch (SocketTimeoutException | ClassNotFoundException e) {
 				// If receive times out send packet again ---------------------------------------------
+				if (!(e instanceof SocketTimeoutException)) {
+					e.printStackTrace();
+				} else {
+					e.printStackTrace();
+				}
 			}
 		}
 		socket.setSoTimeout(timeout);
-	}*/
+	}
 	
-	public static void sendUDPObjectReliably(String protocol, Object object, ServerAddress address, DatagramSocket socket) throws IOException {
-		ServerCommand command = new ServerCommand(protocol, address, new Wrapper(object));
-		System.out.println(command);
-		
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-		objectOutputStream.writeObject(command);
-		byte[] bytes = byteArrayOutputStream.toByteArray();
-		
-		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, address.getAddress(), address.getUDPPort());
-		
-		int timeout = socket.getSoTimeout();
-		socket.setSoTimeout(RECEIVE_TIMEOUT);
-		int tryNumber = 0;
-		
-		while (true) {
-			if (++tryNumber > RETRY_LIMIT) {
-				//Time to give up
-				break;
-			}
-			try {
-				// Send the stuff
-				socket.send(packet);
-				System.out.println("Sent packet");
-				DatagramPacket acknowledge = new DatagramPacket(
-						new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-				//Receive ACK. If timeout, then try again a couple more times
-				System.out.println("waiting for ACK");
-				socket.receive(acknowledge);
-				
-				byte[] idArr = acknowledge.getData();
+	/*byte[] idArr = acknowledge.getData();
 				int idArrLength = acknowledge.getLength();
 				ByteBuffer buffer = ByteBuffer.wrap(idArr, 0, idArrLength);
 				long idACK = buffer.getLong();
@@ -147,42 +125,67 @@ public class UDPHelper {
 				if (idACK != ((Wrapper) command.getExtras()).id) {
 					throw new IOException("Invalid ID ACK\nThis is not supposed to EVER happen");
 				}
-				break;
-			} catch (SocketTimeoutException ignored) {
-				// If receive times out send packet again ---------------------------------------------
-			}
-		}
-		socket.setSoTimeout(timeout);
-	}
+				break;*/
 	
 	public static Object receiveUDPObjectReliably(DatagramSocket socket, ServerAddress server) throws IOException, ClassNotFoundException {
 		while (true) {
 			DatagramPacket packet = new DatagramPacket(
 					new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 			socket.receive(packet);
-			System.out.println("received packet");
-			
 			
 			//Get Object from packet
-			ObjectInputStream ois = new ObjectInputStream(
-					new ByteArrayInputStream(packet.getData(), 0, packet.getLength()));
-			ServerCommand serverCommand = (ServerCommand) ois.readObject();
-			System.out.println(serverCommand);
+			ServerCommand serverCommand = (ServerCommand) readObjectFromPacket(packet);
 			
-			if (!serverCommand.getServerAddress().equals(server)) {
-				System.out.println("Not from the right server still waiting");
+			ServerAddress ownServerAddress = ServerMain.getInstance().getServersManager().getServerAddress();
+			if (!serverCommand.getServerAddress().equals(ownServerAddress)
+					|| serverCommand.getProtocol().equals(ServerConstants.ACKNOWLEDGE)) {
+				/* Server sends this own server address so it knows its for him */
+				System.out.println("Not for this server, still waiting : " + serverCommand);
 				continue;
 			}
-			//Send ACK
-			Wrapper wrapper = (Wrapper) serverCommand.getExtras();
-			ByteBuffer byteBuffer = ByteBuffer.allocate(Long.BYTES).putLong(wrapper.id);
-			byte[] bytes = byteBuffer.array();
-			packet.setData(bytes);
-			packet.setLength(bytes.length);
-			socket.send(packet);
-			socket.close();
 			
-			return wrapper.object;
+			System.out.println("Received object : " + serverCommand);
+			
+			if (!(serverCommand.getExtras() instanceof Wrapper)) {
+				System.out.println("Not for me");
+				continue;
+			}
+			Wrapper wrapper = (Wrapper) serverCommand.getExtras();
+			
+			//Send ACK
+			byte[] bytes = writeServerCommandToArray(ServerConstants.ACKNOWLEDGE, server, wrapper.id);
+			// send to server its own ServerAddress so the ServerNetwork loop ignores this UDP packet
+			
+			//packet.setData(bytes);
+			//packet.setLength(bytes.length);
+			
+			DatagramPacket ackPacket = new DatagramPacket(bytes, bytes.length, packet.getAddress(), packet.getPort());
+			
+			for (int i = 0; i < 10; i++) {
+				
+				socket.send(ackPacket); // Send ACK
+			}
+			System.out.println("sent ACK : " + wrapper.id + " to ip: " + packet.getAddress() + ":" + packet.getPort() + " \n\t to server :" + server);
+			
+			serverCommand.setExtras(wrapper.object);
+			return serverCommand;
 		}
+	}
+	
+	public static byte[] writeServerCommandToArray(String protocol, ServerAddress serverAddress, Object extras) throws IOException {
+		return writeObjectToArray(new ServerCommand(protocol, serverAddress, extras));
+	}
+	
+	public static byte[] writeObjectToArray(Object object) throws IOException {
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+		objectOutputStream.writeUnshared(object);
+		return byteArrayOutputStream.toByteArray();
+	}
+	
+	public static Object readObjectFromPacket(DatagramPacket packet) throws IOException, ClassNotFoundException {
+		ObjectInputStream ois = new ObjectInputStream(
+				new ByteArrayInputStream(packet.getData(), 0, packet.getLength()));
+		return ois.readObject();
 	}
 }

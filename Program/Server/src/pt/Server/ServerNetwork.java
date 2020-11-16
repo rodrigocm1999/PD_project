@@ -34,7 +34,7 @@ public class ServerNetwork extends Thread {
 		ownAddress = new ServerAddress(InetAddress.getLocalHost(), serverUDPPort);
 		System.out.println("Own Local Address : " + ownAddress + "\t Own Public Address" + ownPublicAddress);
 		startMulticastSocket();
-		multiMan = new MulticastManager(multicastSocket, ownPublicAddress, group, port);
+		multiMan = new MulticastManager(multicastSocket, getServerAddress(), group, port);
 	}
 	
 	public MulticastSocket getMulticastSocket() {
@@ -42,7 +42,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	public ServerAddress getServerAddress() {
-		return ownPublicAddress;
+		return ownAddress; // IMPORTANT return public when on different networks
 	}
 	
 	@Override
@@ -76,7 +76,7 @@ public class ServerNetwork extends Thread {
 		if (servers.size() == 1) {
 			return null;
 		}
-		return servers.get(1);
+		return servers.get(0);
 	}
 	
 	public boolean checkIfBetterServer() {
@@ -127,26 +127,29 @@ public class ServerNetwork extends Thread {
 		while (!stop) {
 			DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 			ServerCommand command = (ServerCommand) multiMan.receiveObject(packet);
-			
 			ServerAddress otherServerAddress = command.getServerAddress();
-			if (isOwnAddress(otherServerAddress))
+			if (isOwnAddress(otherServerAddress)) {
+				System.out.println("received with own address : " + command);
 				continue;
+			}
+			System.out.println("ServerNetwork received : " + command);
 			
 			try {
 				switch (command.getProtocol()) {
+					
+					case ServerConstants.HEARTBEAT -> {
+						ServerStatus status = getServerStatus(otherServerAddress);
+						receivedHeartbeat(status);
+					}
 					
 					case ServerConstants.CAME_ONLINE -> {
 						ServerAddress serverAddress = command.getServerAddress();
 						serverConnected(serverAddress);
 					}
+					
 					case ServerConstants.CAME_OFFLINE -> {
 						ServerAddress serverAddress = command.getServerAddress();
 						serverDisconnected(getServerStatus(serverAddress));
-					}
-					
-					case ServerConstants.HEARTBEAT -> {
-						ServerStatus status = getServerStatus(otherServerAddress);
-						receivedHeartbeat(status);
 					}
 					
 					case ServerConstants.UPDATE_USER_COUNT -> {
@@ -160,7 +163,7 @@ public class ServerNetwork extends Thread {
 					}
 					
 					case ServerConstants.ASK_SYNCHRONIZER -> {
-						System.out.println("ASK_SYNCHRONIZER");
+						//System.out.println("ASK_SYNCHRONIZER");
 						receivedSynchronizationRequest(command.getServerAddress());
 					}
 					
@@ -181,13 +184,14 @@ public class ServerNetwork extends Thread {
 		//TODO get all of the new information
 		//Connect to the server with the least user load at the moment
 		ServerAddress server = getLeastLoadServer();
-		if (server == null) {
+		if (server == null || server.equals(getServerAddress())) {
 			System.out.println("No others servers running. Skipping synchronization");
 			return;
 		}
 		
 		System.out.println("Syncing Database ----------------------------------------------");
-		Synchronizer synchronizer = new Synchronizer(server, getServerAddress(), getMulticastSocket());
+		System.out.println("Creating synchronizer with address : " + getServerAddress() + " to server " + server);
+		Synchronizer synchronizer = new Synchronizer(server, getServerAddress(), getMulticastSocket(), multiMan);
 		synchronizer.receiveData();
 		//Get all of the info after list ID of the table that I have
 		//Have to use reliable UDP and break files into 5KB chunks
@@ -196,9 +200,9 @@ public class ServerNetwork extends Thread {
 	private void receivedSynchronizationRequest(ServerAddress serverAddress) throws Exception {
 		synchronizationFakeUsers += ServerConstants.FAKE_USER_SYNC_COUNT;
 		updateUserCount(serverMain.getNConnectedUsers());
-		System.out.println("updated user count");
-		Synchronizer synchronizer = new Synchronizer(serverAddress, getServerAddress(), multicastSocket);
+		Synchronizer synchronizer = new Synchronizer(serverAddress, getServerAddress(), getMulticastSocket(), multiMan);
 		synchronizer.sendData();
+		synchronizationFakeUsers -= ServerConstants.FAKE_USER_SYNC_COUNT;
 	}
 	
 	private void protocolNewMessage(MessageInfo message) throws IOException, SQLException {
@@ -324,7 +328,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	private boolean isOwnAddress(ServerAddress other) {
-		return ownPublicAddress.equals(other);
+		return getServerAddress().equals(other);
 	}
 	
 	public void sendShutdown() {

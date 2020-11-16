@@ -63,11 +63,21 @@ public class ServerMain {
 		
 		while (true) {
 			DatagramPacket receivedPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-			Command command = (Command) UDPHelper.receiveUDPObject(udpSocket, receivedPacket);
+			Command command;
+			try {
+				command = (Command) UDPHelper.receiveUDPObject(udpSocket, receivedPacket);
+			} catch (ClassCastException e) {
+				e.printStackTrace();
+				continue;
+			}
 			System.out.println(command);
 			
 			handleCommand(command, receivedPacket, udpSocket);
 		}
+	}
+	
+	public ServerNetwork getServersManager() {
+		return serversManager;
 	}
 	
 	private void handleCommand(Command command, DatagramPacket receivedPacket, DatagramSocket udpSocket) {

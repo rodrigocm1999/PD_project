@@ -1,7 +1,9 @@
 package pt.Server;
 
+import jdk.swing.interop.SwingInterOpUtils;
 import pt.Common.Constants;
 import pt.Common.ServerAddress;
+import pt.Common.UDPHelper;
 
 import java.io.*;
 import java.net.DatagramPacket;
@@ -15,7 +17,17 @@ public class MulticastManager {
 	private InetAddress group;
 	private int port;
 	
+	private static MulticastManager instance;
+	
+	public MulticastManager getInstance() {
+		return instance;
+	}
+	
 	public MulticastManager(MulticastSocket socket, ServerAddress ownServerAddress, InetAddress group, int port) {
+		if (instance != null) {
+			System.out.println("ERROR created second MulticastManager");
+		}
+		instance = this;
 		this.socket = socket;
 		this.ownServerAddress = ownServerAddress;
 		this.group = group;
@@ -27,19 +39,15 @@ public class MulticastManager {
 	}
 	
 	public void sendServerCommand(String protocol, Object extras) throws IOException {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-		objectOutputStream.writeObject(new ServerCommand(protocol, ownServerAddress, extras));
-		byte[] bytes = byteArrayOutputStream.toByteArray();
+		byte[] bytes = UDPHelper.writeServerCommandToArray(protocol, ownServerAddress, extras);
+		
 		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, group, port);
 		socket.send(packet);
 	}
 	
 	public void sendObject(Object obj) throws IOException {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-		objectOutputStream.writeUnshared(obj);
-		byte[] bytes = byteArrayOutputStream.toByteArray();
+		byte[] bytes = UDPHelper.writeObjectToArray(obj);
+		
 		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, group, port);
 		socket.send(packet);
 	}

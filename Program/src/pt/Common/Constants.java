@@ -2,7 +2,7 @@ package pt.Common;
 
 public class Constants {
 	
-	public static final int UDP_PACKET_SIZE = 1024;
+	public static final int UDP_PACKET_SIZE = 64 * 1024;
 	
 	public static final String ESTABLISH_CONNECTION = "ESTABLISH_CONNECTION";
 	public static final String CONNECTION_ACCEPTED = "CONNECTION_ACCEPTED";

@@ -9,8 +9,11 @@ public class ServerConstants {
 	
 	
 	public static final String HEARTBEAT = "HEARTBEAT";
-	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 8;
-	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 10;
+	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 80;
+	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 100;// TODO REVERT this
+	public static final int FAKE_USER_SYNC_COUNT = 25;
+	public static final String ASK_SYNCHRONIZER = "ASK_SYNCHRONIZER";
+	public static final String ACKNOWLEDGE = "ACKNOWLEDGE";
 	
 	public static final String CAME_ONLINE = "CAME_ONLINE";
 	public static final String CAME_OFFLINE = "CAME_OFFLINE";
@@ -48,6 +51,4 @@ public class ServerConstants {
 	
 	public static final String TRANSFERRED_FILES = "transferred_files";
 	
-	public static final int FAKE_USER_SYNC_COUNT = 25;
-	public static final String ASK_SYNCHRONIZER = "ASK_SYNCHRONIZER";
 }

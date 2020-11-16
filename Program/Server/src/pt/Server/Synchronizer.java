@@ -4,39 +4,41 @@ import pt.Common.*;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.util.ArrayList;
 
 public class Synchronizer {
 	
-	private static final String GET_USERS = "GET_USERS";
-	private static final String GET_CHANNELS = "GET_CHANNELS";
-	private static final String GET_USERS_CHANNELS = "GET_USERS_CHANNELS";
-	private static final String GET_MESSAGES = "GET_MESSAGES";
+	private static final String GET_USERS = "SYNCHRONIZER_GET_USERS";
+	private static final String GET_CHANNELS = "SYNCHRONIZER_GET_CHANNELS";
+	private static final String GET_USERS_CHANNELS = "SYNCHRONIZER_GET_USERS_CHANNELS";
+	private static final String GET_MESSAGES = "SYNCHRONIZER_GET_MESSAGES";
 	public static final int USERS_BLOCK = 40;
 	public static final int CHANNELS_BLOCK = 30;
 	public static final int USERS_CHANNELS_BLOCK = 100;
 	public static final int MESSAGES_BLOCK = 20;
-	private static final String NO_MORE_USERS = "NO_MORE_USERS";
-	private static final String NO_MORE_CHANNELS = "NO_MORE_CHANNELS";
-	private static final String NO_MORE_USERS_CHANNELS = "NO_MORE_USERS_CHANNELS";
-	private static final String NO_MORE_MESSAGES = "NO_MORE_MESSAGES";
+	private static final String NO_MORE_USERS = "SYNCHRONIZER_NO_MORE_USERS";
+	private static final String NO_MORE_CHANNELS = "SYNCHRONIZER_NO_MORE_CHANNELS";
+	private static final String NO_MORE_USERS_CHANNELS = "SYNCHRONIZER_NO_MORE_USERS_CHANNELS";
+	private static final String NO_MORE_MESSAGES = "SYNCHRONIZER_NO_MORE_MESSAGES";
 	
 	private final ServerAddress otherServer;
 	private final ServerAddress thisServer;
-	private final DatagramSocket socket;
+	private DatagramSocket socket;
+	private final MulticastManager multicastManager;
 	
-	public Synchronizer(ServerAddress otherServer, ServerAddress thisServer, DatagramSocket socket) {
+	public Synchronizer(ServerAddress otherServer, ServerAddress thisServer, DatagramSocket socket, MulticastManager multicastManager) {
 		this.otherServer = otherServer;
 		this.thisServer = thisServer;
 		this.socket = socket;
+		this.multicastManager = multicastManager;
 	}
 	
 	public void receiveData() throws Exception {
 		//Setup connection with server
-		System.out.println("sent");
-		//UDPHelper.sendUDPObjectReliably(new ServerCommand(ServerConstants.ASK_SYNCHRONIZER, server), socket, server.getAddress(), server.getUDPPort());
-		UDPHelper.sendUDPObjectReliably(ServerConstants.ASK_SYNCHRONIZER, null, otherServer, socket);
-		System.out.println("sent reliably");
+		//UDPHelper.sendUDPObjectReliably(ServerConstants.ASK_SYNCHRONIZER, null, otherServer,ServerConstants.MULTICAST_PORT, socket);
+		UDPHelper.sendUDPObject(new ServerCommand(ServerConstants.ASK_SYNCHRONIZER, thisServer), socket, otherServer.getAddress(), ServerConstants.MULTICAST_PORT);
+		//multicastManager.sendServerCommand(ServerConstants.ASK_SYNCHRONIZER, otherServer);
 		// send to the other server to get all missing users -----------------------------------------------------------
 		int lastUserId = UserManager.getLastUserId();
 		sendCommand(GET_USERS, lastUserId);
@@ -119,12 +121,14 @@ public class Synchronizer {
 	}
 	
 	public void sendData() throws Exception {
-		System.out.println("waiting for synchronization request");
+		
 		while (true) {
 			ServerCommand command = (ServerCommand) receiveCommand();
-			if (!command.getServerAddress().equals(otherServer)) {
-			
+			if (!command.getServerAddress().equals(thisServer)) {
+				System.out.println("SendData discarded command : " + command);
+				continue; // this packet is not from synchronization
 			}
+			System.out.println("Received ServerCommand : " + command);
 			
 			switch (command.getProtocol()) {
 				
@@ -168,7 +172,7 @@ public class Synchronizer {
 	}
 	
 	private void sendCommand(String protocol, Object object) throws IOException {
-		UDPHelper.sendUDPObjectReliably(protocol, object, otherServer, socket);
+		UDPHelper.sendUDPObjectReliably(protocol, object, otherServer, ServerConstants.MULTICAST_PORT, socket);
 	}
 	
 	private Object receiveCommand() throws Exception {
@@ -185,6 +189,7 @@ public class Synchronizer {
 			for (int blockCounter = 0; (blockCounter < blockSize) && (usersCount < list.size()); blockCounter++, usersCount++) {
 				block.add(list.get(usersCount));
 			}
+			Utils.printList(block, "Block");
 			sendCommand("", block);
 		}
 	}

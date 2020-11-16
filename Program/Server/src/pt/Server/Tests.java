@@ -25,26 +25,6 @@ public class Tests {
 	
 	public static void main(String[] args) throws Exception {
 		
-		int port = 12345;
-		InetAddress address = InetAddress.getLocalHost();
-		ServerAddress serverAddress = new ServerAddress(address, port);
-		DatagramSocket socket = new DatagramSocket(port);
-		
-		new Thread(() -> {
-			try {
-				DatagramSocket socketSend = new DatagramSocket();
-				UDPHelper.sendUDPObjectReliably("test object reliably", null, serverAddress, socketSend);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}).start();
-		
-		
-		Object o = UDPHelper.receiveUDPObjectReliably(socket, serverAddress);
-		System.out.println("received : " + o);
-		
-		
-		
 		/*ServerMain main = new ServerMain("localhost", "main", 3213, 54312,53212);
 		Socket socketUser = new Socket("localhost",3123);
 		
