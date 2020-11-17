@@ -119,10 +119,7 @@ public class UserManager {
 	}
 	
 	public static String saveImage(UserInfo userInfo) {
-		String folderPath = ServerConstants.getFilesPath() + File.separator +
-				ServerMain.getInstance().getDatabaseName() + "_" + ServerConstants.USER_IMAGES_DIRECTORY;
-		String imageName = userInfo.getUsername() + ".jpg";
-		String imagePath = folderPath + File.separator + imageName;
+		String imagePath = ServerConstants.getPhotoPathFromUsername(userInfo.getUsername());
 		File imageFile = new File(imagePath);
 		Utils.createDirectories(imageFile);
 		

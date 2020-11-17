@@ -88,7 +88,6 @@ public class ServerMain {
 					if (!serversManager.checkIfBetterServer()) {
 						UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
 								udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-						//TODO garantir entrega MAYBE, if so, then make this non blocking, and add syncronized on connectedMachines
 						receiveNewUser(receivedPacket, udpSocket);
 					} else {
 						ArrayList<ServerAddress> list = serversManager.getOrderedServerAddressesThisLast();
@@ -255,7 +254,6 @@ public class ServerMain {
 		ServerMain serverMain = new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort, listeningFilePort);
 		serverMain.start();
 		
-		//TODO use this --> Runtime.getRuntime().addShutdownHook();
 	}
 	
 	public void shutdown() {

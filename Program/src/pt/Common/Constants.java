@@ -28,6 +28,7 @@ public class Constants {
 	
 	public static final String USER_GET_LIKE = "USER_GET_LIKE";
 	public static final String USER_GET_MESSAGES = "USER_GET_MESSAGES";
+	public static final String USER_GET_PHOTO = "GET_USER_PHOTO";
 	
 	public static final String NO_PERMISSIONS = "NO_PERMISSIONS";
 	

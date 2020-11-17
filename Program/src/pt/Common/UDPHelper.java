@@ -30,8 +30,9 @@ public class UDPHelper {
 	}
 	
 	//TODO test reliable ones
-	static final int RETRY_LIMIT = 3;
-	static final int RECEIVE_TIMEOUT = 60000;
+	public static final int RETRY_LIMIT = 3;
+	public static final int RECEIVE_TIMEOUT = 60000;
+	public static final int ACK_SENT_AMOUNT = 3;
 	
 	public static void sendUDPObject(Object obj, DatagramSocket socket, InetAddress address, int port) throws IOException {
 		byte[] bytes = writeObjectToArray(obj);
@@ -52,7 +53,7 @@ public class UDPHelper {
 		return receiveUDPObject(socket, packet);
 	}
 	
-	public static void sendUDPObjectReliably(String protocol, Object object, ServerAddress address, int port, DatagramSocket socket) throws IOException {
+	public static void sendServerCommandReliably(String protocol, Object object, ServerAddress address, int port, DatagramSocket socket) throws IOException {
 		Wrapper wrapperToSend = new Wrapper(object);
 		long sentAckId = wrapperToSend.id;
 		ServerCommand command = new ServerCommand(protocol, address, wrapperToSend);
@@ -127,7 +128,7 @@ public class UDPHelper {
 				}
 				break;*/
 	
-	public static Object receiveUDPObjectReliably(DatagramSocket socket, ServerAddress server) throws IOException, ClassNotFoundException {
+	public static ServerCommand receiveServerCommandObjectReliably(DatagramSocket socket, ServerAddress server) throws IOException, ClassNotFoundException {
 		while (true) {
 			DatagramPacket packet = new DatagramPacket(
 					new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
@@ -161,8 +162,7 @@ public class UDPHelper {
 			
 			DatagramPacket ackPacket = new DatagramPacket(bytes, bytes.length, packet.getAddress(), packet.getPort());
 			
-			for (int i = 0; i < 10; i++) {
-				
+			for (int i = 0; i < ACK_SENT_AMOUNT; i++) {
 				socket.send(ackPacket); // Send ACK
 			}
 			System.out.println("sent ACK : " + wrapper.id + " to ip: " + packet.getAddress() + ":" + packet.getPort() + " \n\t to server :" + server);

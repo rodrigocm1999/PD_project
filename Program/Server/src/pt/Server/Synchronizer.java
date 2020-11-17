@@ -2,15 +2,19 @@ package pt.Server;
 
 import pt.Common.*;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.SocketException;
 import java.util.ArrayList;
 
 public class Synchronizer {
 	
 	private static final String GET_USERS = "SYNCHRONIZER_GET_USERS";
 	private static final String GET_CHANNELS = "SYNCHRONIZER_GET_CHANNELS";
+	private static final String GET_USER_PHOTO = "SYNCHRONIZER_GET_USER_PHOTO";
+	private static final String NO_MORE_USER_PHOTO = "SYNCHRONIZER_NO_MORE_USER_PHOTO";
 	private static final String GET_USERS_CHANNELS = "SYNCHRONIZER_GET_USERS_CHANNELS";
 	private static final String GET_MESSAGES = "SYNCHRONIZER_GET_MESSAGES";
 	public static final int USERS_BLOCK = 40;
@@ -21,6 +25,10 @@ public class Synchronizer {
 	private static final String NO_MORE_CHANNELS = "SYNCHRONIZER_NO_MORE_CHANNELS";
 	private static final String NO_MORE_USERS_CHANNELS = "SYNCHRONIZER_NO_MORE_USERS_CHANNELS";
 	private static final String NO_MORE_MESSAGES = "SYNCHRONIZER_NO_MORE_MESSAGES";
+	private static final String GET_MESSAGE_FILE = "SYNCHRONIZER_GET_MESSAGE_FILE";
+	private static final String NO_MORE_MESSAGE_FILE = "SYNCHRONIZER_NO_MORE_MESSAGE_FILE";
+	
+	public static final int FILE_CHUNK_SIZE = 5 * 1024;
 	
 	private final ServerAddress otherServer;
 	private final ServerAddress thisServer;
@@ -43,17 +51,17 @@ public class Synchronizer {
 		int lastUserId = UserManager.getLastUserId();
 		sendCommand(GET_USERS, lastUserId);
 		
+		ArrayList<UserInfo> allNewUsers = new ArrayList<>();
+		
 		while (true) {
-			Command command = (Command) receiveCommand();
+			ServerCommand command = receiveCommand();
 			if (command.getProtocol().equals(NO_MORE_USERS)) {
 				break;
 			}
 			ArrayList<UserInfo> newUsers = (ArrayList<UserInfo>) command.getExtras();
 			for (var user : newUsers) {
-				//TODO send photo, chunks of 5KB
-				//String imagePath = UserManager.saveImage(user);
-				//UserManager.insertFull(user, imagePath);
-				if (!UserManager.insertFull(user, "")) {
+				String imagePath = ServerConstants.getPhotoPathFromUsername(user.getUsername());
+				if (!UserManager.insertFull(user, imagePath)) {
 					System.out.println("User insert");
 					socket.close();
 					return;
@@ -61,12 +69,29 @@ public class Synchronizer {
 			}
 		}
 		
+		// get all new user photos -------------------------------------------------------------------------------------
+		for (var user : allNewUsers) {
+			sendCommand(GET_USER_PHOTO, user.getUsername());
+			File file = new File(ServerConstants.getPhotoPathFromUsername(user.getUsername()));
+			Utils.createDirectories(file);
+			
+			FileOutputStream fileOutputStream = new FileOutputStream(file);
+			
+			while (true) {
+				ServerCommand command = receiveCommand();
+				if (command.getProtocol().equals(NO_MORE_USER_PHOTO)) break;
+				byte[] receivedFileBytes = (byte[]) command.getExtras();
+				fileOutputStream.write(receivedFileBytes);
+			}
+			fileOutputStream.close();
+		}
+		
 		// send to the other server to get all missing channels --------------------------------------------------------
 		int lastChannelId = ChannelManager.getLastChannelId();
 		sendCommand(GET_CHANNELS, lastChannelId);
 		
 		while (true) {
-			Command command = (Command) receiveCommand();
+			ServerCommand command = receiveCommand();
 			if (command.getProtocol().equals(NO_MORE_CHANNELS)) {
 				break;
 			}
@@ -85,7 +110,7 @@ public class Synchronizer {
 		sendCommand(GET_USERS_CHANNELS, lastConnectionId);
 		
 		while (true) {
-			Command command = (Command) receiveCommand();
+			ServerCommand command = receiveCommand();
 			if (command.getProtocol().equals(NO_MORE_USERS_CHANNELS)) {
 				break;
 			}
@@ -103,8 +128,10 @@ public class Synchronizer {
 		int lastMessageId = MessageManager.getLastMessageId();
 		sendCommand(GET_MESSAGES, lastMessageId);
 		
+		ArrayList<MessageInfo> fileMessages = new ArrayList<>();
+		
 		while (true) {
-			Command command = (Command) receiveCommand();
+			ServerCommand command = receiveCommand();
 			if (command.getProtocol().equals(NO_MORE_MESSAGES)) {
 				break;
 			}
@@ -115,15 +142,36 @@ public class Synchronizer {
 					socket.close();
 					return;
 				}
+				if (message.getType().equals(MessageInfo.TYPE_FILE)) {
+					fileMessages.add(message);
+				}
 			}
 		}
 		// channel_message and user_message already get inserted along with the messages due to foreign keys -----------
+		for (var fileMessage : fileMessages) {
+			sendCommand(GET_MESSAGE_FILE, fileMessage.getContent());
+			
+			String filePath = ServerConstants.getTransferredFilesPath() + File.separator + fileMessage.getContent();
+			
+			File file = new File(filePath);
+			Utils.createDirectories(file);
+			
+			FileOutputStream fileOutputStream = new FileOutputStream(file);
+			
+			while (true) {
+				ServerCommand command = receiveCommand();
+				if (command.getProtocol().equals(NO_MORE_MESSAGE_FILE)) break;
+				byte[] receivedFileBytes = (byte[]) command.getExtras();
+				fileOutputStream.write(receivedFileBytes);
+			}
+			fileOutputStream.close();
+		}
 	}
 	
 	public void sendData() throws Exception {
 		
 		while (true) {
-			ServerCommand command = (ServerCommand) receiveCommand();
+			ServerCommand command = receiveCommand();
 			if (!command.getServerAddress().equals(thisServer)) {
 				System.out.println("SendData discarded command : " + command);
 				continue; // this packet is not from synchronization
@@ -167,16 +215,46 @@ public class Synchronizer {
 					
 					sendCommand(NO_MORE_CHANNELS, null);
 				}
+				
+				case GET_MESSAGE_FILE -> {
+					String fileName = (String) command.getExtras();
+					byte[] buffer = new byte[FILE_CHUNK_SIZE];
+					FileInputStream fileInputStream = new FileInputStream(
+							ServerConstants.getTransferredFilesPath() + File.separator + fileName);
+					while (true) {
+						int readAmount = fileInputStream.read(buffer);
+						if (readAmount <= 0) {
+							break;
+						}
+						sendCommand("", buffer);
+					}
+					sendCommand(NO_MORE_MESSAGE_FILE, null);
+					fileInputStream.close();
+				}
+				case GET_USER_PHOTO -> {
+					String username = (String) command.getExtras();
+					byte[] buffer = new byte[FILE_CHUNK_SIZE];
+					FileInputStream fileInputStream = new FileInputStream(ServerConstants.getPhotoPathFromUsername(username));
+					while (true) {
+						int readAmount = fileInputStream.read(buffer);
+						if (readAmount <= 0) {
+							break;
+						}
+						sendCommand("", buffer);
+					}
+					sendCommand(NO_MORE_USER_PHOTO, null);
+					fileInputStream.close();
+				}
 			}
 		}
 	}
 	
 	private void sendCommand(String protocol, Object object) throws IOException {
-		UDPHelper.sendUDPObjectReliably(protocol, object, otherServer, ServerConstants.MULTICAST_PORT, socket);
+		UDPHelper.sendServerCommandReliably(protocol, object, otherServer, ServerConstants.MULTICAST_PORT, socket);
 	}
 	
-	private Object receiveCommand() throws Exception {
-		return UDPHelper.receiveUDPObjectReliably(socket, otherServer);
+	private ServerCommand receiveCommand() throws Exception {
+		return UDPHelper.receiveServerCommandObjectReliably(socket, otherServer);
 	}
 	
 	private void sendByBlocks(ArrayList list, int blockSize) throws Exception {

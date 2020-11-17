@@ -197,4 +197,25 @@ public class MessageManager {
 		}
 		return list;
 	}
+	
+	public static MessageInfo getMessageById(int messageId) throws SQLException {
+		String select = "select id,sender_id,moment_sent,type,content, " +
+				" (select channel_id from channel_message where message.id = message_id) as channel_id, " +
+				" (select receiver_id from user_message where message.id = message_id) as receiver_id " +
+				"from message " +
+				"where id = ?";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		statement.setInt(1, messageId);
+		ResultSet result = statement.executeQuery();
+		result.next();
+		
+		MessageInfo.Recipient recipientType = result.getString("channel_id") != null ? MessageInfo.Recipient.CHANNEL : MessageInfo.Recipient.USER;
+		int recipientId = recipientType == MessageInfo.Recipient.CHANNEL ? result.getInt("channel_id") : result.getInt("receiver_id");
+		
+		return new MessageInfo(
+				result.getInt("id"),result.getInt("sender_id"),
+				recipientType,recipientId,
+				result.getDate("moment_sent").getTime(),
+				result.getString("type"),result.getString("content"));
+	}
 }

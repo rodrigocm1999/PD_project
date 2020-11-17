@@ -27,7 +27,6 @@ public class UserThread extends Thread {
 	}
 	
 	//TODO send passwords encrypted
-	//TODO add file downloads
 	//TODO add get user images
 	public UserThread(Socket socket, ArrayList<ServerAddress> orderedServerAddresses) throws IOException {
 		this.socket = socket;
@@ -150,8 +149,12 @@ public class UserThread extends Thread {
 							// TODO Test messages before
 						}
 						case Constants.GET_FILE -> {
-							MessageInfo message = (MessageInfo) protocol.getExtras();
-							protocolGetFile(message);
+							int messageId = (int) protocol.getExtras();
+							protocolGetFile(messageId);
+						}
+						
+						case Constants.USER_GET_PHOTO -> {
+							// TODO get user photo
 						}
 						
 						case Constants.LOGOUT -> {
@@ -181,7 +184,10 @@ public class UserThread extends Thread {
 		sendCommand(Constants.SUCCESS, usersLike);
 	}
 	
-	public void protocolGetFile(MessageInfo message) throws IOException {
+	public void protocolGetFile(int messageId) throws IOException, SQLException {
+		MessageInfo message = MessageManager.getMessageById(messageId);
+		System.out.println("Get file from message : " + message);
+		
 		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 			
 			String path = ServerConstants.getFilesPath() + File.separator + message.getContent();
@@ -356,7 +362,7 @@ public class UserThread extends Thread {
 	
 	private void logout() throws IOException {
 		isLoggedIn = false;
-		sendCommand(Constants.LOGOUT);
+		sendCommand(Constants.SUCCESS);
 	}
 	
 	private void handleRegister(UserInfo userInfo) throws IOException {
@@ -433,6 +439,7 @@ public class UserThread extends Thread {
 		}
 	}
 	
+	// TODO add all propagators
 	public synchronized void sendCommand(String command) throws IOException {
 		sendCommand(command, null);
 	}

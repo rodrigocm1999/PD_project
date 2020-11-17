@@ -27,17 +27,14 @@ public class ServerConstants {
 	public static final String DATABASE_NAME = "main";
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
-	
 	public static String getDatabaseURL(String address, String name) {
 		return DATABASE_URL.replace("{1}", address).replace("{2}", name);
 	}
 	
+	
 	public static final String PUBLIC_IP_ADDRESS_API = "https://api.ipify.org";
 	
 	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 25;
-	
-	private static final String FILES_PATH = "files";
-	
 	public static String getFilesPath() {
 		return FILES_PATH + "_" + ServerMain.getInstance().getDatabaseName();
 	}
@@ -46,9 +43,18 @@ public class ServerConstants {
 		return getFilesPath() + File.separator + ServerConstants.TRANSFERRED_FILES;
 	}
 	
+	public static String getUserPhotosPath() {
+		return getFilesPath() + File.separator + ServerConstants.USER_IMAGES_DIRECTORY;
+	}
 	
-	public static final String USER_IMAGES_DIRECTORY = "user_images";
+	public static String getPhotoPathFromUsername(String username){
+		return getUserPhotosPath() + File.separator + username + USER_PHOTO_EXTENSION;
+	}
 	
-	public static final String TRANSFERRED_FILES = "transferred_files";
+	
+	private static final String FILES_PATH = "files";
+	private static final String USER_IMAGES_DIRECTORY = "user_images";
+	private static final String USER_PHOTO_EXTENSION = ".jpg";
+	private static final String TRANSFERRED_FILES = "transferred_files";
 	
 }

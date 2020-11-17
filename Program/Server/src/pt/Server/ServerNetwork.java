@@ -55,7 +55,7 @@ public class ServerNetwork extends Thread {
 			receiveUpdates();
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
-			stop = true;// TODO maybe when stopping send a packet to receive and sheet
+			stop = true;
 		}
 	}
 	
@@ -180,8 +180,7 @@ public class ServerNetwork extends Thread {
 		}
 	}
 	
-	public void synchronizeDatabase() throws Exception {
-		//TODO get all of the new information
+	public void synchronizeDatabase(){
 		//Connect to the server with the least user load at the moment
 		ServerAddress server = getLeastLoadServer();
 		if (server == null || server.equals(getServerAddress())) {
@@ -192,16 +191,24 @@ public class ServerNetwork extends Thread {
 		System.out.println("Syncing Database ----------------------------------------------");
 		System.out.println("Creating synchronizer with address : " + getServerAddress() + " to server " + server);
 		Synchronizer synchronizer = new Synchronizer(server, getServerAddress(), getMulticastSocket(), multiMan);
-		synchronizer.receiveData();
+		try {
+			synchronizer.receiveData();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		//Get all of the info after list ID of the table that I have
 		//Have to use reliable UDP and break files into 5KB chunks
 	}
 	
-	private void receivedSynchronizationRequest(ServerAddress serverAddress) throws Exception {
+	private void receivedSynchronizationRequest(ServerAddress serverAddress) throws IOException {
 		synchronizationFakeUsers += ServerConstants.FAKE_USER_SYNC_COUNT;
 		updateUserCount(serverMain.getNConnectedUsers());
 		Synchronizer synchronizer = new Synchronizer(serverAddress, getServerAddress(), getMulticastSocket(), multiMan);
-		synchronizer.sendData();
+		try {
+			synchronizer.sendData();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		synchronizationFakeUsers -= ServerConstants.FAKE_USER_SYNC_COUNT;
 	}
 	
