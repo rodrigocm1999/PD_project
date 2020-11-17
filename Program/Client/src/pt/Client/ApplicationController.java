@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -12,7 +13,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -187,31 +191,41 @@ public class ApplicationController implements Initializable {
 		vBoxMessage.getChildren().clear();
 		vBoxMessage.requestFocus();
 		for (MessageInfo item:client.getMessages()) {
-			HBox box = new HBox();
-			box.setPrefWidth(Region.USE_COMPUTED_SIZE);
-			box.setFillHeight(true);
 
-			Label label = new Label(item.getContent());
-			box.getChildren().add(label);
-
-			if (client.getUserInfo().getUserId() != item.getSenderId()){
-				box.setAlignment(Pos.BASELINE_LEFT);
-			}else {
-				box.setAlignment(Pos.BASELINE_RIGHT);
-			}
-
-			vBoxMessage.getChildren().add(box);
+			vBoxMessage.getChildren().add(insertLine(item));
 		}
 
-		/*
-		msgsObsList.clear();
-		for (MessageInfo item : client.getMessages()) {
-			msgsObsList.add(item.getContent());
-		}*/
+	}
+	public HBox insertLine(MessageInfo message){
+		HBox box = new HBox();
+		box.setPrefWidth(Region.USE_COMPUTED_SIZE);
+		box.setFillHeight(true);
+
+		Label label = new Label(message.getContent());
+		if (!message.getType().equals(MessageInfo.TYPE_TEXT)){
+			/* --------- WTF dont work and dont know why
+			Text text = new Text(label.getText());
+			text.setUnderline(true);
+			text.setFill(Color.color(0,0,1));
+			*/
+			label.setTextFill(Color.color(0,0,1));
+			label.setOnMouseClicked(event -> {
+				client.downloadFile(message.getContent());
+			});
+		}
+
+		box.getChildren().add(label);
+
+		if (client.getUserInfo().getUserId() != message.getSenderId()){
+			box.setAlignment(Pos.BASELINE_LEFT);
+		}else {
+			box.setAlignment(Pos.BASELINE_RIGHT);
+		}
+		return box;
 	}
 	
 	public void addMessageToScreen(MessageInfo message) {
-		msgsObsList.add(message.getContent());
+		vBoxMessage.getChildren().add(insertLine(message));
 	}
 	
 	public void onMessageSend(ActionEvent actionEvent) {

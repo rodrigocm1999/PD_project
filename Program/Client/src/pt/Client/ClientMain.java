@@ -175,10 +175,11 @@ public class ClientMain {
 	
 	public void sendFile(File file) throws IOException, InterruptedException {
 		
-		Recipient recipientType = messages.get(0).getRecipientType();
-		int recipientId = messages.get(0).getRecipientId();
+		Recipient recipientType = getMessagesRecipientType();
+		int recipientId = getMessagesRecipientId();
 		
 		MessageInfo message = new MessageInfo(recipientType, recipientId, MessageInfo.TYPE_FILE, file.getName());
+
 		
 		Command command = (Command) sendCommandToServer(Constants.ADD_FILE, message);
 		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
@@ -256,5 +257,10 @@ public class ClientMain {
 	
 	public void waitForMessage() {
 	
+	}
+
+	public void downloadFile(String fileName) {
+	//	TODO DOWNLOAD FILE
+
 	}
 }
