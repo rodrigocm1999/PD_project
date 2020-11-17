@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="window" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="696.0" prefWidth="990.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ApplicationController">
+   <children>
+      <MenuBar>
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+            <items>
+              <MenuItem mnemonicParsing="false" onAction="#logout" text="Logout" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Channels">
+            <items>
+              <MenuItem mnemonicParsing="false" onAction="#onClickCreateChannel" text="Create" />
+                  <MenuItem mnemonicParsing="false" text="Add User" />
+                  <MenuItem mnemonicParsing="false" text="Remove user" />
+                  <MenuItem mnemonicParsing="false" text="Leave" />
+                  <MenuItem mnemonicParsing="false" onAction="#onClickDeleteChannel" text="Delete" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Help">
+            <items>
+              <MenuItem mnemonicParsing="false" text="About" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <SplitPane fx:id="bigSPane" dividerPositions="0.2" VBox.vgrow="ALWAYS">
+        <items>
+          <GridPane>
+               <columnConstraints>
+                  <ColumnConstraints />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints />
+               </rowConstraints>
+               <children>
+                  <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
+                    <items>
+                        <ListView fx:id="channelsListView" />
+                        <VBox>
+                           <children>
+                              <TextField fx:id="searchTextField" onKeyPressed="#searchUserByKey" />
+                              <ListView fx:id="usersListView" VBox.vgrow="ALWAYS" />
+                           </children>
+                        </VBox>
+                    </items>
+                  </SplitPane>
+               </children></GridPane>
+          <GridPane fx:id="msgPane" style="-fx-background-color: E2FAB5;">
+               <children>
+                  <VBox alignment="TOP_CENTER" nodeOrientation="LEFT_TO_RIGHT" style="-fx-background-color: red;" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
+                     <children>
+                        <ScrollPane fx:id="scrollPane" style="-fx-background-color: black;" VBox.vgrow="ALWAYS">
+                           <content>
+                              <VBox fx:id="vBoxMessage" alignment="BOTTOM_CENTER" style="-fx-spacing: 5; -fx-background-color: E2FAB5;">
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding></VBox>
+                           </content>
+                        </ScrollPane>
+                        <HBox alignment="BOTTOM_LEFT">
+                           <children>
+                              <TextField fx:id="msgTextField" alignment="BOTTOM_LEFT" onKeyPressed="#sendMessageByKey" HBox.hgrow="ALWAYS" />
+                              <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onMessageSend" text="Send" />
+                              <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#onSendFile" text="File" />
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </children>
+               <columnConstraints>
+                  <ColumnConstraints />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints />
+               </rowConstraints></GridPane>
+        </items>
+      </SplitPane>
+   </children>
+</VBox>
