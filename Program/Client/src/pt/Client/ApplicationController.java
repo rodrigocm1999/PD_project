@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -37,6 +38,8 @@ public class ApplicationController implements Initializable {
 	public Button btnSend;
 	public TextField msgTextField;
 	public TextField searchTextField;
+	public VBox vBoxMessage;
+	public ScrollPane scrollPane;
 	
 	
 	private final ObservableList<String> channelsObsList = FXCollections.observableArrayList();
@@ -66,7 +69,7 @@ public class ApplicationController implements Initializable {
 		
 		updateChannelsListView();
 		channelsListView.setItems(channelsObsList);
-		msgListView.setItems(msgsObsList);
+		//msgListView.setItems(msgsObsList);
 		usersListView.setItems(usersObsList);
 		
 		searchUsersByUsername();
@@ -79,7 +82,6 @@ public class ApplicationController implements Initializable {
 		});
 		
 		getUpdates();
-		
 		
 		usersListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
 			@Override
@@ -181,10 +183,31 @@ public class ApplicationController implements Initializable {
 	}
 	
 	public void updateMessageListView() {
+		//TODO FOCUS ON LAST ITEM
+		vBoxMessage.getChildren().clear();
+		vBoxMessage.requestFocus();
+		for (MessageInfo item:client.getMessages()) {
+			HBox box = new HBox();
+			box.setPrefWidth(Region.USE_COMPUTED_SIZE);
+			box.setFillHeight(true);
+
+			Label label = new Label(item.getContent());
+			box.getChildren().add(label);
+
+			if (client.getUserInfo().getUserId() != item.getSenderId()){
+				box.setAlignment(Pos.BASELINE_LEFT);
+			}else {
+				box.setAlignment(Pos.BASELINE_RIGHT);
+			}
+
+			vBoxMessage.getChildren().add(box);
+		}
+
+		/*
 		msgsObsList.clear();
 		for (MessageInfo item : client.getMessages()) {
 			msgsObsList.add(item.getContent());
-		}
+		}*/
 	}
 	
 	public void addMessageToScreen(MessageInfo message) {
@@ -314,6 +337,11 @@ public class ApplicationController implements Initializable {
 			onMessageSend(null);
 		}
 	}
-	
-	
+
+
+	public void logout(ActionEvent actionEvent) throws InterruptedException, IOException, ClassNotFoundException {
+		if (client.logout()){
+			ClientWindow.getInstance().setWindowRoot("LoginPage.fxml");
+		}
+	}
 }

@@ -119,8 +119,10 @@ public class ClientMain {
 	
 	public boolean logout() throws IOException, ClassNotFoundException, InterruptedException {
 		Command command = (Command) sendCommandToServer(Constants.LOGOUT, null);
-		// wait for response
-		return true;
+		if (command.getProtocol().equals(Constants.SUCCESS)){
+			return true;
+		}
+		return false;
 	}
 	
 	public UserInfo getUserInfo() {
