@@ -17,6 +17,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -210,7 +211,13 @@ public class ApplicationController implements Initializable {
 			*/
 			label.setTextFill(Color.color(0,0,1));
 			label.setOnMouseClicked(event -> {
-				client.downloadFile(message.getContent());
+				DirectoryChooser directoryChooser = new DirectoryChooser();
+				File fileDirectory = directoryChooser.showDialog(ClientWindow.getInstance().getStage());
+				try {
+					client.downloadFile(message.getContent(),fileDirectory.getAbsolutePath());
+				} catch (IOException | InterruptedException e) {
+					e.printStackTrace();
+				}
 			});
 		}
 
