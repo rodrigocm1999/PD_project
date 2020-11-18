@@ -175,10 +175,11 @@ public class ClientMain {
 	
 	public void sendFile(File file) throws IOException, InterruptedException {
 		
-		Recipient recipientType = messages.get(0).getRecipientType();
-		int recipientId = messages.get(0).getRecipientId();
+		Recipient recipientType = getMessagesRecipientType();
+		int recipientId = getMessagesRecipientId();
 		
 		MessageInfo message = new MessageInfo(recipientType, recipientId, MessageInfo.TYPE_FILE, file.getName());
+
 		
 		Command command = (Command) sendCommandToServer(Constants.ADD_FILE, message);
 		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
@@ -256,5 +257,45 @@ public class ClientMain {
 	
 	public void waitForMessage() {
 	
+	}
+
+	public void downloadFile(String fileName,String directory) throws IOException, InterruptedException {
+	//	TODO TRY DOWNLOAD
+		Recipient recipientType = getMessagesRecipientType();
+		int recipientId = getMessagesRecipientId();
+
+		MessageInfo message = new MessageInfo(recipientType, recipientId, MessageInfo.TYPE_FILE, fileName);
+
+
+		Command command = (Command) sendCommandToServer(Constants.GET_FILE, message);
+		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
+			System.err.println("Error File not  Success before send");
+			return;
+		}
+
+		Thread thread = new Thread(()->{
+			int fileDownloadPort = (int) command.getExtras();
+			try {
+				Socket socket = new Socket(serverIPAddress,fileDownloadPort);
+
+
+				InputStream fIS = socket.getInputStream();
+				FileOutputStream fileOutputStream = new FileOutputStream(directory);
+
+				byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
+
+				while (true){
+					int readAmount =  fIS.read(buffer);
+					if (readAmount == -1){
+						fIS.close();
+						socket.close();
+						break;
+					}
+					fileOutputStream.write(buffer,0,readAmount);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
 	}
 }
