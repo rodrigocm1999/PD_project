@@ -1,15 +1,12 @@
 package pt.Server;
 
 import pt.Common.Command;
-import pt.Common.ServerAddress;
-import pt.Common.UDPHelper;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class Tests {
 	
@@ -24,6 +21,18 @@ public class Tests {
 	}
 	
 	public static void main(String[] args) throws Exception {
+		
+		int initialSize = 10;
+		int endSize = 5;
+		int[] arr = new int[initialSize];
+		for (int i = 0; i < initialSize; i++) {
+			arr[i] = i * 2;
+			System.out.println("i : " + i + " : " + arr[i]);
+		}
+		int[] newArr = Arrays.copyOfRange(arr, 0, endSize);
+		for (int i = 0; i < endSize; i++) {
+			System.out.println("i : " + i + " : " + newArr[i]);
+		}
 		
 		/*ServerMain main = new ServerMain("localhost", "main", 3213, 54312,53212);
 		Socket socketUser = new Socket("localhost",3123);

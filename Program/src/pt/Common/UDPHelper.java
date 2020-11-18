@@ -29,7 +29,6 @@ public class UDPHelper {
 		}
 	}
 	
-	//TODO test reliable ones
 	public static final int RETRY_LIMIT = 3;
 	public static final int RECEIVE_TIMEOUT = 60000;
 	public static final int ACK_SENT_AMOUNT = 3;
@@ -85,8 +84,6 @@ public class UDPHelper {
 				
 				while (true) {
 					acknowledge.setLength(Constants.UDP_PACKET_SIZE);
-					//DatagramPacket acknowledge = new DatagramPacket(
-					//		new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE,address.getAddress(),port);
 					socket.receive(acknowledge);
 					ServerCommand ackCommand = (ServerCommand) readObjectFromPacket(acknowledge);
 					System.out.println("waiting for ACK, received : " + ackCommand);
@@ -116,17 +113,6 @@ public class UDPHelper {
 		}
 		socket.setSoTimeout(timeout);
 	}
-	
-	/*byte[] idArr = acknowledge.getData();
-				int idArrLength = acknowledge.getLength();
-				ByteBuffer buffer = ByteBuffer.wrap(idArr, 0, idArrLength);
-				long idACK = buffer.getLong();
-				
-				System.out.println(idACK);
-				if (idACK != ((Wrapper) command.getExtras()).id) {
-					throw new IOException("Invalid ID ACK\nThis is not supposed to EVER happen");
-				}
-				break;*/
 	
 	public static ServerCommand receiveServerCommandObjectReliably(DatagramSocket socket, ServerAddress server) throws IOException, ClassNotFoundException {
 		while (true) {

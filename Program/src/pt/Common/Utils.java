@@ -41,13 +41,6 @@ public class Utils {
 	}
 	
 	public static BufferedImage getCompressedImage(BufferedImage img, int newW, int newH) {
-		/*if (img.getColorModel().hasAlpha()) {
-			BufferedImage newImage = new BufferedImage(
-					img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
-			newImage.createGraphics().drawImage(img, 0, 0, Color.WHITE, null);
-			img = newImage;
-		}*/
-		//TODO scale image properly maybe
 		Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
 		BufferedImage bufferedImage = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
 		

@@ -31,6 +31,7 @@ insert into channel_user(channel_id,user_id) values(15,100);
 update channel set password_hash = '12fpfd2m99l1gsstg61m8o5f0s1y5nkftwo3hxw96pvizb1otr' where id = 1;
 update channel set name = ?, password_hash = ?, description = ? where id = ?;
 
+
 -- Selects
 select * from channel;
 select * from user;

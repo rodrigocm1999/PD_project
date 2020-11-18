@@ -196,7 +196,7 @@ public class ServerNetwork extends Thread {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		//Get all of the info after list ID of the table that I have
+		//Get all of the info after Ids of the info that this one has
 		//Have to use reliable UDP and break files into 5KB chunks
 	}
 	
@@ -210,6 +210,7 @@ public class ServerNetwork extends Thread {
 			e.printStackTrace();
 		}
 		synchronizationFakeUsers -= ServerConstants.FAKE_USER_SYNC_COUNT;
+		updateUserCount(serverMain.getNConnectedUsers());
 	}
 	
 	private void protocolNewMessage(MessageInfo message) throws IOException, SQLException {

@@ -1,5 +1,6 @@
 package pt.Server;
 
+import com.sun.security.jgss.GSSUtil;
 import pt.Common.*;
 
 import java.io.*;
@@ -26,8 +27,6 @@ public class UserThread extends Thread {
 		return ServerMain.getInstance();
 	}
 	
-	//TODO send passwords encrypted
-	//TODO add get user images
 	public UserThread(Socket socket, ArrayList<ServerAddress> orderedServerAddresses) throws IOException {
 		this.socket = socket;
 		oos = new ObjectOutputStream(socket.getOutputStream());
@@ -85,7 +84,6 @@ public class UserThread extends Thread {
 				handleRegister((UserInfo) protocol.getExtras());
 			}
 			
-			// TODO login from multiple clients CANNOT HAPPEN maybe
 			case Constants.LOGIN -> {
 				UserInfo userInfo = (UserInfo) protocol.getExtras();
 				login(userInfo.getUsername(), userInfo.getPassword());
@@ -105,7 +103,6 @@ public class UserThread extends Thread {
 						case Constants.CHANNEL_GET_MESSAGES -> {
 							Ids ids = (Ids) protocol.getExtras();
 							protocolChannelGetMessages(ids);
-							//TODO test get messages before certain message
 						}
 						
 						case Constants.CHANNEL_ADD -> {
@@ -154,7 +151,8 @@ public class UserThread extends Thread {
 						}
 						
 						case Constants.USER_GET_PHOTO -> {
-							// TODO get user photo
+							String username = (String) protocol.getExtras();
+							protocolGetUserPhoto(username);
 						}
 						
 						case Constants.LOGOUT -> {
@@ -163,6 +161,14 @@ public class UserThread extends Thread {
 					}
 				}
 			}
+		}
+	}
+	
+	private void protocolGetUserPhoto(String username) {
+		File image = new File(ServerConstants.getPhotoPathFromUsername(username));
+		
+		if (image.exists() && !image.isDirectory()) {
+			//TODO finish get user photo
 		}
 	}
 	
@@ -190,27 +196,34 @@ public class UserThread extends Thread {
 		
 		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 			
-			String path = ServerConstants.getFilesPath() + File.separator + message.getContent();
+			String path = ServerConstants.getTransferredFilesPath() + File.separator + message.getContent();
 			System.out.println(path);
 			File file = new File(path);
 			//TODO test file Download
 			
-			Thread sendingFile = new Thread(() -> {
+			new Thread(() -> {
 				try {
+					System.out.println("waiting connection");
 					Socket fileSocket = getApp().acceptFileConnection(this);
-					
+					System.out.println("Accepted connection");
 					byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
 					OutputStream outputStream = fileSocket.getOutputStream();
+					System.out.println("opened output stream");
 					
 					try (FileInputStream fileStream = new FileInputStream(file)) {
-						int amountRead = fileStream.read(buffer);
-						outputStream.write(buffer, 0, amountRead);
+						while (true) {
+							int amountRead = fileStream.read(buffer);
+							if (amountRead <= 0) {
+								socket.close();
+								break;
+							}
+							outputStream.write(buffer, 0, amountRead);
+						}
 					}
 				} catch (Exception e) {
+					e.printStackTrace();
 				}
-			});
-			sendingFile.start();
-			
+			}).start();
 		} else {
 			sendCommand(Constants.ERROR, "Invalid Message for download");
 		}
@@ -223,8 +236,7 @@ public class UserThread extends Thread {
 		}
 		String fileNameWithTime = addTimestampFileName(message.getContent());
 		
-		String filePath = ServerConstants.getTransferredFilesPath() + File.separator +
-				fileNameWithTime;
+		String filePath = ServerConstants.getTransferredFilesPath() + File.separator + fileNameWithTime;
 		
 		File file = new File(filePath);
 		Utils.createDirectories(file);
@@ -251,8 +263,9 @@ public class UserThread extends Thread {
 					file.delete();
 				}
 				
+				message.setSenderId(userInfo.getUserId());
 				message.setContent(fileNameWithTime);
-				
+				System.out.println(message);
 				if (MessageManager.insertMessage(message))
 					sendCommand(Constants.SUCCESS, fileNameWithTime);
 				else
@@ -330,8 +343,10 @@ public class UserThread extends Thread {
 			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 50 characters)");
 			return;
 		}
-		//TODO check name is not already in use by an user
-		//TODO check name is not already in use by an channel
+		if (!checkNameAvailability(channel.getName())) {
+			sendCommand(Constants.ERROR, "Name already in use by another channel or user");
+			return;
+		}
 		channel.setCreatorId(userInfo.getUserId());
 		boolean success = ChannelManager.createChannel(channel);
 		if (success) {
@@ -382,8 +397,8 @@ public class UserThread extends Thread {
 			} else if (!Utils.checkNameUser(userInfo.getName())) {
 				sendCommand(Constants.REGISTER_ERROR, "Name is invalid (needs to be between 3 and 50 characters long)");
 				
-			} else if (!UserManager.checkUsernameAvailability(userInfo.getUsername())) {
-				sendCommand(Constants.REGISTER_ERROR, "Username already in use");
+			} else if (!checkNameAvailability(userInfo.getUsername())) {
+				sendCommand(Constants.REGISTER_ERROR, "Username already in use by another user or channel");
 				
 			} else {
 				String imageName = "";
@@ -456,5 +471,9 @@ public class UserThread extends Thread {
 	
 	public boolean isLoggedIn() {
 		return isLoggedIn;
+	}
+	
+	private boolean checkNameAvailability(String name) throws SQLException {
+		return (UserManager.checkUsernameAvailability(name) && ChannelManager.checkNameAvailability(name));
 	}
 }

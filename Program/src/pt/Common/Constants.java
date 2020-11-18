@@ -36,6 +36,7 @@ public class Constants {
 	public static final String GET_FILE = "GET_FILE";
 	public static final String FILE_ACCEPT_CONNECTION = "FILE_ACCEPT_CONNECTION";
 	public static final int CLIENT_FILE_CHUNK_SIZE = 128 * 1024;
+	public static final String FINISHED_FILE_DOWNLOAD = "FINISHED_FILE_DOWNLOAD";
 	
 	public static final String SUCCESS = "SUCCESS";
 	public static final String FAILURE = "FAILURE";

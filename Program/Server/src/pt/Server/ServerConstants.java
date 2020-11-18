@@ -27,6 +27,7 @@ public class ServerConstants {
 	public static final String DATABASE_NAME = "main";
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
+	
 	public static String getDatabaseURL(String address, String name) {
 		return DATABASE_URL.replace("{1}", address).replace("{2}", name);
 	}
@@ -35,7 +36,8 @@ public class ServerConstants {
 	public static final String PUBLIC_IP_ADDRESS_API = "https://api.ipify.org";
 	
 	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 25;
-	public static String getFilesPath() {
+	
+	private static String getFilesPath() {
 		return FILES_PATH + "_" + ServerMain.getInstance().getDatabaseName();
 	}
 	
@@ -47,7 +49,7 @@ public class ServerConstants {
 		return getFilesPath() + File.separator + ServerConstants.USER_IMAGES_DIRECTORY;
 	}
 	
-	public static String getPhotoPathFromUsername(String username){
+	public static String getPhotoPathFromUsername(String username) {
 		return getUserPhotosPath() + File.separator + username + USER_PHOTO_EXTENSION;
 	}
 	

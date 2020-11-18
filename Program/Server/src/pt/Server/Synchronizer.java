@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Synchronizer {
 	
@@ -218,34 +219,36 @@ public class Synchronizer {
 				
 				case GET_MESSAGE_FILE -> {
 					String fileName = (String) command.getExtras();
-					byte[] buffer = new byte[FILE_CHUNK_SIZE];
+					
 					FileInputStream fileInputStream = new FileInputStream(
 							ServerConstants.getTransferredFilesPath() + File.separator + fileName);
-					while (true) {
-						int readAmount = fileInputStream.read(buffer);
-						if (readAmount <= 0) {
-							break;
-						}
-						sendCommand("", buffer);
-					}
+					sendFileBlocks(fileInputStream);
+					
 					sendCommand(NO_MORE_MESSAGE_FILE, null);
 					fileInputStream.close();
 				}
 				case GET_USER_PHOTO -> {
 					String username = (String) command.getExtras();
-					byte[] buffer = new byte[FILE_CHUNK_SIZE];
+					
 					FileInputStream fileInputStream = new FileInputStream(ServerConstants.getPhotoPathFromUsername(username));
-					while (true) {
-						int readAmount = fileInputStream.read(buffer);
-						if (readAmount <= 0) {
-							break;
-						}
-						sendCommand("", buffer);
-					}
+					sendFileBlocks(fileInputStream);
+					
 					sendCommand(NO_MORE_USER_PHOTO, null);
 					fileInputStream.close();
 				}
 			}
+		}
+	}
+	
+	private void sendFileBlocks(FileInputStream fileInputStream) throws IOException {
+		byte[] buffer = new byte[FILE_CHUNK_SIZE];
+		while (true) {
+			int readAmount = fileInputStream.read(buffer);
+			if (readAmount <= 0) {
+				break;
+			}
+			byte[] bufferTrimmed = Arrays.copyOfRange(buffer, 0, readAmount);
+			sendCommand("", bufferTrimmed);
 		}
 	}
 	

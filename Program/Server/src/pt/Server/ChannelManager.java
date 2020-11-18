@@ -161,4 +161,13 @@ public class ChannelManager {
 		result.next();
 		return result.getInt("id");
 	}
+	
+	public static boolean checkNameAvailability(String name) throws SQLException {
+		String select = "select count(id) from channel where name = ?";
+		PreparedStatement stat = ServerMain.getInstance().getPreparedStatement(select);
+		stat.setString(1, name);
+		ResultSet result = stat.executeQuery();
+		result.next();
+		return result.getInt(1) == 1;
+	}
 }
