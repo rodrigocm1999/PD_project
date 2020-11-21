@@ -18,6 +18,8 @@ public class LoginController {
 		//UserInfo user = new UserInfo(idUsername.getText(), idPassword.getText());
 		UserInfo user = new UserInfo("dorin", "Dorin1234");
 
+		//TODO CHECK IF IS BLANK
+
 		
 		Command command = (Command) instance.sendCommandToServer(Constants.LOGIN, user);
 		if (command.getProtocol().equals(Constants.LOGIN_SUCCESS)) {

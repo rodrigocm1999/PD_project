@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -13,10 +12,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -115,7 +112,7 @@ public class ApplicationController implements Initializable {
 		});
 		Callback cellFactory = usersListView.getCellFactory();
 		channelsListView.setCellFactory(cellFactory);
-		channelsListView.setCellFactory(cellFactory);
+
 	}
 	
 	
@@ -154,7 +151,7 @@ public class ApplicationController implements Initializable {
 			ArrayList<MessageInfo> messages = client.getMessagesFromChannel(channel.getId());
 			client.defineMessageTemplate(Recipient.CHANNEL, channel.getId());
 			client.setMessages(messages);
-			updateMessageListView();
+			updateMessageVBox();
 		} catch (IOException | ClassNotFoundException | InterruptedException e) {
 		}
 	}
@@ -187,10 +184,12 @@ public class ApplicationController implements Initializable {
 		alert.showAndWait();
 	}
 	
-	public void updateMessageListView() {
+	public void updateMessageVBox() {
 		//TODO FOCUS ON LAST ITEM
 		vBoxMessage.getChildren().clear();
 		vBoxMessage.requestFocus();
+		vBoxMessage.setPrefWidth(scrollPane.getWidth());
+		vBoxMessage.setPrefHeight(scrollPane.getHeight());
 		for (MessageInfo item:client.getMessages()) {
 
 			vBoxMessage.getChildren().add(insertLine(item));
@@ -214,7 +213,7 @@ public class ApplicationController implements Initializable {
 				DirectoryChooser directoryChooser = new DirectoryChooser();
 				File fileDirectory = directoryChooser.showDialog(ClientWindow.getInstance().getStage());
 				try {
-					client.downloadFile(message.getContent(),fileDirectory.getAbsolutePath());
+					client.downloadFile(message,fileDirectory.getAbsolutePath());
 				} catch (IOException | InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -329,7 +328,7 @@ public class ApplicationController implements Initializable {
 			Command command = (Command) client.sendCommandToServer(Constants.USER_GET_MESSAGES, new Ids(user.getUserId(), 0, 0));
 			client.defineMessageTemplate(Recipient.USER, user.getUserId());
 			client.setMessages((ArrayList<MessageInfo>) command.getExtras());
-			updateMessageListView();
+			updateMessageVBox();
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}

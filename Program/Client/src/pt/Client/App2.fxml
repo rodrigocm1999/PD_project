@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<VBox fx:id="window" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="696.0" prefWidth="990.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ApplicationController">
+<VBox fx:id="window" prefHeight="696.0" prefWidth="990.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ApplicationController">
    <children>
       <MenuBar>
         <menus>
@@ -29,57 +41,57 @@
           </Menu>
         </menus>
       </MenuBar>
-      <SplitPane fx:id="bigSPane" dividerPositions="0.2" VBox.vgrow="ALWAYS">
-        <items>
-          <GridPane>
-               <columnConstraints>
-                  <ColumnConstraints />
-               </columnConstraints>
-               <rowConstraints>
-                  <RowConstraints />
-               </rowConstraints>
-               <children>
-                  <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" GridPane.hgrow="ALWAYS" GridPane.vgrow="ALWAYS">
-                    <items>
-                        <ListView fx:id="channelsListView" />
-                        <VBox>
-                           <children>
-                              <TextField fx:id="searchTextField" onKeyPressed="#searchUserByKey" />
-                              <ListView fx:id="usersListView" VBox.vgrow="ALWAYS" />
-                           </children>
-                        </VBox>
-                    </items>
-                  </SplitPane>
-               </children></GridPane>
-          <GridPane fx:id="msgPane" style="-fx-background-color: E2FAB5;">
-               <children>
-                  <VBox alignment="TOP_CENTER" nodeOrientation="LEFT_TO_RIGHT" style="-fx-background-color: red;" GridPane.halignment="LEFT" GridPane.hgrow="ALWAYS" GridPane.valignment="BOTTOM" GridPane.vgrow="ALWAYS">
+      <BorderPane VBox.vgrow="ALWAYS">
+         <left>
+            <SplitPane fx:id="smallSPane" dividerPositions="0.5" orientation="VERTICAL" prefWidth="142.0" BorderPane.alignment="CENTER">
+              <items>
+                  <ListView fx:id="channelsListView" />
+                  <VBox>
                      <children>
-                        <ScrollPane fx:id="scrollPane" style="-fx-background-color: black;" VBox.vgrow="ALWAYS">
-                           <content>
-                              <VBox fx:id="vBoxMessage" alignment="BOTTOM_CENTER" style="-fx-spacing: 5; -fx-background-color: E2FAB5;">
-                                 <padding>
-                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                                 </padding></VBox>
-                           </content>
-                        </ScrollPane>
-                        <HBox alignment="BOTTOM_LEFT">
-                           <children>
-                              <TextField fx:id="msgTextField" alignment="BOTTOM_LEFT" onKeyPressed="#sendMessageByKey" HBox.hgrow="ALWAYS" />
-                              <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onMessageSend" text="Send" />
-                              <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#onSendFile" text="File" />
-                           </children>
-                        </HBox>
+                        <TextField fx:id="searchTextField" onKeyPressed="#searchUserByKey" />
+                        <ListView fx:id="usersListView" VBox.vgrow="ALWAYS" />
                      </children>
                   </VBox>
+              </items>
+            </SplitPane>
+         </left>
+         <center>
+            <VBox alignment="TOP_CENTER" nodeOrientation="LEFT_TO_RIGHT" style="-fx-background-color: red;" BorderPane.alignment="CENTER">
+               <children>
+                  <HBox prefHeight="50.0" style="-fx-background-color: #24EAF3;">
+                     <children>
+                        <ImageView fitHeight="50.0" fitWidth="57.0" pickOnBounds="true" preserveRatio="true">
+                           <HBox.margin>
+                              <Insets left="20.0" />
+                           </HBox.margin>
+                        </ImageView>
+                        <Label text="Label">
+                           <HBox.margin>
+                              <Insets left="10.0" top="10.0" />
+                           </HBox.margin>
+                           <font>
+                              <Font size="20.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </HBox>
+                  <ScrollPane fx:id="scrollPane" hbarPolicy="NEVER" style="-fx-background-color: black;" VBox.vgrow="ALWAYS">
+                     <content>
+                        <VBox fx:id="vBoxMessage" alignment="BOTTOM_CENTER" prefHeight="0.0" prefWidth="0.0" style="-fx-spacing: 5; -fx-background-color: E2FAB5;">
+                           <padding>
+                              <Insets bottom="20.0" left="30.0" right="30.0" />
+                           </padding></VBox>
+                     </content>
+                  </ScrollPane>
+                  <HBox alignment="BOTTOM_LEFT">
+                     <children>
+                        <TextField fx:id="msgTextField" alignment="BOTTOM_LEFT" onKeyPressed="#sendMessageByKey" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="btnSend" mnemonicParsing="false" onAction="#onMessageSend" text="Send" />
+                        <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#onSendFile" text="File" />
+                     </children>
+                  </HBox>
                </children>
-               <columnConstraints>
-                  <ColumnConstraints />
-               </columnConstraints>
-               <rowConstraints>
-                  <RowConstraints />
-               </rowConstraints></GridPane>
-        </items>
-      </SplitPane>
+            </VBox>
+         </center></BorderPane>
    </children>
 </VBox>

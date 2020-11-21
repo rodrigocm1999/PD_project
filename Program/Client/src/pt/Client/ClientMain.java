@@ -1,6 +1,7 @@
 package pt.Client;
 
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import pt.Common.*;
 import pt.Common.MessageInfo.Recipient;
 
@@ -259,15 +260,10 @@ public class ClientMain {
 	
 	}
 
-	public void downloadFile(String fileName,String directory) throws IOException, InterruptedException {
+	public void downloadFile(MessageInfo message,String directory) throws IOException, InterruptedException {
 	//	TODO TRY DOWNLOAD
-		Recipient recipientType = getMessagesRecipientType();
-		int recipientId = getMessagesRecipientId();
 
-		MessageInfo message = new MessageInfo(recipientType, recipientId, MessageInfo.TYPE_FILE, fileName);
-
-
-		Command command = (Command) sendCommandToServer(Constants.GET_FILE, message);
+		Command command = (Command) sendCommandToServer(Constants.GET_FILE, message.getId());
 		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
 			System.err.println("Error File not  Success before send");
 			return;
@@ -277,25 +273,39 @@ public class ClientMain {
 			int fileDownloadPort = (int) command.getExtras();
 			try {
 				Socket socket = new Socket(serverIPAddress,fileDownloadPort);
-
+				System.out.println("cheguei aqui");
 
 				InputStream fIS = socket.getInputStream();
-				FileOutputStream fileOutputStream = new FileOutputStream(directory);
+				FileOutputStream fileOutputStream = new FileOutputStream(directory + File.separator + message.getContent());
 
 				byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
 
 				while (true){
 					int readAmount =  fIS.read(buffer);
-					if (readAmount == -1){
+					if (readAmount <= 0){
 						fIS.close();
 						socket.close();
 						break;
 					}
 					fileOutputStream.write(buffer,0,readAmount);
 				}
-			} catch (IOException e) {
+				Command newComand = (Command) receiveCommand();
+				if (newComand.getProtocol().equals(Constants.FINISHED_FILE_DOWNLOAD)){
+					Platform.runLater(()->{
+						Alert alert = new Alert(Alert.AlertType.INFORMATION);
+						alert.setTitle(" INFO ");
+						alert.setHeaderText(null);
+						alert.setContentText("Download completed");
+						alert.showAndWait();
+
+					});
+
+				}
+
+			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
 		});
+		thread.start();
 	}
 }
