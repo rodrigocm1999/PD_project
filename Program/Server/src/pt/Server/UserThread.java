@@ -5,6 +5,7 @@ import pt.Common.*;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -165,10 +166,33 @@ public class UserThread extends Thread {
 	}
 	
 	private void protocolGetUserPhoto(String username) {
-		File image = new File(ServerConstants.getPhotoPathFromUsername(username));
+		File file = new File(ServerConstants.getPhotoPathFromUsername(username));
 		
-		if (image.exists() && !image.isDirectory()) {
-			//TODO finish get user photo
+		if (file.exists() && !file.isDirectory()) {
+			
+			new Thread(() -> {
+				try {
+					Socket fileSocket = getApp().acceptFileConnection(this);
+					byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
+					OutputStream outputStream = fileSocket.getOutputStream();
+					
+					try (FileInputStream fileStream = new FileInputStream(file)) {
+						while (true) {
+							int amountRead = fileStream.read(buffer);
+							if (amountRead <= 0) {
+								socket.close();
+								break;
+							}
+							outputStream.write(buffer, 0, amountRead);
+						}
+					}
+					sendCommand(Constants.FINISHED_PHOTO_DOWNLOAD);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}).start();
+		} else {
+			System.out.println("File does not exists or is directory : " + file.getAbsolutePath());
 		}
 	}
 	
@@ -186,29 +210,23 @@ public class UserThread extends Thread {
 	
 	private void protocolUserGetLike(String username) throws SQLException, IOException {
 		if (username == null) username = "";
-		ArrayList<UserInfo> usersLike = UserManager.getUsersLike(username);
+		ArrayList<UserInfo> usersLike = UserManager.getUsersLike(username,userInfo.getUserId());
 		sendCommand(Constants.SUCCESS, usersLike);
 	}
 	
 	public void protocolGetFile(int messageId) throws IOException, SQLException {
 		MessageInfo message = MessageManager.getMessageById(messageId);
-		System.out.println("Get file from message : " + message);
 		
 		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 			
 			String path = ServerConstants.getTransferredFilesPath() + File.separator + message.getContent();
-			System.out.println(path);
 			File file = new File(path);
-			//TODO test file Download
 			
 			new Thread(() -> {
 				try {
-					System.out.println("waiting connection");
 					Socket fileSocket = getApp().acceptFileConnection(this);
-					System.out.println("Accepted connection");
 					byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
 					OutputStream outputStream = fileSocket.getOutputStream();
-					System.out.println("opened output stream");
 					
 					try (FileInputStream fileStream = new FileInputStream(file)) {
 						while (true) {
@@ -220,6 +238,7 @@ public class UserThread extends Thread {
 							outputStream.write(buffer, 0, amountRead);
 						}
 					}
+					sendCommand(Constants.FINISHED_FILE_DOWNLOAD, messageId);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

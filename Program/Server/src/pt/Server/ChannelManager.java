@@ -8,6 +8,8 @@ import java.util.ArrayList;
 
 public class ChannelManager {
 	
+	private static Object channelLock = new Object();
+	
 	private static ServerMain getApp() {
 		return ServerMain.getInstance();
 	}
@@ -31,28 +33,32 @@ public class ChannelManager {
 	}
 	
 	public static boolean createChannel(ChannelInfo channel) throws SQLException, NoSuchAlgorithmException {
-		String insert = "insert into channel(id,creator_id,name,password_hash,description) values(?,?,?,?,?)";
-		PreparedStatement statement = getApp().getPreparedStatement(insert);
-		// set new channel id
-		channel.setId(getLastChannelId() + 1);
-		statement.setInt(1, channel.getId());
-		statement.setInt(2, channel.getCreatorId());
-		statement.setString(3, channel.getName());
-		statement.setString(4, Utils.hashStringBase36(channel.getPassword()));
-		statement.setString(5, channel.getDescription());
-		return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
+		synchronized (channelLock) {
+			String insert = "insert into channel(id,creator_id,name,password_hash,description) values(?,?,?,?,?)";
+			PreparedStatement statement = getApp().getPreparedStatement(insert);
+			// set new channel id
+			channel.setId(getLastChannelId() + 1);
+			statement.setInt(1, channel.getId());
+			statement.setInt(2, channel.getCreatorId());
+			statement.setString(3, channel.getName());
+			statement.setString(4, Utils.hashStringBase36(channel.getPassword()));
+			statement.setString(5, channel.getDescription());
+			return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
+		}
 	}
 	
-	public static boolean insertChannel(ChannelInfo channel) throws SQLException {
-		String insert = "insert into channel(id,creator_id,name,password_hash,description,creation_moment) values(?,?,?,?,?,?)";
-		PreparedStatement statement = getApp().getPreparedStatement(insert);
-		statement.setInt(1, channel.getId());
-		statement.setInt(2, channel.getCreatorId());
-		statement.setString(3, channel.getName());
-		statement.setString(4, channel.getPassword());
-		statement.setString(5, channel.getDescription());
-		statement.setDate(6, new Date(channel.getCreationMoment()));
-		return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
+	public static boolean insertFull(ChannelInfo channel) throws SQLException {
+		synchronized (channelLock) {
+			String insert = "insert into channel(id,creator_id,name,password_hash,description,creation_moment) values(?,?,?,?,?,?)";
+			PreparedStatement statement = getApp().getPreparedStatement(insert);
+			statement.setInt(1, channel.getId());
+			statement.setInt(2, channel.getCreatorId());
+			statement.setString(3, channel.getName());
+			statement.setString(4, channel.getPassword());
+			statement.setString(5, channel.getDescription());
+			statement.setDate(6, new Date(channel.getCreationMoment()));
+			return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
+		}
 	}
 	
 	public static boolean deleteChannel(int channelId) throws SQLException {
@@ -82,7 +88,8 @@ public class ChannelManager {
 		return result.getInt(1) == 1;
 	}
 	
-	public static boolean isChannelPassword(int channelId, String password) throws NoSuchAlgorithmException, SQLException {
+	public static boolean isChannelPassword(int channelId, String password) throws
+			NoSuchAlgorithmException, SQLException {
 		String select = "select count(id) from channel where id = ? and password_hash = ?";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setInt(1, channelId);
@@ -101,13 +108,15 @@ public class ChannelManager {
 	}
 	
 	public static boolean updateChannel(ChannelInfo channel) throws SQLException, NoSuchAlgorithmException {
-		String insert = "update channel set name = ?, password_hash = ?, description = ? where id = ?";
-		PreparedStatement statement = getApp().getPreparedStatement(insert);
-		statement.setString(1, channel.getName());
-		statement.setString(2, Utils.hashStringBase36(channel.getPassword()));
-		statement.setString(3, channel.getDescription());
-		statement.setInt(4, channel.getId());
-		return statement.executeUpdate() == 1;
+		synchronized (channelLock) {
+			String insert = "update channel set name = ?, password_hash = ?, description = ? where id = ?";
+			PreparedStatement statement = getApp().getPreparedStatement(insert);
+			statement.setString(1, channel.getName());
+			statement.setString(2, Utils.hashStringBase36(channel.getPassword()));
+			statement.setString(3, channel.getDescription());
+			statement.setInt(4, channel.getId());
+			return statement.executeUpdate() == 1;
+		}
 	}
 	
 	public static int getLastChannelId() throws SQLException {

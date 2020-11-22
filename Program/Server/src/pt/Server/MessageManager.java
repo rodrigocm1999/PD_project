@@ -124,25 +124,27 @@ public class MessageManager {
 	}
 	
 	public static boolean insertFull(MessageInfo message) throws SQLException {
-		String insert = "insert into message(id,sender_id,moment_sent,type,content) values(?,?,?,?,?)";
-		PreparedStatement statement = getApp().getPreparedStatement(insert);
-		statement.setInt(1, message.getId());
-		statement.setInt(2, message.getSenderId());
-		statement.setString(3, message.getType());
-		statement.setString(4, message.getContent());
-		boolean added = statement.executeUpdate() == 1;
-		if (!added) return false;
-		
-		String tableInsert = "";
-		if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
-			tableInsert = "insert into channel_message(message_id,channel_id) values(?,?)";
-		} else {
-			tableInsert = "insert into user_message(message_id,receiver_id) values(?,?)";
+		synchronized (messageLock) {
+			String insert = "insert into message(id,sender_id,moment_sent,type,content) values(?,?,?,?,?)";
+			PreparedStatement statement = getApp().getPreparedStatement(insert);
+			statement.setInt(1, message.getId());
+			statement.setInt(2, message.getSenderId());
+			statement.setString(3, message.getType());
+			statement.setString(4, message.getContent());
+			boolean added = statement.executeUpdate() == 1;
+			if (!added) return false;
+			
+			String tableInsert = "";
+			if (message.getRecipientType().equals(MessageInfo.Recipient.CHANNEL)) {
+				tableInsert = "insert into channel_message(message_id,channel_id) values(?,?)";
+			} else {
+				tableInsert = "insert into user_message(message_id,receiver_id) values(?,?)";
+			}
+			statement = getApp().getPreparedStatement(tableInsert);
+			statement.setInt(1, message.getId());
+			statement.setInt(2, message.getRecipientId());
+			return statement.executeUpdate() == 1;
 		}
-		statement = getApp().getPreparedStatement(tableInsert);
-		statement.setInt(1, message.getId());
-		statement.setInt(2, message.getRecipientId());
-		return statement.executeUpdate() == 1;
 	}
 	
 	private static int getLastChannelMessageId(int channelId) throws SQLException {
@@ -213,9 +215,9 @@ public class MessageManager {
 		int recipientId = recipientType == MessageInfo.Recipient.CHANNEL ? result.getInt("channel_id") : result.getInt("receiver_id");
 		
 		return new MessageInfo(
-				result.getInt("id"),result.getInt("sender_id"),
-				recipientType,recipientId,
+				result.getInt("id"), result.getInt("sender_id"),
+				recipientType, recipientId,
 				result.getDate("moment_sent").getTime(),
-				result.getString("type"),result.getString("content"));
+				result.getString("type"), result.getString("content"));
 	}
 }

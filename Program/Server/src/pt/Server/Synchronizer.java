@@ -60,6 +60,8 @@ public class Synchronizer {
 				break;
 			}
 			ArrayList<UserInfo> newUsers = (ArrayList<UserInfo>) command.getExtras();
+			allNewUsers.addAll(newUsers);
+			
 			for (var user : newUsers) {
 				String imagePath = ServerConstants.getPhotoPathFromUsername(user.getUsername());
 				if (!UserManager.insertFull(user, imagePath)) {
@@ -98,7 +100,7 @@ public class Synchronizer {
 			}
 			ArrayList<ChannelInfo> newChannels = (ArrayList<ChannelInfo>) command.getExtras();
 			for (var channel : newChannels) {
-				if (!ChannelManager.insertChannel(channel)) {
+				if (!ChannelManager.insertFull(channel)) {
 					System.out.println("Channel insert");
 					socket.close();
 					return;
@@ -240,6 +242,14 @@ public class Synchronizer {
 		}
 	}
 	
+	private void sendCommand(String protocol, Object object) throws IOException {
+		UDPHelper.sendServerCommandReliably(protocol, object, otherServer, ServerConstants.MULTICAST_PORT, socket);
+	}
+	
+	private ServerCommand receiveCommand() throws Exception {
+		return UDPHelper.receiveServerCommandObjectReliably(socket, otherServer);
+	}
+	
 	private void sendFileBlocks(FileInputStream fileInputStream) throws IOException {
 		byte[] buffer = new byte[FILE_CHUNK_SIZE];
 		while (true) {
@@ -250,14 +260,6 @@ public class Synchronizer {
 			byte[] bufferTrimmed = Arrays.copyOfRange(buffer, 0, readAmount);
 			sendCommand("", bufferTrimmed);
 		}
-	}
-	
-	private void sendCommand(String protocol, Object object) throws IOException {
-		UDPHelper.sendServerCommandReliably(protocol, object, otherServer, ServerConstants.MULTICAST_PORT, socket);
-	}
-	
-	private ServerCommand receiveCommand() throws Exception {
-		return UDPHelper.receiveServerCommandObjectReliably(socket, otherServer);
 	}
 	
 	private void sendByBlocks(ArrayList list, int blockSize) throws Exception {

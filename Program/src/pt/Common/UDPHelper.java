@@ -1,13 +1,11 @@
 package pt.Common;
 
-import pt.Server.MulticastManager;
 import pt.Server.ServerCommand;
 import pt.Server.ServerConstants;
 import pt.Server.ServerMain;
 
 import java.io.*;
 import java.net.*;
-import java.sql.SQLOutput;
 
 public class UDPHelper {
 	
@@ -76,16 +74,17 @@ public class UDPHelper {
 			try {
 				// Send the stuff
 				socket.send(packet);
-				DatagramPacket acknowledge = new DatagramPacket(
+				DatagramPacket ackPacket = new DatagramPacket(
 						new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 				//Receive ACK. If timeout, then try again a couple more times
 				
 				System.out.println("waiting for ACK");
 				
 				while (true) {
-					acknowledge.setLength(Constants.UDP_PACKET_SIZE);
-					socket.receive(acknowledge);
-					ServerCommand ackCommand = (ServerCommand) readObjectFromPacket(acknowledge);
+					ackPacket.setLength(Constants.UDP_PACKET_SIZE);
+					socket.receive(ackPacket);
+					System.out.println("got something");
+					ServerCommand ackCommand = (ServerCommand) readObjectFromPacket(ackPacket);
 					System.out.println("waiting for ACK, received : " + ackCommand);
 					
 					if (ackCommand.getProtocol().equals(ServerConstants.ACKNOWLEDGE)) {

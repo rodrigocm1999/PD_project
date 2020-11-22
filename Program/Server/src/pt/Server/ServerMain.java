@@ -180,7 +180,7 @@ public class ServerMain {
 	}
 	
 	public void propagatedNewMessage(MessageInfo message) throws IOException {
-		System.out.println("Received propagation");
+		System.out.println("Received propagation new Message");
 		for (UserThread user : connectedMachines) {
 			user.receivedPropagatedMessage(message);
 		}

@@ -19,6 +19,7 @@ public class ServerConstants {
 	public static final String CAME_OFFLINE = "CAME_OFFLINE";
 	public static final String AM_ONLINE = "AM_ONLINE";
 	public static final String NEW_MESSAGE = "NEW_MESSAGE";
+	public static final String PROTOCOL_NEW_USER = "PROTOCOL_NEW_USER";
 	
 	public static final String UPDATE_USER_COUNT = "UPDATE_USER_COUNT";
 	public static final float ACCEPT_PERCENTAGE_THRESHOLD = 0.5f;

@@ -1,12 +1,10 @@
 package pt.Server;
 
-import pt.Common.Constants;
-import pt.Common.MessageInfo;
-import pt.Common.ServerAddress;
-import pt.Common.Utils;
+import pt.Common.*;
 
 import java.io.IOException;
 import java.net.*;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,7 +90,7 @@ public class ServerNetwork extends Thread {
 	
 	public void discoverServers() throws ClassNotFoundException, IOException {
 		System.out.println("Server Discovery ----------------------------------------------");
-		warnEveryone();
+		thisCameOnline();
 		
 		multicastSocket.setSoTimeout(1000);
 		try {
@@ -139,7 +137,7 @@ public class ServerNetwork extends Thread {
 					
 					case ServerConstants.HEARTBEAT -> {
 						ServerStatus status = getServerStatus(otherServerAddress);
-						receivedHeartbeat(status);
+						receivedHeartbeat(status, otherServerAddress);
 					}
 					
 					case ServerConstants.CAME_ONLINE -> {
@@ -173,6 +171,12 @@ public class ServerNetwork extends Thread {
 						protocolNewMessage(message);
 					}
 					
+					case ServerConstants.PROTOCOL_NEW_USER -> {
+						UserInfo userInfo = (UserInfo) command.getExtras();
+						System.out.println("Received propagated new user : " + userInfo);
+						protocolNewUser(userInfo);
+					}
+					
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -180,7 +184,7 @@ public class ServerNetwork extends Thread {
 		}
 	}
 	
-	public void synchronizeDatabase(){
+	public void synchronizeDatabase() {
 		//Connect to the server with the least user load at the moment
 		ServerAddress server = getLeastLoadServer();
 		if (server == null || server.equals(getServerAddress())) {
@@ -213,8 +217,14 @@ public class ServerNetwork extends Thread {
 		updateUserCount(serverMain.getNConnectedUsers());
 	}
 	
+	private void protocolNewUser(UserInfo userInfo) throws SQLException {
+		UserManager.insertFull(userInfo, "");
+		//TODO receive user image
+		//serverMain.propagatedNewUser(userInfo);
+	}
+	
 	private void protocolNewMessage(MessageInfo message) throws IOException, SQLException {
-		MessageManager.insertMessage(message);
+		MessageManager.insertFull(message);
 		serverMain.propagatedNewMessage(message);
 	}
 	
@@ -225,18 +235,18 @@ public class ServerNetwork extends Thread {
 		System.out.println("Came Online : " + server);
 	}
 	
-	private void receivedHeartbeat(ServerStatus status) {
+	private void receivedHeartbeat(ServerStatus status, ServerAddress otherServerAddress) {
 		if (status != null) {
 			status.setHeartbeat(true);
 			//System.out.println("set heartbeat true : " + status);
 		} else {
 			System.err.println("Not yet registered. Not supposed to happen\t Registering now"); // should never happen
-			serverConnected(new ServerStatus(Integer.MAX_VALUE, status.getServerAddress()));
+			serverConnected(new ServerStatus(Integer.MAX_VALUE, otherServerAddress));
 			printAvailableServers();
 		}
 	}
 	
-	private void warnEveryone() throws IOException {
+	private void thisCameOnline() throws IOException {
 		sendAllCommand(ServerConstants.CAME_ONLINE);
 	}
 	

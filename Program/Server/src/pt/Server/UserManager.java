@@ -4,7 +4,6 @@ import pt.Common.UserInfo;
 import pt.Common.Utils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -16,32 +15,38 @@ import java.sql.Date;
 
 public class UserManager {
 	
+	private static Object syncLock = new Object();
+	
 	private static ServerMain getApp() {
 		return ServerMain.getInstance();
 	}
 	
 	public static boolean insertUser(UserInfo user, String imagePath) throws SQLException, NoSuchAlgorithmException {
-		// insert the new user into the database ------------------------------------------
-		String insert = "insert into user(name,username,password_hash,photo_path) values(?,?,?,?)";
-		PreparedStatement preparedStatement = ServerMain.getInstance().getPreparedStatement(insert);
-		preparedStatement.setString(1, user.getName());
-		preparedStatement.setString(2, user.getUsername());
-		preparedStatement.setString(3, Utils.hashStringBase36(user.getPassword()));
-		preparedStatement.setString(4, imagePath);
-		return preparedStatement.executeUpdate() == 1;
+		synchronized (syncLock) {
+			// insert the new user into the database ------------------------------------------
+			String insert = "insert into user(name,username,password_hash,photo_path) values(?,?,?,?)";
+			PreparedStatement preparedStatement = getApp().getPreparedStatement(insert);
+			preparedStatement.setString(1, user.getName());
+			preparedStatement.setString(2, user.getUsername());
+			preparedStatement.setString(3, Utils.hashStringBase36(user.getPassword()));
+			preparedStatement.setString(4, imagePath);
+			return preparedStatement.executeUpdate() == 1;
+		}
 	}
 	
-	public static boolean insertFull(UserInfo user, String imagePath) throws SQLException, NoSuchAlgorithmException {
-		// insert the new user into the database ------------------------------------------
-		String insert = "insert into user(id,name,username,password_hash,photo_path,user_creation) values(?,?,?,?,?,?)";
-		PreparedStatement preparedStatement = ServerMain.getInstance().getPreparedStatement(insert);
-		preparedStatement.setInt(1, user.getUserId());
-		preparedStatement.setString(2, user.getName());
-		preparedStatement.setString(3, user.getUsername());
-		preparedStatement.setString(4, user.getPassword());
-		preparedStatement.setString(5, imagePath);
-		preparedStatement.setDate(6, new Date(user.getCreationMoment()));
-		return preparedStatement.executeUpdate() == 1;
+	public static boolean insertFull(UserInfo user, String imagePath) throws SQLException {
+		synchronized (syncLock) {
+			// insert the new user into the database ------------------------------------------
+			String insert = "insert into user(id,name,username,password_hash,photo_path,user_creation) values(?,?,?,?,?,?)";
+			PreparedStatement preparedStatement = getApp().getPreparedStatement(insert);
+			preparedStatement.setInt(1, user.getUserId());
+			preparedStatement.setString(2, user.getName());
+			preparedStatement.setString(3, user.getUsername());
+			preparedStatement.setString(4, user.getPassword());
+			preparedStatement.setString(5, imagePath);
+			preparedStatement.setDate(6, new Date(user.getCreationMoment()));
+			return preparedStatement.executeUpdate() == 1;
+		}
 	}
 	
 	public static boolean checkUsernameAvailability(String username) throws SQLException {
@@ -52,27 +57,29 @@ public class UserManager {
 	public static boolean doesUsernameExist(String username) throws SQLException {
 		// check if username exists -------------------------------------------
 		String select = "select count(id) from user where username = ?";
-		PreparedStatement stat = ServerMain.getInstance().getPreparedStatement(select);
+		PreparedStatement stat = getApp().getPreparedStatement(select);
 		stat.setString(1, username);
 		ResultSet result = stat.executeQuery();
-		result.next();
+		if (!result.next())
+			throw new SQLException("WTF HOW DID THIS HAPPEN");
 		return result.getInt(1) == 1;
 	}
 	
 	public static boolean doesPasswordMatchUsername(String username, String password) throws SQLException, NoSuchAlgorithmException {
 		// get the number of users with that password and username. should either return 1 or 0, never anything else
 		String select = "select count(id) from user where username = ? and password_hash = ?";
-		PreparedStatement preparedStatement = ServerMain.getInstance().getPreparedStatement(select);
+		PreparedStatement preparedStatement = getApp().getPreparedStatement(select);
 		preparedStatement.setString(1, username);
 		preparedStatement.setString(2, Utils.hashStringBase36(password));
-		ResultSet resultSet = preparedStatement.executeQuery();
-		resultSet.next();
-		return resultSet.getInt(1) == 1;
+		ResultSet result = preparedStatement.executeQuery();
+		if (!result.next())
+			throw new SQLException("WTF HOW DID THIS HAPPEN");
+		return result.getInt(1) == 1;
 	}
 	
 	public static int getUserId(String username) throws SQLException {
 		String select = "select id from user where username = ?";
-		PreparedStatement statement = ServerMain.getInstance().getPreparedStatement(select);
+		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setString(1, username);
 		ResultSet result = statement.executeQuery();
 		if (!result.next())
@@ -90,12 +97,18 @@ public class UserManager {
 		return result.getString(1);
 	}
 	
-	public static ArrayList<UserInfo> getUsersLike(String username) throws SQLException {
-		String select = "select id,name,username from user where username like ? order by " +
-				"(select count(id) from message,user_message where message.id = message_id && receiver_id = user.id) desc, username " +
-				" limit 30"; // TODO FIX order
+	public static ArrayList<UserInfo> getUsersLike(String username, int thisManId) throws SQLException {
+		String select = "select id,name,username, " +
+				"   (select count(*) " +
+				"   from message,user_message " +
+				"   where message.id = message_id && ((sender_id = ? && receiver_id = user.id) ||  (sender_id = user.id && receiver_id = ?)) ) as amountOfMessages " +
+				"from user " +
+				"where username like ? " +
+				"order by amountOfMessages desc, username ";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
-		statement.setString(1, "%" + username + "%");
+		statement.setInt(1, thisManId);
+		statement.setInt(2, thisManId);
+		statement.setString(3, "%" + username + "%");
 		ResultSet result = statement.executeQuery();
 		
 		ArrayList<UserInfo> usersLike = new ArrayList<>();

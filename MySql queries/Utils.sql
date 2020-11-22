@@ -89,7 +89,26 @@ from message where (select channel_id from channel_message where channel_id = 3 
 select * from user where username like '%channel%'; 
 
 select count(id) from message,user_message where message.id = message_id && receiver_id = 2;
-select id,name,username from user where username like '%%' order by (select count(id) from message,user_message where message.id = message_id && receiver_id = user.id), username limit 30;
+
+select id,name,username, 
+	(select count(*) 
+	from message,user_message 
+	where message.id = message_id && ((sender_id = 2 && receiver_id = user.id) ||  (sender_id = user.id && receiver_id = 2)) ) as amountOfMessages 
+from user 
+where username like '%%'
+order by amountOfMessages desc, username 
+limit 30;
+
+select count(*)
+from message,user_message
+where message.id = message_id && ((sender_id = 2 && receiver_id = 101) ||  (sender_id = 101 && receiver_id = 2));
+
+select count(*)
+from message 
+where sender_id = 101;
+
+select count(*) from user_message where receiver_id = 101;
+
 
 select id,name,username,password_hash,photo_path,user_creation from user where id>2;
 insert into user(id,name,username,password_hash,photo_path,user_creation) values(?,?,?,?,?,?);
