@@ -84,7 +84,19 @@ public class ApplicationController implements Initializable {
 		});
 		
 		getUpdates();
+		window.getStage().widthProperty().addListener((observable, oldValue, newValue) -> {
+			vBoxMessage.setPrefWidth(scrollPane.getWidth());
+		});
 		
+
+		vBoxMessage.heightProperty().addListener((observable, oldValue, newValue) -> {
+			scrollPane.setVvalue(1.0d);
+		});
+
+
+		// TODO QUANDO CARREGA NO MAXIMAZE ELE NAO FAZ O RESIZE AUTOMATICO
+
+		/*
 		usersListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
 			@Override
 			public ListCell<String> call(ListView<String> param) {
@@ -110,8 +122,7 @@ public class ApplicationController implements Initializable {
 				};
 			}
 		});
-		Callback cellFactory = usersListView.getCellFactory();
-		channelsListView.setCellFactory(cellFactory);
+		*/
 
 	}
 	
@@ -185,9 +196,9 @@ public class ApplicationController implements Initializable {
 	}
 	
 	public void updateMessageVBox() {
-		//TODO FOCUS ON LAST ITEM
+		client.getMessagesRecipientType();
+
 		vBoxMessage.getChildren().clear();
-		vBoxMessage.requestFocus();
 		vBoxMessage.setPrefWidth(scrollPane.getWidth());
 		vBoxMessage.setPrefHeight(scrollPane.getHeight());
 		for (MessageInfo item:client.getMessages()) {
@@ -203,11 +214,6 @@ public class ApplicationController implements Initializable {
 
 		Label label = new Label(message.getContent());
 		if (!message.getType().equals(MessageInfo.TYPE_TEXT)){
-			/* --------- WTF dont work and dont know why
-			Text text = new Text(label.getText());
-			text.setUnderline(true);
-			text.setFill(Color.color(0,0,1));
-			*/
 			label.setTextFill(Color.color(0,0,1));
 			label.setOnMouseClicked(event -> {
 				DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -219,7 +225,6 @@ public class ApplicationController implements Initializable {
 				}
 			});
 		}
-
 		box.getChildren().add(label);
 
 		if (client.getUserInfo().getUserId() != message.getSenderId()){
@@ -227,6 +232,7 @@ public class ApplicationController implements Initializable {
 		}else {
 			box.setAlignment(Pos.BASELINE_RIGHT);
 		}
+
 		return box;
 	}
 	
@@ -243,6 +249,7 @@ public class ApplicationController implements Initializable {
 		int recipientId = client.getMessagesRecipientId();
 		Recipient recipientType = client.getMessagesRecipientType();
 		MessageInfo message = new MessageInfo(recipientType, recipientId, MessageInfo.TYPE_TEXT, messageText);
+		message.setSenderId(client.getUserInfo().getUserId());
 		System.out.println(message);
 		
 		Thread thread = new Thread(() -> {
@@ -357,7 +364,6 @@ public class ApplicationController implements Initializable {
 			onMessageSend(null);
 		}
 	}
-
 
 	public void logout(ActionEvent actionEvent) throws InterruptedException, IOException, ClassNotFoundException {
 		if (client.logout()){
