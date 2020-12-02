@@ -6,7 +6,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.MulticastSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -18,10 +20,10 @@ public class Synchronizer {
 	private static final String NO_MORE_USER_PHOTO = "SYNCHRONIZER_NO_MORE_USER_PHOTO";
 	private static final String GET_USERS_CHANNELS = "SYNCHRONIZER_GET_USERS_CHANNELS";
 	private static final String GET_MESSAGES = "SYNCHRONIZER_GET_MESSAGES";
-	public static final int USERS_BLOCK = 40;
-	public static final int CHANNELS_BLOCK = 30;
-	public static final int USERS_CHANNELS_BLOCK = 100;
-	public static final int MESSAGES_BLOCK = 20;
+	private static final int USERS_BLOCK = 40;
+	private static final int CHANNELS_BLOCK = 30;
+	private static final int USERS_CHANNELS_BLOCK = 100;
+	private static final int MESSAGES_BLOCK = 20;
 	private static final String NO_MORE_USERS = "SYNCHRONIZER_NO_MORE_USERS";
 	private static final String NO_MORE_CHANNELS = "SYNCHRONIZER_NO_MORE_CHANNELS";
 	private static final String NO_MORE_USERS_CHANNELS = "SYNCHRONIZER_NO_MORE_USERS_CHANNELS";
@@ -29,30 +31,37 @@ public class Synchronizer {
 	private static final String GET_MESSAGE_FILE = "SYNCHRONIZER_GET_MESSAGE_FILE";
 	private static final String NO_MORE_MESSAGE_FILE = "SYNCHRONIZER_NO_MORE_MESSAGE_FILE";
 	
-	public static final int FILE_CHUNK_SIZE = 5 * 1024;
+	private static final String FINISHED = "SYNCHRONIZER_FINISHED";
+	private static final int FILE_CHUNK_SIZE = 5 * 1024;
 	
 	private final ServerAddress otherServer;
 	private final ServerAddress thisServer;
+	private int otherServerPort;
+	private final int synchronizerUDPPort;
 	private DatagramSocket socket;
-	private final MulticastManager multicastManager;
 	
-	public Synchronizer(ServerAddress otherServer, ServerAddress thisServer, DatagramSocket socket, MulticastManager multicastManager) {
+	public Synchronizer(ServerAddress otherServer, ServerAddress thisServer, int otherServerPort, DatagramSocket datagramSocket, int synchronizerUDPPort) {
 		this.otherServer = otherServer;
 		this.thisServer = thisServer;
-		this.socket = socket;
-		this.multicastManager = multicastManager;
+		this.socket = datagramSocket;
+		this.otherServerPort = otherServerPort;
+		this.synchronizerUDPPort = synchronizerUDPPort;
 	}
 	
 	public void receiveData() throws Exception {
+		System.out.println("Receiving Data");
 		//Setup connection with server
-		//UDPHelper.sendUDPObjectReliably(ServerConstants.ASK_SYNCHRONIZER, null, otherServer,ServerConstants.MULTICAST_PORT, socket);
-		UDPHelper.sendUDPObject(new ServerCommand(ServerConstants.ASK_SYNCHRONIZER, thisServer), socket, otherServer.getAddress(), ServerConstants.MULTICAST_PORT);
-		//multicastManager.sendServerCommand(ServerConstants.ASK_SYNCHRONIZER, otherServer);
+		socket = new DatagramSocket(synchronizerUDPPort);
+		ServerCommand ask = new ServerCommand(ServerConstants.ASK_SYNCHRONIZER, thisServer, socket.getLocalPort());
+		UDPHelper.sendUDPObject(ask, socket, otherServer.getAddress(), ServerConstants.MULTICAST_PORT);
+		ServerCommand serverCommand = receiveCommand();
+		otherServerPort = (int) serverCommand.getExtras();
+		
 		// send to the other server to get all missing users -----------------------------------------------------------
 		int lastUserId = UserManager.getLastUserId();
 		sendCommand(GET_USERS, lastUserId);
 		
-		ArrayList<UserInfo> allNewUsers = new ArrayList<>();
+		ArrayList<UserInfo> allUsersWithImages = new ArrayList<>();
 		
 		while (true) {
 			ServerCommand command = receiveCommand();
@@ -60,12 +69,15 @@ public class Synchronizer {
 				break;
 			}
 			ArrayList<UserInfo> newUsers = (ArrayList<UserInfo>) command.getExtras();
-			allNewUsers.addAll(newUsers);
 			
-			for (var user : newUsers) {
-				String imagePath = ServerConstants.getPhotoPathFromUsername(user.getUsername());
-				if (!UserManager.insertFull(user, imagePath)) {
-					System.out.println("User insert");
+			for (var currentUser : newUsers) {
+				String imagePath = "";
+				if (currentUser.hasImage()) {
+					imagePath = ServerConstants.getPhotoPathFromUsername(currentUser.getUsername());
+					allUsersWithImages.add(currentUser);
+				}
+				if (!UserManager.insertFull(currentUser, imagePath)) {
+					System.err.println("User insert");
 					socket.close();
 					return;
 				}
@@ -73,7 +85,7 @@ public class Synchronizer {
 		}
 		
 		// get all new user photos -------------------------------------------------------------------------------------
-		for (var user : allNewUsers) {
+		for (var user : allUsersWithImages) {
 			sendCommand(GET_USER_PHOTO, user.getUsername());
 			File file = new File(ServerConstants.getPhotoPathFromUsername(user.getUsername()));
 			Utils.createDirectories(file);
@@ -101,7 +113,7 @@ public class Synchronizer {
 			ArrayList<ChannelInfo> newChannels = (ArrayList<ChannelInfo>) command.getExtras();
 			for (var channel : newChannels) {
 				if (!ChannelManager.insertFull(channel)) {
-					System.out.println("Channel insert");
+					System.err.println("Channel insert");
 					socket.close();
 					return;
 				}
@@ -120,7 +132,7 @@ public class Synchronizer {
 			ArrayList<Ids> channelUsers = (ArrayList<Ids>) command.getExtras();
 			for (var id : channelUsers) {
 				if (!ChannelManager.registerUserToChannel(id.getUserId(), id.getChannelId())) {
-					System.out.println("registerUserToChannel insert");
+					System.err.println("registerUserToChannel insert");
 					socket.close();
 					return;
 				}
@@ -141,7 +153,7 @@ public class Synchronizer {
 			ArrayList<MessageInfo> newMessages = (ArrayList<MessageInfo>) command.getExtras();
 			for (var message : newMessages) {
 				if (!MessageManager.insertFull(message)) {
-					System.out.println("Message insert");
+					System.err.println("Message insert");
 					socket.close();
 					return;
 				}
@@ -169,17 +181,21 @@ public class Synchronizer {
 			}
 			fileOutputStream.close();
 		}
+		
+		sendCommand(FINISHED, null);
+		
+		socket.close();
 	}
 	
 	public void sendData() throws Exception {
-		
+		System.out.println("Sending Data");
 		while (true) {
 			ServerCommand command = receiveCommand();
 			if (!command.getServerAddress().equals(thisServer)) {
 				System.out.println("SendData discarded command : " + command);
 				continue; // this packet is not from synchronization
 			}
-			System.out.println("Received ServerCommand : " + command);
+			System.out.println("Synchronizer received request : " + command);
 			
 			switch (command.getProtocol()) {
 				
@@ -216,7 +232,7 @@ public class Synchronizer {
 					ArrayList<MessageInfo> messagesAfterId = MessageManager.getAfterId(lastMessageId);
 					sendByBlocks(messagesAfterId, MESSAGES_BLOCK);
 					
-					sendCommand(NO_MORE_CHANNELS, null);
+					sendCommand(NO_MORE_MESSAGES, null);
 				}
 				
 				case GET_MESSAGE_FILE -> {
@@ -232,22 +248,27 @@ public class Synchronizer {
 				case GET_USER_PHOTO -> {
 					String username = (String) command.getExtras();
 					
-					FileInputStream fileInputStream = new FileInputStream(ServerConstants.getPhotoPathFromUsername(username));
-					sendFileBlocks(fileInputStream);
-					
-					sendCommand(NO_MORE_USER_PHOTO, null);
-					fileInputStream.close();
+					try (FileInputStream fileInputStream = new FileInputStream(ServerConstants.getPhotoPathFromUsername(username))) {
+						sendFileBlocks(fileInputStream);
+						
+						sendCommand(NO_MORE_USER_PHOTO, null);
+						fileInputStream.close();
+					}
+				}
+				case FINISHED -> {
+					socket.close();
+					return;
 				}
 			}
 		}
 	}
 	
 	private void sendCommand(String protocol, Object object) throws IOException {
-		UDPHelper.sendServerCommandReliably(protocol, object, otherServer, ServerConstants.MULTICAST_PORT, socket);
+		sendServerCommand(protocol, object);
 	}
 	
 	private ServerCommand receiveCommand() throws Exception {
-		return UDPHelper.receiveServerCommandObjectReliably(socket, otherServer);
+		return receiveServerCommandObject();
 	}
 	
 	private void sendFileBlocks(FileInputStream fileInputStream) throws IOException {
@@ -272,8 +293,27 @@ public class Synchronizer {
 			for (int blockCounter = 0; (blockCounter < blockSize) && (usersCount < list.size()); blockCounter++, usersCount++) {
 				block.add(list.get(usersCount));
 			}
-			Utils.printList(block, "Block");
 			sendCommand("", block);
+		}
+	}
+	
+	public void sendServerCommand(String protocol, Object object) throws IOException {
+		ServerCommand command = new ServerCommand(protocol, otherServer, object);
+		
+		byte[] bytes = UDPHelper.writeObjectToArray(command);
+		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, otherServer.getAddress(), otherServerPort);
+		socket.send(packet);
+	}
+	
+	public ServerCommand receiveServerCommandObject() throws IOException, ClassNotFoundException {
+		while (true) {
+			DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+			socket.receive(packet);
+			
+			//Get Object from packet
+			ServerCommand serverCommand = (ServerCommand) UDPHelper.readObjectFromPacket(packet);
+			
+			return serverCommand;
 		}
 	}
 }

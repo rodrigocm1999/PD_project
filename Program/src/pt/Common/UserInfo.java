@@ -12,6 +12,7 @@ public class UserInfo implements Serializable {
 	private String password;
 	private long creationMoment;
 	private byte[] imageBytes;
+	private boolean hasImage;
 
 	
 	public UserInfo(String username, String password) {
@@ -32,12 +33,13 @@ public class UserInfo implements Serializable {
 		this.imageBytes = imageBytes;
 	}
 	
-	public UserInfo(int userId, String name, String username, String password, long creationMoment) {
+	public UserInfo(int userId, String name, String username, String password, long creationMoment,boolean hasImage) {
 		this.userId = userId;
 		this.name = name;
 		this.username = username;
 		this.password = password;
 		this.creationMoment = creationMoment;
+		this.hasImage = hasImage;
 	}
 	
 	@Override
@@ -96,5 +98,13 @@ public class UserInfo implements Serializable {
 	
 	public void setImageBytes(byte[] imageBytes) {
 		this.imageBytes = imageBytes;
+	}
+	
+	public boolean hasImage() {
+		return hasImage;
+	}
+	
+	public void setHasImage(boolean hasImage) {
+		this.hasImage = hasImage;
 	}
 }

@@ -109,10 +109,9 @@ public class ClientMain {
 	public Object receiveCommand() throws InterruptedException {
 		Waiter waiter = new Waiter();
 		System.out.println("stopped to wait");
-		receiver.waitForCommand(waiter);
+		Command ob = (Command)receiver.waitForCommand();
 		System.out.println("Received something");
 		
-		Command ob = (Command) waiter.getResult();
 		//Object ob = oIS.readObject();
 		System.out.println("Received : " + ob);
 		return ob;

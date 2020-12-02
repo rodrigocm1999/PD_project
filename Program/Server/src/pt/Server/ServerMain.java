@@ -170,67 +170,72 @@ public class ServerMain {
 		return databaseName;
 	}
 	
-	public void propagateNewMessage(MessageInfo message, UserThread adder) throws IOException {
-		for (UserThread user : connectedMachines) {
-			if (user != adder) {
-				user.receivedPropagatedMessage(message);
+	public void propagateNewMessage(MessageInfo message, UserThread adder) {
+		new Thread(() -> {
+			try {
+				serversManager.propagateNewMessage(message);
+				
+				for (UserThread user : connectedMachines) {
+					if (user != adder) {
+						user.receivedPropagatedMessage(message);
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-		}
-		serversManager.propagateNewMessage(message);
+		}).start();
 	}
 	
-	public void propagatedNewMessage(MessageInfo message) throws IOException {
-		System.out.println("Received propagation new Message");
-		for (UserThread user : connectedMachines) {
-			user.receivedPropagatedMessage(message);
-		}
+	public void warnClientsAboutNewMessage(MessageInfo message) {
+		new Thread(() -> {
+			System.out.println("Received propagation new Message");
+			try {
+				for (UserThread user : connectedMachines) {
+					user.receivedPropagatedMessage(message);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
 	}
+	
+	public void propagateRegisterUserChannel(Ids ids) {
+		new Thread(() -> {
+			try {
+				serversManager.propagateRegisterUserChannel(ids);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
+	}
+	
+	public void propagateNewUser(UserInfo user) {
+		new Thread(() -> {
+			try {
+				serversManager.propagateNewUser(user);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
+	}
+	
+	public void propagateNewChannel(ChannelInfo channel) {
+		new Thread(() -> {
+			try {
+				serversManager.propagateNewChannel(channel);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
+	}
+	//TODO get file and user photo
 	
 	public static void main(String[] args) throws Exception {
-		
-		/*String IP = "239.4.5.6";
-		int Port = 5432;
-		
-		try (MulticastSocket mS = new MulticastSocket(Port)) {
-			InetAddress address = InetAddress.getByName(IP);
-			NetworkInterface nI = NetworkInterface.getByInetAddress(InetAddress.getByName("25.63.62.45"));
-			mS.joinGroup(new InetSocketAddress(address, 5432), nI);
-			//mS.joinGroup(InetAddress.getByName(IP));
-			Scanner sc = new Scanner(System.in);
-			System.out.println("Username: ");
-			String username = sc.nextLine();
-			
-			new Thread(() -> {
-				DatagramPacket dP = new DatagramPacket(new byte[1024], 1024);
-				try {
-					while (true) {
-						dP.setLength(1024);
-						mS.receive(dP);
-						String raw = new String(dP.getData(), 0, dP.getLength());
-						System.out.println(dP.getAddress().getHostName() + ":" + dP.getPort() + ": " + raw);
-					}
-				} catch (IOException ex) {
-					ex.printStackTrace();
-				}
-			}).start();
-			
-			while (true) {
-				String msg = sc.nextLine();
-				if (msg.equals("exit"))
-					break;
-				msg = "[" + username + "]: " + msg;
-				DatagramPacket dP = new DatagramPacket(msg.getBytes(), msg.getBytes().length, address, Port);
-				mS.send(dP);
-			}
-			mS.leaveGroup(address);
-		}*/
-		
-		
 		/*Object obj = null;
 		obj.toString();*/
 		
 		if (args.length < 4) {
-			System.out.println("Invalid Arguments : database_address, listening udp port, listening tcp port, fileTransfer tcp port, OPTIONAL database_name");
+			System.out.println("Invalid Arguments : database_address, listening udp port (+1 for server synchronization), listening tcp port, fileTransfer tcp port, OPTIONAL database_name");
 			System.exit(-1);
 		}
 		String databaseAddress = args[0];

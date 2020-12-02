@@ -4,7 +4,6 @@ import pt.Common.*;
 
 import java.io.IOException;
 import java.net.*;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,14 +12,15 @@ public class ServerNetwork extends Thread {
 	
 	private final ServerMain serverMain;
 	private MulticastSocket multicastSocket;
+	private final int synchronizerUDPPort;
 	private final ServerAddress ownPublicAddress;
 	private final ServerAddress ownAddress;
 	private final ArrayList<ServerStatus> serversList = new ArrayList<>();
 	private Thread heartbeatSend;
 	private Thread heartbeatCheck;
 	private boolean stop = false;
-	private final MulticastManager multiMan;
 	private int synchronizationFakeUsers;
+	private final MulticastSocketReceiver socketReceiver;
 	
 	ServerNetwork(ServerMain serverMain, InetAddress group, int port, int serverUDPPort) throws IOException {
 		this.serverMain = serverMain;
@@ -30,9 +30,12 @@ public class ServerNetwork extends Thread {
 		
 		ownPublicAddress = new ServerAddress(publicIPAddress, serverUDPPort);
 		ownAddress = new ServerAddress(InetAddress.getLocalHost(), serverUDPPort);
-		System.out.println("Own Local Address : " + ownAddress + "\t Own Public Address" + ownPublicAddress);
 		startMulticastSocket();
-		multiMan = new MulticastManager(multicastSocket, getServerAddress(), group, port);
+		System.out.println("Own Local Address : " + ownAddress + "\t Own Public Address" + ownPublicAddress);
+		//multiMan = new MulticastManager(multicastSocket, getServerAddress(), group, port);
+		socketReceiver = new MulticastSocketReceiver(multicastSocket);
+		
+		this.synchronizerUDPPort = serverUDPPort + 1;
 	}
 	
 	public MulticastSocket getMulticastSocket() {
@@ -40,7 +43,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	public ServerAddress getServerAddress() {
-		return ownAddress; // IMPORTANT return public when on different networks
+		return ownAddress; //TODO IMPORTANT return publicIpAddress when on different networks
 	}
 	
 	@Override
@@ -51,7 +54,7 @@ public class ServerNetwork extends Thread {
 			//TODO make everything reliable
 			
 			receiveUpdates();
-		} catch (IOException | ClassNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			stop = true;
 		}
@@ -88,7 +91,7 @@ public class ServerNetwork extends Thread {
 		}
 	}
 	
-	public void discoverServers() throws ClassNotFoundException, IOException {
+	public void discoverServers() throws Exception {
 		System.out.println("Server Discovery ----------------------------------------------");
 		thisCameOnline();
 		
@@ -96,7 +99,8 @@ public class ServerNetwork extends Thread {
 		try {
 			while (true) {
 				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-				ServerCommand command = (ServerCommand) multiMan.receiveObject(packet);
+				multicastSocket.receive(packet);
+				ServerCommand command = (ServerCommand) UDPHelper.readObjectFromPacket(packet);
 				
 				if (command.getProtocol().equals(ServerConstants.AM_ONLINE)) {
 					int nConnected = (int) command.getExtras();
@@ -105,29 +109,37 @@ public class ServerNetwork extends Thread {
 						serverConnected(new ServerStatus(nConnected, serverAddress));
 				}
 			}
-		} catch (IOException e) {
+		} catch (IOException ignore) {
 			// Needed for timeout
 		}
-		printAvailableServers();
 		multicastSocket.setSoTimeout(0);
+		printAvailableServers();
+		
+		socketReceiver.start();
 	}
 	
 	public void updateUserCount(int count) throws IOException {
-		multiMan.sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count + synchronizationFakeUsers);
+		sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count + synchronizationFakeUsers);
 	}
 	
-	public void propagateNewMessage(MessageInfo newMessage) throws IOException {
-		sendAllCommand(ServerConstants.NEW_MESSAGE, newMessage);
+	private void sendServerCommand(String protocol, Object extras) throws IOException {
+		UDPHelper.sendUDPObject(new ServerCommand(protocol, getServerAddress(), extras), multicastSocket,
+				InetAddress.getByName(ServerConstants.MULTICAST_GROUP), ServerConstants.MULTICAST_PORT);
 	}
-	//TODO propagate all changes
 	
-	private void receiveUpdates() throws IOException, ClassNotFoundException {
+	private void receiveUpdates() throws Exception {
 		while (!stop) {
-			DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-			ServerCommand command = (ServerCommand) multiMan.receiveObject(packet);
+			DatagramPacket packet = socketReceiver.waitForPacket();
+			ServerCommand command;
+			try {
+				command = (ServerCommand) UDPHelper.readObjectFromPacket(packet);
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
+				continue;
+			}
 			ServerAddress otherServerAddress = command.getServerAddress();
 			if (isOwnAddress(otherServerAddress)) {
-				System.out.println("received with own address : " + command);
+				//System.out.println("ServerNetwork received with own address, discarding");
 				continue;
 			}
 			System.out.println("ServerNetwork received : " + command);
@@ -162,19 +174,33 @@ public class ServerNetwork extends Thread {
 					
 					case ServerConstants.ASK_SYNCHRONIZER -> {
 						//System.out.println("ASK_SYNCHRONIZER");
-						receivedSynchronizationRequest(command.getServerAddress());
+						receivedSynchronizationRequest(command);
 					}
 					
-					case ServerConstants.NEW_MESSAGE -> {
+					case ServerConstants.PROTOCOL_NEW_MESSAGE -> {
 						MessageInfo message = (MessageInfo) command.getExtras();
 						System.out.println("Received propagated : " + message);
-						protocolNewMessage(message);
+						protocolReceivedNewMessage(message);
+						//TODO test this properly
 					}
 					
 					case ServerConstants.PROTOCOL_NEW_USER -> {
 						UserInfo userInfo = (UserInfo) command.getExtras();
 						System.out.println("Received propagated new user : " + userInfo);
-						protocolNewUser(userInfo);
+						protocolReceivedNewUser(userInfo);
+						//TODO test this
+					}
+					case ServerConstants.PROTOCOL_NEW_CHANNEL -> {
+						ChannelInfo channelInfo = (ChannelInfo) command.getExtras();
+						System.out.println("Received propagated new channel : " + channelInfo);
+						protocolReceivedNewChannel(channelInfo);
+						//TODO test this
+					}
+					case ServerConstants.PROTOCOL_REGISTER_USER_CHANNEL -> {
+						Ids ids = (Ids) command.getExtras();
+						System.out.println("Received propagated user registration to channel : " + ids);
+						protocolReceivedRegisterUserChannel(ids);
+						//TODO test this
 					}
 					
 				}
@@ -184,17 +210,60 @@ public class ServerNetwork extends Thread {
 		}
 	}
 	
+	public void propagateNewMessage(MessageInfo newMessage) throws IOException {
+		sendAllCommand(ServerConstants.PROTOCOL_NEW_MESSAGE, newMessage);
+	}
+	
+	public void propagateRegisterUserChannel(Ids ids) throws IOException {
+		sendAllCommand(ServerConstants.PROTOCOL_REGISTER_USER_CHANNEL, ids);
+	}
+	
+	public void propagateNewChannel(ChannelInfo channelInfo) throws IOException {
+		sendAllCommand(ServerConstants.PROTOCOL_NEW_CHANNEL, channelInfo);
+	}
+	
+	public void propagateNewUser(UserInfo userInfo) throws IOException {
+		sendAllCommand(ServerConstants.PROTOCOL_NEW_USER, userInfo);
+	}
+	
+	
+	public void protocolReceivedRegisterUserChannel(Ids ids) throws SQLException {
+		ChannelManager.registerUserToChannel(ids.getUserId(), ids.getChannelId());
+	}
+	
+	public void protocolReceivedNewChannel(ChannelInfo channelInfo) throws SQLException {
+		ChannelManager.insertFull(channelInfo);
+	}
+	
+	public void protocolReceivedNewUser(UserInfo userInfo) throws SQLException {
+		UserManager.insertFull(userInfo, "");
+		//TODO receive user image
+	}
+	
+	public void protocolReceivedNewMessage(MessageInfo message) throws SQLException {
+		boolean success = MessageManager.insertFull(message);
+		if (!success) {
+			System.out.println("Error that shouldn't happens : protocolNewMessage(MessageInfo message)");
+			return;
+		}
+		//TODO receive file
+		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
+		
+		}
+		serverMain.warnClientsAboutNewMessage(message);
+	}
+	
 	public void synchronizeDatabase() {
 		//Connect to the server with the least user load at the moment
-		ServerAddress server = getLeastLoadServer();
-		if (server == null || server.equals(getServerAddress())) {
+		ServerAddress otherServer = getLeastLoadServer();
+		if (otherServer == null) {
 			System.out.println("No others servers running. Skipping synchronization");
 			return;
 		}
 		
 		System.out.println("Syncing Database ----------------------------------------------");
-		System.out.println("Creating synchronizer with address : " + getServerAddress() + " to server " + server);
-		Synchronizer synchronizer = new Synchronizer(server, getServerAddress(), getMulticastSocket(), multiMan);
+		System.out.println("Creating synchronizer with address : " + getServerAddress() + " to server " + otherServer);
+		Synchronizer synchronizer = new Synchronizer(otherServer, getServerAddress(), -1, null, synchronizerUDPPort);
 		try {
 			synchronizer.receiveData();
 		} catch (Exception e) {
@@ -204,34 +273,32 @@ public class ServerNetwork extends Thread {
 		//Have to use reliable UDP and break files into 5KB chunks
 	}
 	
-	private void receivedSynchronizationRequest(ServerAddress serverAddress) throws IOException {
+	private void receivedSynchronizationRequest(ServerCommand command) throws IOException {
 		synchronizationFakeUsers += ServerConstants.FAKE_USER_SYNC_COUNT;
 		updateUserCount(serverMain.getNConnectedUsers());
-		Synchronizer synchronizer = new Synchronizer(serverAddress, getServerAddress(), getMulticastSocket(), multiMan);
-		try {
-			synchronizer.sendData();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		synchronizationFakeUsers -= ServerConstants.FAKE_USER_SYNC_COUNT;
-		updateUserCount(serverMain.getNConnectedUsers());
-	}
-	
-	private void protocolNewUser(UserInfo userInfo) throws SQLException {
-		UserManager.insertFull(userInfo, "");
-		//TODO receive user image
-		//serverMain.propagatedNewUser(userInfo);
-	}
-	
-	private void protocolNewMessage(MessageInfo message) throws IOException, SQLException {
-		MessageManager.insertFull(message);
-		serverMain.propagatedNewMessage(message);
+		
+		new Thread(() -> {
+			try {
+				int otherServerPort = (int) command.getExtras();
+				DatagramSocket datagramSocket = new DatagramSocket(synchronizerUDPPort);
+				Synchronizer synchronizer = new Synchronizer(command.getServerAddress(), getServerAddress(), otherServerPort, datagramSocket, -1);
+				ServerCommand feedback = new ServerCommand(ServerConstants.ASK_SYNCHRONIZER_OK, getServerAddress(), datagramSocket.getLocalPort());
+				UDPHelper.sendUDPObject(feedback, datagramSocket, command.getServerAddress().getAddress(), otherServerPort);
+				synchronizer.sendData();
+				
+				synchronizationFakeUsers -= ServerConstants.FAKE_USER_SYNC_COUNT;
+				updateUserCount(serverMain.getNConnectedUsers());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+		}).start();
 	}
 	
 	private void serverConnected(ServerAddress serverAddress) throws IOException {
 		ServerStatus server = new ServerStatus(0, serverAddress);
 		serverConnected(server);
-		multiMan.sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getNConnectedUsers());
+		sendServerCommand(ServerConstants.AM_ONLINE, serverMain.getNConnectedUsers());
 		System.out.println("Came Online : " + server);
 	}
 	
@@ -255,7 +322,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	private void sendAllCommand(String protocol, Object extras) throws IOException {
-		multiMan.sendServerCommand(protocol, extras);
+		sendServerCommand(protocol, extras);
 	}
 	
 	private void startMulticastSocket() throws IOException {
@@ -297,7 +364,7 @@ public class ServerNetwork extends Thread {
 		Runnable send = () -> {
 			while (!stop) {
 				try {
-					multiMan.sendServerCommand(ServerConstants.HEARTBEAT);
+					sendServerCommand(ServerConstants.HEARTBEAT, null);
 					//System.out.println("Heartbeat Sent");
 					Thread.sleep(ServerConstants.HEARTBEAT_SEND_INTERVAL);
 				} catch (InterruptedException | IOException e) {
@@ -351,7 +418,7 @@ public class ServerNetwork extends Thread {
 	
 	public void sendShutdown() {
 		try {
-			multiMan.sendServerCommand(ServerConstants.CAME_OFFLINE);
+			sendServerCommand(ServerConstants.CAME_OFFLINE, null);
 		} catch (Exception ignore) {
 		}
 	}

@@ -45,12 +45,14 @@ public class Receiver extends Thread {
 		}
 	}
 	
-	public void waitForCommand(Waiter waiter) throws InterruptedException {
+	public Object waitForCommand() throws InterruptedException {
+		Waiter waiter = new Waiter();
 		synchronized (waiter) {
 			waiters.add(waiter);
 			waiter.wait();
 			waiters.remove(waiter);
 		}
+		return waiter.getResult();
 	}
 	
 }

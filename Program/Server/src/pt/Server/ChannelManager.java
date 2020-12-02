@@ -2,6 +2,7 @@ package pt.Server;
 
 import pt.Common.*;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ public class ChannelManager {
 		return channels;
 	}
 	
-	public static boolean createChannel(ChannelInfo channel) throws SQLException, NoSuchAlgorithmException {
+	public static boolean createChannel(ChannelInfo channel) throws SQLException, NoSuchAlgorithmException, IOException {
 		synchronized (channelLock) {
 			String insert = "insert into channel(id,creator_id,name,password_hash,description) values(?,?,?,?,?)";
 			PreparedStatement statement = getApp().getPreparedStatement(insert);
@@ -43,7 +44,12 @@ public class ChannelManager {
 			statement.setString(3, channel.getName());
 			statement.setString(4, Utils.hashStringBase36(channel.getPassword()));
 			statement.setString(5, channel.getDescription());
-			return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
+			if (statement.executeUpdate() == 1) { // Changed 1 row, it means it was added
+				
+				getApp().propagateNewChannel(channel);
+				return true;
+			}
+			return false;
 		}
 	}
 	
@@ -138,8 +144,8 @@ public class ChannelManager {
 		while (result.next()) {
 			list.add(new ChannelInfo(result.getInt("id"),
 					result.getString("name"),
-					result.getString("username"),
-					result.getString(("password_hash"))));
+					result.getString("password_hash"),
+					result.getString(("description"))));
 		}
 		return list;
 	}
@@ -164,7 +170,7 @@ public class ChannelManager {
 	}
 	
 	public static int getLastUserChannelId() throws SQLException {
-		String select = "select max(id) from channel_user";
+		String select = "select max(id) as id from channel_user";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		ResultSet result = statement.executeQuery();
 		result.next();
@@ -177,6 +183,6 @@ public class ChannelManager {
 		stat.setString(1, name);
 		ResultSet result = stat.executeQuery();
 		result.next();
-		return result.getInt(1) == 1;
+		return result.getInt(1) == 0;
 	}
 }

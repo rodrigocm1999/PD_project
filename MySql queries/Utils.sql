@@ -33,8 +33,10 @@ update channel set name = ?, password_hash = ?, description = ? where id = ?;
 
 
 -- Selects
+use main2;
 select * from channel;
 select * from user;
+select * from channel_user;
 select * from channel_message;
 select * from user_message;
 select * from message;

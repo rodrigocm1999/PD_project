@@ -1,6 +1,5 @@
 package pt.Server;
 
-import jdk.swing.interop.SwingInterOpUtils;
 import pt.Common.Constants;
 import pt.Common.ServerAddress;
 import pt.Common.UDPHelper;

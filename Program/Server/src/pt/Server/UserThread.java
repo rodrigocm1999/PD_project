@@ -124,8 +124,7 @@ public class UserThread extends Thread {
 						
 						case Constants.ADD_MESSAGE -> {
 							MessageInfo message = (MessageInfo) protocol.getExtras();
-							if (protocolAddMessage(message))
-								getApp().propagateNewMessage(message, this);
+							protocolAddMessage(message);
 						}
 						
 						case Constants.ADD_FILE -> {
@@ -202,7 +201,6 @@ public class UserThread extends Thread {
 			userMessages = MessageManager.getUserMessages(userInfo.getUserId(), ids.getUserId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
 		else
 			userMessages = MessageManager.getUserMessagesBefore(userInfo.getUserId(), ids.getUserId(), ids.getMessageId(), ServerConstants.DEFAULT_GET_MESSAGES_AMOUNT);
-		Utils.printList(userMessages, "UserMessages");
 		sendCommand(Constants.SUCCESS, userMessages);
 		
 		currentPlace.setUserOnly(ids.getUserId());
@@ -210,7 +208,7 @@ public class UserThread extends Thread {
 	
 	private void protocolUserGetLike(String username) throws SQLException, IOException {
 		if (username == null) username = "";
-		ArrayList<UserInfo> usersLike = UserManager.getUsersLike(username,userInfo.getUserId());
+		ArrayList<UserInfo> usersLike = UserManager.getUsersLike(username, userInfo.getUserId());
 		sendCommand(Constants.SUCCESS, usersLike);
 	}
 	
@@ -260,7 +258,7 @@ public class UserThread extends Thread {
 		File file = new File(filePath);
 		Utils.createDirectories(file);
 		
-		Thread receivingFile = new Thread(() -> {
+		new Thread(() -> {
 			try {
 				Socket fileSocket = getApp().acceptFileConnection(this);
 				InputStream socketInputStream = fileSocket.getInputStream();
@@ -277,24 +275,24 @@ public class UserThread extends Thread {
 						fileOutputStream.write(buffer, 0, readAmount);
 					}
 				} catch (IOException e) {
-					fileSocket.close();
 					fileOutputStream.close();
-					file.delete();
+					fileSocket.close();
 				}
 				
 				message.setSenderId(userInfo.getUserId());
 				message.setContent(fileNameWithTime);
 				System.out.println(message);
-				if (MessageManager.insertMessage(message))
+				if (MessageManager.insertMessage(message)) {
 					sendCommand(Constants.SUCCESS, fileNameWithTime);
-				else
+					getApp().propagateNewMessage(message, this);
+				} else {
 					sendCommand(Constants.ERROR, "Should not happen");
+				}
 				
 			} catch (IOException | SQLException e) {
 				e.printStackTrace();
 			}
-		});
-		receivingFile.start();
+		}).start();
 	}
 	
 	private String addTimestampFileName(String fileName) {
@@ -316,36 +314,39 @@ public class UserThread extends Thread {
 			return;
 		}
 		boolean success = ChannelManager.updateChannel(channel);
-		if (success) sendCommand(Constants.SUCCESS);
-		else sendCommand(Constants.ERROR, "Error Updating, channel name might already be in use");
+		if (success) {
+			sendCommand(Constants.SUCCESS);
+		} else sendCommand(Constants.ERROR, "Error Updating, channel name might already be in use");
 	}
 	
 	public void protocolChannelRegister(ChannelInfo channelInfo) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (ChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId()))
+		if (ChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId())) {
 			sendCommand(Constants.SUCCESS, "User is already part of channel");
-		else {
+		} else {
 			if (ChannelManager.isChannelPassword(channelInfo.getId(), channelInfo.getPassword())) {
-				if (ChannelManager.registerUserToChannel(userInfo.getUserId(), channelInfo.getId()))
+				if (ChannelManager.registerUserToChannel(userInfo.getUserId(), channelInfo.getId())) {
 					sendCommand(Constants.SUCCESS);
-				else
+					
+					getApp().propagateRegisterUserChannel(new Ids(userInfo.getUserId(), channelInfo.getId(), -1));
+				} else {
 					sendCommand(Constants.ERROR, "Should never happen. Pls fix");
+				}
 			} else sendCommand(Constants.ERROR, "Wrong password");
 		}
 	}
 	
-	public boolean protocolAddMessage(MessageInfo message) throws IOException, SQLException {
+	public void protocolAddMessage(MessageInfo message) throws IOException, SQLException {
 		if (message.getContent().isBlank()) {
 			sendCommand(Constants.ERROR);
-			return false;
+			return;
 		}
 		message.setSenderId(userInfo.getUserId());
 		
 		if (MessageManager.insertMessage(message)) {
 			sendCommand(Constants.SUCCESS);
-			return true;
+			getApp().propagateNewMessage(message, this);
 		} else {
 			sendCommand(Constants.ERROR, "Should not happen");
-			return false;
 		}
 	}
 	
@@ -473,7 +474,6 @@ public class UserThread extends Thread {
 		}
 	}
 	
-	// TODO add all propagators
 	public synchronized void sendCommand(String command) throws IOException {
 		sendCommand(command, null);
 	}

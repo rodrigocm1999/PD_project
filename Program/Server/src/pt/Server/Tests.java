@@ -1,12 +1,15 @@
 package pt.Server;
 
 import pt.Common.Command;
+import pt.Common.UDPHelper;
+import pt.Common.UserInfo;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class Tests {
 	
@@ -22,7 +25,31 @@ public class Tests {
 	
 	public static void main(String[] args) throws Exception {
 		
-		int initialSize = 10;
+		
+		MulticastSocket multicastSocket = new MulticastSocket(5432);
+		
+		MulticastSocketReceiver receiver = new MulticastSocketReceiver(multicastSocket);
+		receiver.start();
+		
+		Runnable runnable = () -> {
+			try {
+				System.out.println("thread waiting ");
+				Object object = receiver.waitForPacket();
+				System.out.println("thread received : " + object);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		};
+		
+		new Thread(runnable).start();
+		new Thread(runnable).start();
+		new Thread(runnable).start();
+		
+		
+		UDPHelper.sendUDPObject(new UserInfo("dsadfs","fnewi"),multicastSocket, InetAddress.getLocalHost(),5432);
+		
+		
+		/*int initialSize = 10;
 		int endSize = 5;
 		int[] arr = new int[initialSize];
 		for (int i = 0; i < initialSize; i++) {
@@ -32,7 +59,7 @@ public class Tests {
 		int[] newArr = Arrays.copyOfRange(arr, 0, endSize);
 		for (int i = 0; i < endSize; i++) {
 			System.out.println("i : " + i + " : " + newArr[i]);
-		}
+		}*/
 		
 		/*ServerMain main = new ServerMain("localhost", "main", 3213, 54312,53212);
 		Socket socketUser = new Socket("localhost",3123);

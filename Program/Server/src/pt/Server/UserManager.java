@@ -30,7 +30,11 @@ public class UserManager {
 			preparedStatement.setString(2, user.getUsername());
 			preparedStatement.setString(3, Utils.hashStringBase36(user.getPassword()));
 			preparedStatement.setString(4, imagePath);
-			return preparedStatement.executeUpdate() == 1;
+			if (preparedStatement.executeUpdate() == 1) {
+				getApp().propagateNewUser(user);
+				return true;
+			}
+			return false;
 		}
 	}
 	
@@ -153,11 +157,16 @@ public class UserManager {
 		ArrayList<UserInfo> userList = new ArrayList<>();
 		
 		while (result.next()) {
-			userList.add(new UserInfo(result.getInt("id"),
+			String imagePath = result.getString("photo_path");
+			boolean hasImage = imagePath != null && !imagePath.isBlank();
+			
+			UserInfo newUser = new UserInfo(result.getInt("id"),
 					result.getString("name"),
 					result.getString("username"),
 					result.getString("password_hash"),
-					result.getDate("user_creation").getTime()));
+					result.getDate("user_creation").getTime(),
+					hasImage);
+			userList.add(newUser);
 		}
 		
 		return userList;

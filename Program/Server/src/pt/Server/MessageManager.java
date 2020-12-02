@@ -1,8 +1,8 @@
 package pt.Server;
 
-import pt.Common.ChannelInfo;
 import pt.Common.MessageInfo;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,7 +16,6 @@ public class MessageManager {
 		return ServerMain.getInstance();
 	}
 	
-	
 	public static ArrayList<String> getLikeFiles(String fileName) throws SQLException {
 		String select = "select content from message where type = 'file' and content like ?";
 		PreparedStatement preparedStatement = ServerMain.getInstance().getPreparedStatement(select);
@@ -29,7 +28,6 @@ public class MessageManager {
 		}
 		return list;
 	}
-	
 	
 	public static ArrayList<MessageInfo> getChannelMessages(int channelId, int amount) throws SQLException {
 		int lastMessageId = getLastMessageId() + 1;
@@ -119,18 +117,23 @@ public class MessageManager {
 			statement = getApp().getPreparedStatement(tableInsert);
 			statement.setInt(1, message.getId());
 			statement.setInt(2, message.getRecipientId());
-			return statement.executeUpdate() == 1;
+			if (statement.executeUpdate() == 1) {
+				return true;
+			}
+			return false;
 		}
 	}
 	
 	public static boolean insertFull(MessageInfo message) throws SQLException {
 		synchronized (messageLock) {
-			String insert = "insert into message(id,sender_id,moment_sent,type,content) values(?,?,?,?,?)";
+			String insert = "insert into message(id,sender_id,type,content,moment_sent) values(?,?,?,?,?)";
 			PreparedStatement statement = getApp().getPreparedStatement(insert);
 			statement.setInt(1, message.getId());
 			statement.setInt(2, message.getSenderId());
 			statement.setString(3, message.getType());
 			statement.setString(4, message.getContent());
+			statement.setDate(5, new Date(message.getMomentSent()));
+			
 			boolean added = statement.executeUpdate() == 1;
 			if (!added) return false;
 			
