@@ -92,9 +92,6 @@ public class ApplicationController implements Initializable {
 		vBoxMessage.heightProperty().addListener((observable, oldValue, newValue) -> {
 			scrollPane.setVvalue(1.0d);
 		});
-		
-		
-		// TODO QUANDO CARREGA NO MAXIMAZE ELE NAO FAZ O RESIZE AUTOMATICO
 
 		/*
 		usersListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
