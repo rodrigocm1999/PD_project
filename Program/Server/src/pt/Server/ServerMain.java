@@ -243,37 +243,6 @@ public class ServerMain {
 		}
 	}
 	
-	public static void main(String[] args) throws Exception {
-		/*Object obj = null;
-		obj.toString();*/
-		
-		if (args.length < 4) {
-			System.out.println("Invalid Arguments : database_address, listening udp port (+1 for server synchronization), listening tcp port, fileTransfer tcp port, OPTIONAL database_name");
-			System.exit(-1);
-		}
-		String databaseAddress = args[0];
-		int listeningUDPPort = 0;
-		int listeningTCPPort = 0;
-		int listeningFilePort = 0;
-		try {
-			listeningUDPPort = Integer.parseInt(args[1]);
-			listeningTCPPort = Integer.parseInt(args[2]);
-			listeningFilePort = Integer.parseInt(args[3]);
-		} catch (NumberFormatException e) {
-			System.out.println("Invalid Port number(s)");
-			System.exit(-1);
-		}
-		
-		String databaseName = ServerConstants.DATABASE_NAME;
-		if (args.length == 5) {
-			databaseName = args[4];
-		}
-		
-		ServerMain serverMain = new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort, listeningFilePort);
-		serverMain.start();
-		
-	}
-	
 	public void shutdown() {
 		serversManager.sendShutdown();
 		serversManager = null;
@@ -288,5 +257,31 @@ public class ServerMain {
 		public void run() {
 			ServerMain.getInstance().shutdown();
 		}
+	}
+	
+	public static void main(String[] args) throws Exception {
+		
+		if (args.length < 4) {
+			System.out.println("Invalid Arguments : database_address, listening udp port (+1 for server synchronization), listening tcp port, fileTransfer tcp port, OPTIONAL database_name");
+			System.exit(-1);
+		}
+		String databaseAddress = args[0];
+		int listeningUDPPort = 0, listeningFilePort = 0, listeningTCPPort = 0;
+		try {
+			listeningUDPPort = Integer.parseInt(args[1]);
+			listeningTCPPort = Integer.parseInt(args[2]);
+			listeningFilePort = Integer.parseInt(args[3]);
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid Port number(s)");
+			System.exit(-1);
+		}
+		
+		String databaseName = ServerConstants.DATABASE_NAME;
+		if (args.length == 5) {
+			databaseName = args[4];
+		}
+		
+		new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort, listeningFilePort)
+				.start();
 	}
 }

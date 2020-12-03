@@ -20,15 +20,13 @@ public class ClientMain {
 	private static ClientMain instance;
 	private ArrayList<ChannelInfo> channels;
 	private ArrayList<UserInfo> users;
+	private Receiver receiver;
 	private UserInfo userInfo;
 	private File userPhoto;
-	//private ChannelInfo currentChannel;
-	//private UserInfo currentUser;
 	private ApplicationController applicationController;
 	
 	private ArrayList<MessageInfo> messages = null;
 	private MessageInfo messageTemplate = null;
-	
 	
 	public static ClientMain getInstance() {
 		return instance;
@@ -87,15 +85,12 @@ public class ClientMain {
 			
 			return true;
 		} else if (protocol.equals(Constants.CONNECTION_REFUSED)) {
-			// TODO Garantir que recebe
 			serversList = (ArrayList<ServerAddress>) command.getExtras();
 			return false;
 		} else {
 			throw new IOException("Illegal Connection Protocol");
 		}
 	}
-	
-	private Receiver receiver;
 	
 	public Object sendCommandToServer(String protocol, Object object) throws IOException, InterruptedException {
 		Command command = new Command(protocol, object);
@@ -107,7 +102,6 @@ public class ClientMain {
 	}
 	
 	public Object receiveCommand() throws InterruptedException {
-		Waiter waiter = new Waiter();
 		System.out.println("stopped to wait");
 		Command ob = (Command)receiver.waitForCommand();
 		System.out.println("Received something");
@@ -117,12 +111,9 @@ public class ClientMain {
 		return ob;
 	}
 	
-	public boolean logout() throws IOException, ClassNotFoundException, InterruptedException {
+	public boolean logout() throws IOException, InterruptedException {
 		Command command = (Command) sendCommandToServer(Constants.LOGOUT, null);
-		if (command.getProtocol().equals(Constants.SUCCESS)){
-			return true;
-		}
-		return false;
+		return command.getProtocol().equals(Constants.SUCCESS);
 	}
 	
 	public UserInfo getUserInfo() {
@@ -254,13 +245,8 @@ public class ClientMain {
 	public void defineMessageTemplate(Recipient recipientType, int recipientId) {
 		messageTemplate = new MessageInfo(recipientType, recipientId);
 	}
-	
-	public void waitForMessage() {
-	
-	}
 
 	public void downloadFile(MessageInfo message,String directory) throws IOException, InterruptedException {
-	//	TODO TRY DOWNLOAD
 
 		Command command = (Command) sendCommandToServer(Constants.GET_FILE, message.getId());
 		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
