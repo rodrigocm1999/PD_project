@@ -88,12 +88,12 @@ public class ApplicationController implements Initializable {
 			vBoxMessage.setPrefWidth(scrollPane.getWidth());
 		});
 		
-
+		
 		vBoxMessage.heightProperty().addListener((observable, oldValue, newValue) -> {
 			scrollPane.setVvalue(1.0d);
 		});
-
-
+		
+		
 		// TODO QUANDO CARREGA NO MAXIMAZE ELE NAO FAZ O RESIZE AUTOMATICO
 
 		/*
@@ -123,7 +123,7 @@ public class ApplicationController implements Initializable {
 			}
 		});
 		*/
-
+		
 	}
 	
 	
@@ -197,42 +197,43 @@ public class ApplicationController implements Initializable {
 	
 	public void updateMessageVBox() {
 		client.getMessagesRecipientType();
-
+		
 		vBoxMessage.getChildren().clear();
 		vBoxMessage.setPrefWidth(scrollPane.getWidth());
 		vBoxMessage.setPrefHeight(scrollPane.getHeight());
-		for (MessageInfo item:client.getMessages()) {
-
+		for (MessageInfo item : client.getMessages()) {
+			
 			vBoxMessage.getChildren().add(insertLine(item));
 		}
-
+		
 	}
-	public HBox insertLine(MessageInfo message){
+	
+	public HBox insertLine(MessageInfo message) {
 		HBox box = new HBox();
 		box.setPrefWidth(Region.USE_COMPUTED_SIZE);
 		box.setFillHeight(true);
-
+		
 		Label label = new Label(message.getContent());
-		if (!message.getType().equals(MessageInfo.TYPE_TEXT)){
-			label.setTextFill(Color.color(0,0,1));
+		if (!message.getType().equals(MessageInfo.TYPE_TEXT)) {
+			label.setTextFill(Color.color(0, 0, 1));
 			label.setOnMouseClicked(event -> {
 				DirectoryChooser directoryChooser = new DirectoryChooser();
 				File fileDirectory = directoryChooser.showDialog(ClientWindow.getInstance().getStage());
 				try {
-					client.downloadFile(message,fileDirectory.getAbsolutePath());
+					client.downloadFile(message, fileDirectory.getAbsolutePath());
 				} catch (IOException | InterruptedException e) {
 					e.printStackTrace();
 				}
 			});
 		}
 		box.getChildren().add(label);
-
-		if (client.getUserInfo().getUserId() != message.getSenderId()){
+		
+		if (client.getUserInfo().getUserId() != message.getSenderId()) {
 			box.setAlignment(Pos.BASELINE_LEFT);
-		}else {
+		} else {
 			box.setAlignment(Pos.BASELINE_RIGHT);
 		}
-
+		
 		return box;
 	}
 	
@@ -260,7 +261,7 @@ public class ApplicationController implements Initializable {
 					
 					Platform.runLater(() -> addMessageToScreen(message));
 				}
-			} catch (IOException  | InterruptedException e) {
+			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
 		});
@@ -275,10 +276,26 @@ public class ApplicationController implements Initializable {
 					
 					Command command = (Command) client.receiveCommand();
 					System.out.println("update thread received : " + command);
-					if (command.getProtocol().equals(Constants.NEW_MESSAGE)) {
-						MessageInfo message = (MessageInfo) command.getExtras();
-						
-						Platform.runLater(() -> addMessageToScreen(message));
+					switch (command.getProtocol()) {
+						case Constants.NEW_MESSAGE -> {
+							MessageInfo message = (MessageInfo) command.getExtras();
+							
+							Platform.runLater(() -> addMessageToScreen(message));
+						}
+						case Constants.NEW_USER -> {
+							UserInfo user = (UserInfo) command.getExtras();
+							
+							Platform.runLater(() -> {
+								//TODO SYKA BLYAT
+							});
+						}
+						case Constants.NEW_CHANNEL -> {
+							ChannelInfo channel = (ChannelInfo) command.getExtras();
+							
+							Platform.runLater(() -> {
+								//TODO SYKA BLYAT
+							});
+						}
 					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -364,9 +381,9 @@ public class ApplicationController implements Initializable {
 			onMessageSend(null);
 		}
 	}
-
+	
 	public void logout(ActionEvent actionEvent) throws InterruptedException, IOException, ClassNotFoundException {
-		if (client.logout()){
+		if (client.logout()) {
 			ClientWindow.getInstance().setWindowRoot("LoginPage.fxml");
 		}
 	}

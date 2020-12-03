@@ -186,19 +186,6 @@ public class ServerMain {
 		}).start();
 	}
 	
-	public void warnClientsAboutNewMessage(MessageInfo message) {
-		new Thread(() -> {
-			System.out.println("Received propagation new Message");
-			try {
-				for (UserThread user : connectedMachines) {
-					user.receivedPropagatedMessage(message);
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}).start();
-	}
-	
 	public void propagateRegisterUserChannel(Ids ids) {
 		new Thread(() -> {
 			try {
@@ -228,7 +215,33 @@ public class ServerMain {
 			}
 		}).start();
 	}
-	//TODO get file and user photo
+	
+	public void protocolReceivedNewMessage(MessageInfo message) {
+		new Thread(() -> {
+			System.out.println("Received propagation new Message");
+			try {
+				for (UserThread user : connectedMachines) {
+					user.receivedPropagatedMessage(message);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
+	}
+	
+	public void protocolReceivedNewUser(UserInfo user) throws IOException {
+		System.out.println("Propagated user : " + user);
+		for (var userThread : connectedMachines) {
+			userThread.receivedPropagatedUser(user);
+		}
+	}
+	
+	public void protocolReceivedNewChannel(ChannelInfo channel) throws IOException {
+		System.out.println("Propagated channel: " + channel);
+		for (var user : connectedMachines) {
+			user.receivedPropagatedChannel(channel);
+		}
+	}
 	
 	public static void main(String[] args) throws Exception {
 		/*Object obj = null;

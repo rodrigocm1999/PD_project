@@ -4,7 +4,6 @@ import pt.Common.*;
 
 import java.io.IOException;
 import java.net.*;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -226,21 +225,22 @@ public class ServerNetwork extends Thread {
 		sendAllCommand(ServerConstants.PROTOCOL_NEW_USER, userInfo);
 	}
 	
-	
-	public void protocolReceivedRegisterUserChannel(Ids ids) throws SQLException {
+	public void protocolReceivedRegisterUserChannel(Ids ids) throws Exception {
 		ChannelManager.registerUserToChannel(ids.getUserId(), ids.getChannelId());
 	}
 	
-	public void protocolReceivedNewChannel(ChannelInfo channelInfo) throws SQLException {
+	public void protocolReceivedNewChannel(ChannelInfo channelInfo) throws Exception {
 		ChannelManager.insertFull(channelInfo);
+		serverMain.protocolReceivedNewChannel(channelInfo);
 	}
 	
-	public void protocolReceivedNewUser(UserInfo userInfo) throws SQLException {
+	public void protocolReceivedNewUser(UserInfo userInfo) throws Exception {
 		UserManager.insertFull(userInfo, "");
 		//TODO receive user image
+		serverMain.protocolReceivedNewUser(userInfo);
 	}
 	
-	public void protocolReceivedNewMessage(MessageInfo message) throws SQLException {
+	public void protocolReceivedNewMessage(MessageInfo message) throws Exception {
 		boolean success = MessageManager.insertFull(message);
 		if (!success) {
 			System.out.println("Error that shouldn't happens : protocolNewMessage(MessageInfo message)");
@@ -250,7 +250,7 @@ public class ServerNetwork extends Thread {
 		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 		
 		}
-		serverMain.warnClientsAboutNewMessage(message);
+		serverMain.protocolReceivedNewMessage(message);
 	}
 	
 	public void synchronizeDatabase() {

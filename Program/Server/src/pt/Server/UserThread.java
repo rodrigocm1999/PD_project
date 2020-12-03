@@ -164,6 +164,19 @@ public class UserThread extends Thread {
 		}
 	}
 	
+	private String addTimestampFileName(String fileName) {
+		String utcTimeString = "" + new Date().getTime();
+		int timeLength = utcTimeString.length() - 8;
+		
+		utcTimeString = utcTimeString.substring(Math.max(timeLength, 0));
+		
+		int dotIndex = fileName.lastIndexOf(".");
+		if (dotIndex == -1)
+			return fileName + "_" + utcTimeString;
+		else
+			return fileName.substring(0, dotIndex) + "_" + utcTimeString + fileName.substring(dotIndex);
+	}
+	
 	private void protocolGetUserPhoto(String username) {
 		File file = new File(ServerConstants.getPhotoPathFromUsername(username));
 		
@@ -230,7 +243,7 @@ public class UserThread extends Thread {
 						while (true) {
 							int amountRead = fileStream.read(buffer);
 							if (amountRead <= 0) {
-								socket.close();
+								fileSocket.close();
 								break;
 							}
 							outputStream.write(buffer, 0, amountRead);
@@ -293,19 +306,6 @@ public class UserThread extends Thread {
 				e.printStackTrace();
 			}
 		}).start();
-	}
-	
-	private String addTimestampFileName(String fileName) {
-		String utcTimeString = "" + new Date().getTime();
-		int timeLength = utcTimeString.length() - 8;
-		
-		utcTimeString = utcTimeString.substring(Math.max(timeLength, 0));
-		
-		int dotIndex = fileName.lastIndexOf(".");
-		if (dotIndex == -1)
-			return fileName + "_" + utcTimeString;
-		else
-			return fileName.substring(0, dotIndex) + "_" + utcTimeString + fileName.substring(dotIndex);
 	}
 	
 	public void protocolChannelEdit(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -466,11 +466,22 @@ public class UserThread extends Thread {
 	public void receivedPropagatedMessage(MessageInfo message) throws IOException {
 		System.out.println("Propagated message : " + message);
 		if (isLoggedIn) {
-			sendCommand(Constants.NEW_MESSAGE, message);
 			if (currentPlace.getChannelId() == message.getRecipientId() || currentPlace.getMessageId() == message.getRecipientId()) {
 				System.out.println("Send propagated message : " + message);
 				sendCommand(Constants.NEW_MESSAGE, message);
 			}
+		}
+	}
+	
+	public void receivedPropagatedUser(UserInfo user) throws IOException {
+		if (isLoggedIn) {
+			sendCommand(Constants.NEW_USER, user);
+		}
+	}
+	
+	public void receivedPropagatedChannel(ChannelInfo channel) throws IOException {
+		if (isLoggedIn) {
+			sendCommand(Constants.NEW_CHANNEL, channel);
 		}
 	}
 	
