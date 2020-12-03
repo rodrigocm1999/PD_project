@@ -2,6 +2,8 @@ package pt.Client;
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import pt.Common.Command;
 import pt.Common.Constants;
 import pt.Common.UserInfo;
@@ -12,28 +14,49 @@ public class LoginController {
 	
 	public TextField idUsername;
 	public PasswordField idPassword;
+	public Label errorLabel;
 	
-	public void onClickLogin(ActionEvent actionEvent) throws IOException, InterruptedException {
-		ClientMain instance = ClientMain.getInstance();
-		//UserInfo user = new UserInfo(idUsername.getText(), idPassword.getText());
-		UserInfo user = new UserInfo("dorin", "Dorin1234");
-
-		//TODO CHECK IF IS BLANK
-
+	public void onClickLogin(ActionEvent actionEvent) {
+		UserInfo user = new UserInfo(idUsername.getText(), idPassword.getText());
 		
-		Command command = (Command) instance.sendCommandToServer(Constants.LOGIN, user);
-		if (command.getProtocol().equals(Constants.LOGIN_SUCCESS)) {
-			instance.setUserInfo((UserInfo) command.getExtras());
-			ClientWindow.getInstance().setWindowRoot("App2.fxml");
-		} else if (command.getProtocol().equals(Constants.LOGIN_ERROR)) {
-			//TODO create errorLabel and show the error
-			System.out.println(command.getExtras());
+		if (user.getUsername().isBlank()) {
+			errorLabel.setText("Username cannot be empty");
+			return;
+		}
+		if (user.getPassword().isBlank()) {
+			errorLabel.setText("Password cannot be empty");
+			return;
+		}
+		onLoginUser(user);
+	}
+	
+	public void onClickLoginTestUser(ActionEvent actionEvent) {
+		UserInfo user = new UserInfo("testuser", "Testuser12345");
+		onLoginUser(user);
+	}
+	
+	public void onLoginUser(UserInfo user) {
+		try {
+			ClientMain instance = ClientMain.getInstance();
+			Command command = (Command) instance.sendCommandToServer(Constants.LOGIN, user);
+			if (command.getProtocol().equals(Constants.LOGIN_SUCCESS)) {
+				instance.setUserInfo((UserInfo) command.getExtras());
+				ClientWindow.getInstance().setWindowRoot("App2.fxml");
+			} else {
+				errorLabel.setText((String) command.getExtras());
+			}
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 	
-	//TODO add go back to login page
-	
 	public void onClickRegister(ActionEvent actionEvent) throws IOException {
 		ClientWindow.getInstance().setWindowRoot("Registration.fxml");
+	}
+	
+	public void keyPressed(KeyEvent keyEvent) {
+		if (keyEvent.getCode() == KeyCode.ENTER) {
+			onClickLogin(null);
+		}
 	}
 }

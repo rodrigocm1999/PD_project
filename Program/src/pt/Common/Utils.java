@@ -24,10 +24,14 @@ public class Utils {
 		return new BigInteger(1, hash).toString(36);
 	}
 	
-	public static boolean checkPasswordFollowsRules(String password) {
+	public static boolean checkUserPasswordFollowsRules(String password) {
 		Pattern pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,25}$");
 		Matcher matcher = pattern.matcher(password);
 		return matcher.find();
+	}
+	
+	public static boolean checkChannelPasswordFollowsRules(String password) {
+		return !(password.length() < 3 || password.length() > 25);
 	}
 	
 	public static boolean checkNameUser(String name) {

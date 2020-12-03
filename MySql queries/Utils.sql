@@ -64,6 +64,8 @@ delete from message where id != -1;
 
 select max(id) from message,channel_message where message_id = id and channel_id = 1;
 
+select count(id) from user where username = 'testuser';
+
 insert into channel_user() values(1,2);
 
 select id,creator_id,name,description,(

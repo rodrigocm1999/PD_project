@@ -79,9 +79,8 @@ public class RegistrationController {
 			
 			try {
 				sleep(1000);
-				ClientWindow instanceWindow = ClientWindow.getInstance();
-				instanceWindow.setWindowRoot("LoginPage.fxml");
-			} catch (IOException | InterruptedException e) {
+				goBackLogin(null);
+			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		} else if (command.getProtocol().equals(Constants.REGISTER_ERROR)) {
@@ -97,5 +96,13 @@ public class RegistrationController {
 		File file = fileChooser.showOpenDialog(ClientWindow.getInstance().getStage());
 		ClientMain.getInstance().setUserPhoto(file);
 		idPhotoPath.setText(file.getAbsolutePath());
+	}
+	
+	public void goBackLogin(ActionEvent actionEvent) {
+		try {
+			ClientWindow.getInstance().setWindowRoot("LoginPage.fxml");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

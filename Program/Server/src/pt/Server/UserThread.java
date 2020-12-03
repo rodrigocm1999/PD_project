@@ -1,11 +1,9 @@
 package pt.Server;
 
-import com.sun.security.jgss.GSSUtil;
 import pt.Common.*;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -119,7 +117,6 @@ public class UserThread extends Thread {
 						case Constants.CHANNEL_EDIT -> {
 							ChannelInfo info = (ChannelInfo) protocol.getExtras();
 							protocolChannelEdit(info);
-							//TODO test channel edition
 						}
 						
 						case Constants.ADD_MESSAGE -> {
@@ -143,7 +140,6 @@ public class UserThread extends Thread {
 						case Constants.USER_GET_MESSAGES -> {
 							Ids ids = (Ids) protocol.getExtras();
 							protocolUserGetMessages(ids);
-							// TODO Test messages before
 						}
 						case Constants.GET_FILE -> {
 							int messageId = (int) protocol.getExtras();
@@ -309,14 +305,19 @@ public class UserThread extends Thread {
 	}
 	
 	public void protocolChannelEdit(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (!Utils.checkPasswordFollowsRules(channel.getPassword())) {
-			sendCommand(Constants.ERROR, "Invalid Password");
+		if (Utils.checkChannelPasswordFollowsRules(channel.getPassword())) {
+			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 25 characters)");
 			return;
 		}
+		if(!checkNameAvailability(channel.getName())){
+			sendCommand(Constants.ERROR, "Name already in use");
+			return;
+		}
+		
 		boolean success = ChannelManager.updateChannel(channel);
 		if (success) {
 			sendCommand(Constants.SUCCESS);
-		} else sendCommand(Constants.ERROR, "Error Updating, channel name might already be in use");
+		} else sendCommand(Constants.ERROR, "Error Updating, shouldn't happen");
 	}
 	
 	public void protocolChannelRegister(ChannelInfo channelInfo) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -359,8 +360,8 @@ public class UserThread extends Thread {
 	}
 	
 	public void protocolChannelAdd(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (channel.getPassword().length() < 3 || channel.getPassword().length() > 50) {
-			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 50 characters)");
+		if (Utils.checkChannelPasswordFollowsRules(channel.getPassword())) {
+			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 25 characters)");
 			return;
 		}
 		if (!checkNameAvailability(channel.getName())) {
@@ -411,7 +412,7 @@ public class UserThread extends Thread {
 			if (!Utils.checkUsername(userInfo.getUsername())) {
 				sendCommand(Constants.REGISTER_ERROR, "Username doesn't follow rules (Between 3 and 25 characters and have no special characters and )");
 				
-			} else if (!Utils.checkPasswordFollowsRules(userInfo.getPassword())) {
+			} else if (!Utils.checkUserPasswordFollowsRules(userInfo.getPassword())) {
 				sendCommand(Constants.REGISTER_ERROR, "Password doesn't follow rules (needs 8 to 25 characters, a special character, a number and a upper and lower case letter)");
 				
 			} else if (!Utils.checkNameUser(userInfo.getName())) {
