@@ -96,33 +96,6 @@ public class ApplicationController implements Initializable {
 		
 		// TODO QUANDO CARREGA NO MAXIMAZE ELE NAO FAZ O RESIZE AUTOMATICO
 
-		/*
-		usersListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
-			@Override
-			public ListCell<String> call(ListView<String> param) {
-				return new ListCell<String>() {
-					@Override
-					protected void updateItem(String item, boolean empty) {
-						super.updateItem(item, empty);
-						
-						if (item == null || empty) {
-							setText(null);
-							setStyle("-fx-background-color: white;");
-							setStyle("-fx-color: black;");
-						} else {
-							setText(item);
-							if (getIndex() % 2 == 1) {
-								setStyle("-fx-background-color: white;");
-								setStyle("-fx-color: black;");
-							} else
-								setStyle("-fx-background-color: white;");
-							setStyle("-fx-color: black;");
-						}
-					}
-				};
-			}
-		});
-		*/
 		
 	}
 	
@@ -214,7 +187,7 @@ public class ApplicationController implements Initializable {
 		box.setFillHeight(true);
 		
 		Label label = new Label(message.getContent());
-		if (!message.getType().equals(MessageInfo.TYPE_TEXT)) {
+		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 			label.setTextFill(Color.color(0, 0, 1));
 			label.setOnMouseClicked(event -> {
 				DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -287,13 +260,14 @@ public class ApplicationController implements Initializable {
 							
 							Platform.runLater(() -> {
 								//TODO SYKA BLYAT
+								usersObsList.add(user.getUsername());
 							});
 						}
 						case Constants.NEW_CHANNEL -> {
 							ChannelInfo channel = (ChannelInfo) command.getExtras();
 							
 							Platform.runLater(() -> {
-								//TODO SYKA BLYAT
+								channelsObsList.add(channel.getName());
 							});
 						}
 					}
@@ -317,6 +291,7 @@ public class ApplicationController implements Initializable {
 			Parent parent = instance.loadParent("CreateChannel.fxml");
 			stage.setScene(new Scene(parent, 500, 400));
 			stage.showAndWait();
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -385,6 +360,19 @@ public class ApplicationController implements Initializable {
 	public void logout(ActionEvent actionEvent) throws InterruptedException, IOException, ClassNotFoundException {
 		if (client.logout()) {
 			ClientWindow.getInstance().setWindowRoot("LoginPage.fxml");
+		}
+	}
+
+	public void onClickEditChannel(ActionEvent actionEvent) {
+		ClientWindow instance = ClientWindow.getInstance();
+		try {
+			Stage stage = new Stage();
+			Parent parent = instance.loadParent("EditChannel.fxml");
+			stage.setScene(new Scene(parent, 500, 400));
+			stage.showAndWait();
+
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 }

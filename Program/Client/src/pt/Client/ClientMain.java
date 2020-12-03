@@ -288,6 +288,7 @@ public class ClientMain {
 					}
 					fileOutputStream.write(buffer,0,readAmount);
 				}
+				fileOutputStream.close();
 				Command newComand = (Command) receiveCommand();
 				if (newComand.getProtocol().equals(Constants.FINISHED_FILE_DOWNLOAD)){
 					Platform.runLater(()->{

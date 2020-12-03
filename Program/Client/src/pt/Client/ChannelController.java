@@ -51,8 +51,8 @@ public class ChannelController implements Initializable {
 
     public void onCreate(ActionEvent actionEvent) throws IOException, InterruptedException {
         String name = nameField.getText();
-        ClientMain instance = ClientMain.getInstance();
-        ArrayList<ChannelInfo> list = instance.getChannels();
+        ClientMain client = ClientMain.getInstance();
+        ArrayList<ChannelInfo> list = client.getChannels();
 
         for (var item: list) {
             if (item.getName().equals(name)) {
@@ -60,8 +60,8 @@ public class ChannelController implements Initializable {
                 return;
             }
         }
-    //TODO check if atualiza lista de canais
-        Command command = (Command) instance.sendCommandToServer(Constants.CHANNEL_ADD, new ChannelInfo(name, passwordField.getText(), descriptionField.getText()));
+
+        Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_ADD, new ChannelInfo(name, passwordField.getText(), descriptionField.getText()));
         if (command.getProtocol().equals(Constants.SUCCESS)){
             errorLabel.setText("Created successfully");
             errorLabel.setTextFill(Color.web("green"));
@@ -73,20 +73,33 @@ public class ChannelController implements Initializable {
     }
 
     public void onDelete(ActionEvent actionEvent) throws IOException, InterruptedException {
+        errorLabel.setText("");
         String name = nameField.getText();
-        ClientMain instance = ClientMain.getInstance();
-        ArrayList<ChannelInfo> list = instance.getChannels();
-
+        ClientMain client = ClientMain.getInstance();
+        ArrayList<ChannelInfo> list = client.getChannels();
+        String pwd = passwordField.getText();
+        setChannel(null);
 
         for (var item: list) {
-            if (!item.getName().equals(name)) {
-                errorLabel.setText("This does not exists!");
-            }else {
+            if (item.getName().equals(name)) {
                 setChannel(item);
             }
         }
+        if (channel != null){
+            if (channel.getCreatorId() != client.getUserInfo().getUserId()){
+                errorLabel.setText("You are not the owner of this channel!");
+                return;
+            }else if (!channel.getPassword().equals(pwd)){
+                errorLabel.setText("Wrong Password!");
+                return;
+            }
+        }else {
+            errorLabel.setText("This does not exists!");
+            return;
+        }
 
-        Command command = (Command) instance.sendCommandToServer(Constants.CHANNEL_REMOVE, getChannel().getId());
+
+        Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_REMOVE, getChannel().getId());
         if (command.getProtocol().equals(Constants.SUCCESS)){
             errorLabel.setText("Deleted Successfully");
             errorLabel.setTextFill(Color.web("green"));
@@ -97,25 +110,28 @@ public class ChannelController implements Initializable {
         }
     }
 
-    public void findChannelOnClcik(ActionEvent actionEvent) throws IOException, InterruptedException {
+    public void findChannelOnClcik(ActionEvent actionEvent) {
+        errorLabel.setText("");
         String channelName = channelNameTextField.getText();
         ClientMain client = ClientMain.getInstance();
         ArrayList<ChannelInfo> list = client.getChannels();
-        ChannelInfo channel = null;
+        channel = null;
 
         for (var item: list) {
-            if (!item.getName().equals(channelName)) {
-                errorLabel.setText("This channel does not exists!");
-            }else {
-                if(item.getCreatorId()!= client.getUserInfo().getUserId()){
-                    errorLabel.setText("You are not the owner of this channel!");
-                    return;
-                }
+            if (item.getName().equals(channelName)) {
                 setChannel(item);
             }
         }
         if (getChannel() != null){
-            descriptionField.setText(getChannel().getDescription());
+            if (channel.getCreatorId() != client.getUserInfo().getUserId()){
+                errorLabel.setText("You are not the owner of this channel!");
+                return;
+            }else {
+                descriptionField.setText(getChannel().getDescription());
+            }
+        }else {
+            errorLabel.setText("This channel does not exist!");
+            return;
         }
     }
 
@@ -138,8 +154,8 @@ public class ChannelController implements Initializable {
         if (command.getProtocol().equals(Constants.SUCCESS)){
             errorLabel.setText("Edited Successfully");
             errorLabel.setTextFill(Color.web("green"));
-            btn.setDisable(true);
-            btn.setVisible(false);
+            editBtn.setDisable(true);
+            editBtn.setVisible(false);
         }else {
             errorLabel.setText((String) command.getExtras());
         }
