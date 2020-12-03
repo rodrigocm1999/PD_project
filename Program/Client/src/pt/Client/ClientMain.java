@@ -27,6 +27,17 @@ public class ClientMain {
 	
 	private ArrayList<MessageInfo> messages = null;
 	private MessageInfo messageTemplate = null;
+
+	//TODO FAZER O FAILOVER
+
+	//TODO ALTERAR AS INTERFACES COM TAMANHOS MINIMOS
+
+	//TODO VER AS LABELS QUE SUBREPOEM (CREATE CHANNEL)
+
+	//TODO SELECÇAO DO CANAL QUANDO ESTA MAL
+
+	//TODO IDENTIFICAR PESSOAS NO NO CANAL
+
 	
 	public static ClientMain getInstance() {
 		return instance;

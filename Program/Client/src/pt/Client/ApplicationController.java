@@ -21,6 +21,7 @@ import javafx.util.Callback;
 import pt.Common.*;
 import pt.Common.MessageInfo.Recipient;
 
+import javax.swing.text.html.ImageView;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -42,6 +43,8 @@ public class ApplicationController implements Initializable {
 	public TextField searchTextField;
 	public VBox vBoxMessage;
 	public ScrollPane scrollPane;
+	public Label titleLabel;
+	//public ImageView userImage;
 	
 	
 	private final ObservableList<String> channelsObsList = FXCollections.observableArrayList();
@@ -256,7 +259,6 @@ public class ApplicationController implements Initializable {
 							UserInfo user = (UserInfo) command.getExtras();
 							
 							Platform.runLater(() -> {
-								//TODO SYKA BLYAT
 								usersObsList.add(user.getUsername());
 							});
 						}
@@ -319,6 +321,7 @@ public class ApplicationController implements Initializable {
 		String selectedItem = (String) usersListView.getSelectionModel().getSelectedItem();
 		if (selectedItem == null) return;
 		UserInfo user = client.getUserByUsername(selectedItem);
+		titleLabel.setText(user.getName());
 		System.out.println(selectedItem);
 		try {
 			Command command = (Command) client.sendCommandToServer(Constants.USER_GET_MESSAGES, new Ids(user.getUserId(), 0, 0));
