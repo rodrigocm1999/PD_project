@@ -63,6 +63,7 @@ public class ChannelManager {
 			statement.setString(4, channel.getPassword());
 			statement.setString(5, channel.getDescription());
 			statement.setDate(6, new Date(channel.getCreationMoment()));
+			System.out.println(statement);
 			return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
 		}
 	}
@@ -134,7 +135,7 @@ public class ChannelManager {
 	}
 	
 	public static ArrayList<ChannelInfo> getAfterId(int id) throws SQLException {
-		String select = "select id,creator_id,name,password_hash,description,creation_moment from channel where id > ?";
+		String select = "select id,creator_id,name,password_hash,description,creation_moment from channel where id > ? order by id asc";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setInt(1, id);
 		ResultSet result = statement.executeQuery();
@@ -142,10 +143,14 @@ public class ChannelManager {
 		ArrayList<ChannelInfo> list = new ArrayList<>();
 		
 		while (result.next()) {
-			list.add(new ChannelInfo(result.getInt("id"),
+			ChannelInfo channel = new ChannelInfo(
+					result.getInt("id"),
+					result.getInt("creator_id"),
 					result.getString("name"),
 					result.getString("password_hash"),
-					result.getString(("description"))));
+					result.getString("description"),
+					result.getDate("creation_moment").getTime());
+			list.add(channel);
 		}
 		return list;
 	}

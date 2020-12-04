@@ -2,13 +2,8 @@ package pt.Server;
 
 import pt.Common.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.MulticastSocket;
+import java.io.*;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -33,6 +28,9 @@ public class Synchronizer {
 	
 	private static final String FINISHED = "SYNCHRONIZER_FINISHED";
 	private static final int FILE_CHUNK_SIZE = 5 * 1024;
+	
+	//public static final int RETRY_LIMIT = 3;
+	//public static final int RECEIVE_TIMEOUT = 1500;
 	
 	private final ServerAddress otherServer;
 	private final ServerAddress thisServer;
@@ -188,6 +186,7 @@ public class Synchronizer {
 	}
 	
 	public void sendData() throws Exception {
+		
 		System.out.println("Sending Data");
 		while (true) {
 			ServerCommand command = receiveCommand();
@@ -252,7 +251,6 @@ public class Synchronizer {
 						sendFileBlocks(fileInputStream);
 						
 						sendCommand(NO_MORE_USER_PHOTO, null);
-						fileInputStream.close();
 					}
 				}
 				case FINISHED -> {
@@ -264,11 +262,70 @@ public class Synchronizer {
 	}
 	
 	private void sendCommand(String protocol, Object object) throws IOException {
-		sendServerCommand(protocol, object);
+		/*UDPHelper.Wrapper wrapperToSend = new UDPHelper.Wrapper(object);
+		long sentAckId = wrapperToSend.id;
+		ServerCommand command = new ServerCommand(protocol, otherServer, wrapperToSend);*/
+		ServerCommand command = new ServerCommand(protocol, otherServer, object);
+		byte[] bytes = UDPHelper.writeObjectToArray(command);
+		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, otherServer.getAddress(), otherServerPort);
+		System.out.println(command);
+		
+		socket.send(packet);
+		/*int timeout = socket.getSoTimeout();
+		socket.setSoTimeout(RECEIVE_TIMEOUT);
+		int tryNumber = 0;
+		
+		while (true) {
+			try {
+				if (++tryNumber > RETRY_LIMIT) {
+					//Time to give up
+					System.err.println("ACK didn't arrive, shouldn't happen");
+					break;
+				}
+				
+				socket.send(packet);
+				
+				//Receive ACK. If timeout, then try again a couple more times
+				if (getAck(socket, sentAckId)) {
+					break;
+				}
+			} catch (IOException e) {
+				System.out.println("Packet ACK timeout, waiting again : try -> " + tryNumber);
+			}
+		}
+		
+		socket.setSoTimeout(timeout);*/
 	}
 	
 	private ServerCommand receiveCommand() throws Exception {
-		return receiveServerCommandObject();
+		DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+		socket.receive(packet);
+		//Get Object from packet
+		return (ServerCommand) UDPHelper.readObjectFromPacket(packet);
+		/*
+		while (true) {
+			DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+			socket.receive(packet);
+			
+			//Get Object from packet
+			ServerCommand serverCommand = (ServerCommand) UDPHelper.readObjectFromPacket(packet);
+			System.out.println(serverCommand);
+			if (!(serverCommand.getExtras() instanceof UDPHelper.Wrapper)) {
+				System.err.println("is not Wrapper, shouldn't happen");
+				continue;
+			}
+			UDPHelper.Wrapper wrapper = (UDPHelper.Wrapper) serverCommand.getExtras();
+			
+			//Send ACK
+			byte[] bytes = UDPHelper.writeServerCommandToArray(ServerConstants.ACKNOWLEDGE, thisServer, wrapper.id);
+			
+			DatagramPacket ackPacket = new DatagramPacket(bytes, bytes.length, packet.getAddress(), packet.getPort());
+			
+			socket.send(ackPacket); // Send ACK
+			
+			serverCommand.setExtras(wrapper.object);
+			return serverCommand;
+		}*/
 	}
 	
 	private void sendFileBlocks(FileInputStream fileInputStream) throws IOException {
@@ -297,23 +354,51 @@ public class Synchronizer {
 		}
 	}
 	
-	public void sendServerCommand(String protocol, Object object) throws IOException {
-		ServerCommand command = new ServerCommand(protocol, otherServer, object);
+	private static boolean getAck(DatagramSocket socket, long sentId) {
+		byte[] buffer = new byte[Constants.UDP_PACKET_SIZE];
+		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 		
-		byte[] bytes = UDPHelper.writeObjectToArray(command);
-		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, otherServer.getAddress(), otherServerPort);
-		socket.send(packet);
-	}
-	
-	public ServerCommand receiveServerCommandObject() throws IOException, ClassNotFoundException {
 		while (true) {
-			DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-			socket.receive(packet);
-			
-			//Get Object from packet
-			ServerCommand serverCommand = (ServerCommand) UDPHelper.readObjectFromPacket(packet);
-			
-			return serverCommand;
+			try {
+				packet.setLength(buffer.length);
+				
+				socket.receive(packet);
+				System.out.print("got something and is");
+				ServerCommand ackCommand = (ServerCommand) UDPHelper.readObjectFromPacket(packet);
+				System.out.println("\t, received : " + ackCommand);
+				
+				if (ackCommand.getProtocol().equals(ServerConstants.ACKNOWLEDGE)) {
+					long ackId = (long) ackCommand.getExtras();
+					if (ackId == sentId) {
+						System.out.println("received right ACK : " + ackCommand);
+						return true;
+					}
+				}
+			} catch (SocketTimeoutException e) {
+				return false;
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				//continue;
+			}
 		}
 	}
+	
+	/*public static class Wrapper implements Serializable {
+		private static final long serialVersionUID = 333L;
+		
+		public final long id;
+		public final Object object;
+		static private long idCounter = 0;
+		
+		public Wrapper(Object object) {
+			id = ++idCounter;
+			this.object = object;
+		}
+		
+		@Override
+		public String toString() {
+			return "Wrapper{id=" + id + ", object=" + object + '}';
+		}
+	}*/
 }

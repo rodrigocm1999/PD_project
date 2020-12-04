@@ -305,11 +305,11 @@ public class UserThread extends Thread {
 	}
 	
 	public void protocolChannelEdit(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (Utils.checkChannelPasswordFollowsRules(channel.getPassword())) {
+		if (!Utils.checkChannelPasswordFollowsRules(channel.getPassword())) {
 			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 25 characters)");
 			return;
 		}
-		if(!checkNameAvailability(channel.getName())){
+		if (!checkNameAvailability(channel.getName())) {
 			sendCommand(Constants.ERROR, "Name already in use");
 			return;
 		}
@@ -317,6 +317,8 @@ public class UserThread extends Thread {
 		boolean success = ChannelManager.updateChannel(channel);
 		if (success) {
 			sendCommand(Constants.SUCCESS);
+			
+			getApp().protocolReceivedEditedChannel(channel);
 		} else sendCommand(Constants.ERROR, "Error Updating, shouldn't happen");
 	}
 	
@@ -360,7 +362,7 @@ public class UserThread extends Thread {
 	}
 	
 	public void protocolChannelAdd(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (Utils.checkChannelPasswordFollowsRules(channel.getPassword())) {
+		if (!Utils.checkChannelPasswordFollowsRules(channel.getPassword())) {
 			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 25 characters)");
 			return;
 		}

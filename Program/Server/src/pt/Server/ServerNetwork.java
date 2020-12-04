@@ -50,7 +50,6 @@ public class ServerNetwork extends Thread {
 		try {
 			startHeartbeatChecker();
 			startHeartbeatSender();
-			//TODO make everything reliable
 			
 			receiveUpdates();
 		} catch (Exception e) {
@@ -141,7 +140,6 @@ public class ServerNetwork extends Thread {
 				//System.out.println("ServerNetwork received with own address, discarding");
 				continue;
 			}
-			System.out.println("ServerNetwork received : " + command);
 			
 			try {
 				switch (command.getProtocol()) {
@@ -172,7 +170,6 @@ public class ServerNetwork extends Thread {
 					}
 					
 					case ServerConstants.ASK_SYNCHRONIZER -> {
-						//System.out.println("ASK_SYNCHRONIZER");
 						receivedSynchronizationRequest(command);
 					}
 					
@@ -180,26 +177,27 @@ public class ServerNetwork extends Thread {
 						MessageInfo message = (MessageInfo) command.getExtras();
 						System.out.println("Received propagated : " + message);
 						protocolReceivedNewMessage(message);
-						//TODO test this properly
 					}
 					
 					case ServerConstants.PROTOCOL_NEW_USER -> {
 						UserInfo userInfo = (UserInfo) command.getExtras();
 						System.out.println("Received propagated new user : " + userInfo);
 						protocolReceivedNewUser(userInfo);
-						//TODO test this
 					}
 					case ServerConstants.PROTOCOL_NEW_CHANNEL -> {
 						ChannelInfo channelInfo = (ChannelInfo) command.getExtras();
 						System.out.println("Received propagated new channel : " + channelInfo);
 						protocolReceivedNewChannel(channelInfo);
-						//TODO test this
 					}
 					case ServerConstants.PROTOCOL_REGISTER_USER_CHANNEL -> {
 						Ids ids = (Ids) command.getExtras();
 						System.out.println("Received propagated user registration to channel : " + ids);
 						protocolReceivedRegisterUserChannel(ids);
-						//TODO test this
+					}
+					case ServerConstants.PROTOCOL_EDITED_CHANNEL -> {
+						ChannelInfo channelInfo = (ChannelInfo) command.getExtras();
+						System.out.println("Received propagated channel edited : " + channelInfo);
+						protocolReceivedEditedChannel(channelInfo);
 					}
 					
 				}
@@ -225,6 +223,10 @@ public class ServerNetwork extends Thread {
 		sendAllCommand(ServerConstants.PROTOCOL_NEW_USER, userInfo);
 	}
 	
+	public void propagateChannelEdition(ChannelInfo channel) throws IOException {
+		sendAllCommand(ServerConstants.PROTOCOL_EDITED_CHANNEL, channel);
+	}
+	
 	public void protocolReceivedRegisterUserChannel(Ids ids) throws Exception {
 		ChannelManager.registerUserToChannel(ids.getUserId(), ids.getChannelId());
 	}
@@ -232,6 +234,11 @@ public class ServerNetwork extends Thread {
 	public void protocolReceivedNewChannel(ChannelInfo channelInfo) throws Exception {
 		ChannelManager.insertFull(channelInfo);
 		serverMain.protocolReceivedNewChannel(channelInfo);
+	}
+	
+	public void protocolReceivedEditedChannel(ChannelInfo channelInfo) throws Exception {
+		ChannelManager.updateChannel(channelInfo);
+		serverMain.protocolReceivedEditedChannel(channelInfo);
 	}
 	
 	public void protocolReceivedNewUser(UserInfo userInfo) throws Exception {

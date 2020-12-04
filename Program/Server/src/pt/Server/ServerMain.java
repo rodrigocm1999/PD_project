@@ -196,6 +196,16 @@ public class ServerMain {
 		}).start();
 	}
 	
+	public void propagateChannelEdition(ChannelInfo channel) {
+		new Thread(() -> {
+			try {
+				serversManager.propagateChannelEdition(channel);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
+	}
+	
 	public void propagateNewUser(UserInfo user) {
 		new Thread(() -> {
 			try {
@@ -220,12 +230,12 @@ public class ServerMain {
 		new Thread(() -> {
 			System.out.println("Received propagation new Message");
 			try {
-				for (UserThread user : connectedMachines) {
+				for (var user : connectedMachines) {
 					user.receivedPropagatedMessage(message);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
+			} // TODO PROPAGATE channel edition
 		}).start();
 	}
 	
@@ -238,6 +248,13 @@ public class ServerMain {
 	
 	public void protocolReceivedNewChannel(ChannelInfo channel) throws IOException {
 		System.out.println("Propagated channel: " + channel);
+		for (var user : connectedMachines) {
+			user.receivedPropagatedChannel(channel);
+		}
+	}
+	
+	public void protocolReceivedEditedChannel(ChannelInfo channel) throws IOException {
+		System.out.println("Propagated channel edition: " + channel);
 		for (var user : connectedMachines) {
 			user.receivedPropagatedChannel(channel);
 		}
