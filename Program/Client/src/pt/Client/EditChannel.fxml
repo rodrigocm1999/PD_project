@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="372.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="372.0" minWidth="600.0" prefHeight="372.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
    <children>
       <Pane prefHeight="372.0" prefWidth="600.0">
          <children>
@@ -70,7 +70,7 @@
                   </HBox>
                   <HBox alignment="CENTER_RIGHT">
                      <children>
-                        <Label fx:id="errorLabel" text="ErrorLable" textFill="RED">
+                        <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="480.0" prefHeight="17.0" prefWidth="57.0" text="ErrorLable" textFill="RED" HBox.hgrow="ALWAYS">
                            <HBox.margin>
                               <Insets right="20.0" />
                            </HBox.margin>
