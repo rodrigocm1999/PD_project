@@ -40,7 +40,9 @@ public class LoginController {
 			ClientMain instance = ClientMain.getInstance();
 			Command command = (Command) instance.sendCommandToServer(Constants.LOGIN, user);
 			if (command.getProtocol().equals(Constants.LOGIN_SUCCESS)) {
-				instance.setUserInfo((UserInfo) command.getExtras());
+				UserInfo thisMan = (UserInfo) command.getExtras();
+				thisMan.setPassword(user.getPassword());
+				instance.setUserInfo(thisMan);
 				ClientWindow.getInstance().setWindowRoot("App2.fxml");
 			} else {
 				errorLabel.setText((String) command.getExtras());

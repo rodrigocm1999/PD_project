@@ -6,6 +6,7 @@ public class Ids implements Serializable {
 	
 	private static final long serialVersionUID = 4326789L;
 	
+	private int genericId;
 	private int userId;
 	private int channelId;
 	private int messageId;
@@ -23,6 +24,14 @@ public class Ids implements Serializable {
 				", channelId=" + channelId +
 				", messageId=" + messageId +
 				'}';
+	}
+	
+	public int getGenericId() {
+		return genericId;
+	}
+	
+	public void setGenericId(int genericId) {
+		this.genericId = genericId;
 	}
 	
 	public int getUserId() {

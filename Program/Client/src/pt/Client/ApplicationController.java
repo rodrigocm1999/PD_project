@@ -54,6 +54,7 @@ public class ApplicationController implements Initializable {
 	private static ApplicationController instance;
 	private ClientMain client;
 	private Stage stage;
+	private int lastSelectedItem;
 	
 	public static ApplicationController get() {
 		return instance;
@@ -122,12 +123,14 @@ public class ApplicationController implements Initializable {
 			if (channel != null && !channel.isPartOf()) {
 				String pwd = openPasswordDialog(channel.getName());
 				if (pwd.isBlank()) {
+					channelsListView.getSelectionModel().select(lastSelectedItem);
 					return;
 				}
 				Command feedback = (Command) client.sendCommandToServer(Constants.CHANNEL_REGISTER, new ChannelInfo(channel.getId(), pwd));
 				
 				if (!feedback.getProtocol().equals(Constants.SUCCESS)) {
 					alertError("Channel Password incorrect, try again");
+					channelsListView.getSelectionModel().select(lastSelectedItem);
 					return;
 				}
 				channel.setPartOf(true);
@@ -136,6 +139,8 @@ public class ApplicationController implements Initializable {
 			client.defineMessageTemplate(Recipient.CHANNEL, channel.getId());
 			client.setMessages(messages);
 			updateMessageVBox();
+			
+			lastSelectedItem = channelsListView.getSelectionModel().getSelectedIndex();
 		} catch (IOException | ClassNotFoundException | InterruptedException e) {
 		}
 	}
@@ -271,7 +276,12 @@ public class ApplicationController implements Initializable {
 						}
 					}
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					try {
+						client.connectToServer();
+						client.sendCommandToServer(Constants.LOGIN, client.getUserInfo());
+					} catch (Exception exception) {
+						exception.printStackTrace();
+					}
 				}
 			}
 		}).start();
@@ -324,7 +334,9 @@ public class ApplicationController implements Initializable {
 		titleLabel.setText(user.getName());
 		System.out.println(selectedItem);
 		try {
+			System.out.println("sending");
 			Command command = (Command) client.sendCommandToServer(Constants.USER_GET_MESSAGES, new Ids(user.getUserId(), 0, 0));
+			System.out.println("received");
 			client.defineMessageTemplate(Recipient.USER, user.getUserId());
 			client.setMessages((ArrayList<MessageInfo>) command.getExtras());
 			updateMessageVBox();

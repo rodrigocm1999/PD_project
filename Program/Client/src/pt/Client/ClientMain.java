@@ -27,15 +27,15 @@ public class ClientMain {
 	
 	private ArrayList<MessageInfo> messages = null;
 	private MessageInfo messageTemplate = null;
-
+	
 	//TODO FAZER O FAILOVER
-
+	
 	//TODO TESTAR LABELS EM TODO O LADO
-
+	
 	//TODO SELECÇAO DO CANAL QUANDO ESTA MAL (HOW?)
-
+	
 	//TODO IDENTIFICAR PESSOAS NO NO CANAL
-
+	
 	
 	public static ClientMain getInstance() {
 		return instance;
@@ -51,16 +51,27 @@ public class ClientMain {
 	}
 	
 	public void connectToServer() throws Exception {
+		if (socket != null){
+			if(socket.isConnected()) socket.close();
+		}
 		DatagramSocket datagramSocket = new DatagramSocket();
 		
 		while (true) {
 			System.out.println(serverIPAddress + ":" + portUDPServer);
-			boolean success = tryConnectServer(serverIPAddress, portUDPServer, datagramSocket);
-			if (success) {
+			try {
 				
-				return;
-			} else {
-				ServerAddress serverAddress = serversList.get(0);
+				boolean success = tryConnectServer(serverIPAddress, portUDPServer, datagramSocket);
+				if (success) {
+					receiver = new Receiver(oIS);
+					receiver.start();
+					return;
+				} else {
+					ServerAddress serverAddress = serversList.remove(0);
+					serverIPAddress = serverAddress.getAddress();
+					portUDPServer = serverAddress.getUDPPort();
+				}
+			} catch (Exception e) {
+				ServerAddress serverAddress = serversList.remove(0);
 				serverIPAddress = serverAddress.getAddress();
 				portUDPServer = serverAddress.getUDPPort();
 			}
@@ -88,10 +99,6 @@ public class ClientMain {
 			}
 			serversList = (ArrayList<ServerAddress>) command.getExtras();
 			
-			//----------------------------------------------------------------------------------------------------------
-			receiver = new Receiver(oIS);
-			receiver.start();
-			
 			return true;
 		} else if (protocol.equals(Constants.CONNECTION_REFUSED)) {
 			serversList = (ArrayList<ServerAddress>) command.getExtras();
@@ -111,12 +118,12 @@ public class ClientMain {
 	}
 	
 	public Object receiveCommand() throws InterruptedException {
-		System.out.println("stopped to wait");
-		Command ob = (Command)receiver.waitForCommand();
-		System.out.println("Received something");
-		
-		//Object ob = oIS.readObject();
-		System.out.println("Received : " + ob);
+		System.out.println("receive command : stopped to wait");
+		Command ob = (Command) receiver.waitForCommand();
+		if (ob.getProtocol().equals(Constants.LOST_CONNECTION)) {
+			throw new InterruptedException("Lost connection to the server");
+		}
+		System.out.println("receive command :  : " + ob);
 		return ob;
 	}
 	
@@ -143,7 +150,7 @@ public class ClientMain {
 	}
 	
 	public UserInfo getUserByUsername(String name) {
-		System.out.println(users);
+		System.out.println("getUserByUsername : " + users);
 		for (var user : users) {
 			if (name.equals(user.getUsername())) {
 				return user;
@@ -179,7 +186,7 @@ public class ClientMain {
 		int recipientId = getMessagesRecipientId();
 		
 		MessageInfo message = new MessageInfo(recipientType, recipientId, MessageInfo.TYPE_FILE, file.getName());
-
+		
 		
 		Command command = (Command) sendCommandToServer(Constants.ADD_FILE, message);
 		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
@@ -210,7 +217,7 @@ public class ClientMain {
 				String newFileName = (String) newNameCommand.getExtras();
 				message.setContent(newFileName);
 				Platform.runLater(() -> ApplicationController.get().addMessageToScreen(message));
-			} catch (IOException  | InterruptedException e) {
+			} catch (IOException | InterruptedException e) {
 			}
 		});
 		thread.start();
@@ -254,49 +261,49 @@ public class ClientMain {
 	public void defineMessageTemplate(Recipient recipientType, int recipientId) {
 		messageTemplate = new MessageInfo(recipientType, recipientId);
 	}
-
-	public void downloadFile(MessageInfo message,String directory) throws IOException, InterruptedException {
-
+	
+	public void downloadFile(MessageInfo message, String directory) throws IOException, InterruptedException {
+		
 		Command command = (Command) sendCommandToServer(Constants.GET_FILE, message.getId());
 		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
 			System.err.println("Error File not  Success before send");
 			return;
 		}
-
-		Thread thread = new Thread(()->{
+		
+		Thread thread = new Thread(() -> {
 			int fileDownloadPort = (int) command.getExtras();
 			try {
-				Socket socket = new Socket(serverIPAddress,fileDownloadPort);
+				Socket socket = new Socket(serverIPAddress, fileDownloadPort);
 				System.out.println("cheguei aqui");
-
+				
 				InputStream fIS = socket.getInputStream();
 				FileOutputStream fileOutputStream = new FileOutputStream(directory + File.separator + message.getContent());
-
+				
 				byte[] buffer = new byte[Constants.CLIENT_FILE_CHUNK_SIZE];
-
-				while (true){
-					int readAmount =  fIS.read(buffer);
-					if (readAmount <= 0){
+				
+				while (true) {
+					int readAmount = fIS.read(buffer);
+					if (readAmount <= 0) {
 						fIS.close();
 						socket.close();
 						break;
 					}
-					fileOutputStream.write(buffer,0,readAmount);
+					fileOutputStream.write(buffer, 0, readAmount);
 				}
 				fileOutputStream.close();
 				Command newComand = (Command) receiveCommand();
-				if (newComand.getProtocol().equals(Constants.FINISHED_FILE_DOWNLOAD)){
-					Platform.runLater(()->{
+				if (newComand.getProtocol().equals(Constants.FINISHED_FILE_DOWNLOAD)) {
+					Platform.runLater(() -> {
 						Alert alert = new Alert(Alert.AlertType.INFORMATION);
 						alert.setTitle(" INFO ");
 						alert.setHeaderText(null);
 						alert.setContentText("Download completed");
 						alert.showAndWait();
-
+						
 					});
-
+					
 				}
-
+				
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}

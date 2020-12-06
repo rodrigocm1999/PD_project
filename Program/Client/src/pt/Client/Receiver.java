@@ -1,6 +1,7 @@
 package pt.Client;
 
 import pt.Common.Command;
+import pt.Common.Constants;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -28,7 +29,9 @@ public class Receiver extends Thread {
 				System.out.println(command);
 				
 				setAll(command);
-			} catch (IOException | ClassNotFoundException e) {
+			} catch (IOException e) {
+				setAll(new Command(Constants.LOST_CONNECTION));
+			} catch (ClassNotFoundException e) {
 				setAll(null);
 			}
 			for (var waiter : waiters) {

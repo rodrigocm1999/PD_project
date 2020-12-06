@@ -292,6 +292,7 @@ public class ServerNetwork extends Thread {
 				ServerCommand feedback = new ServerCommand(ServerConstants.ASK_SYNCHRONIZER_OK, getServerAddress(), datagramSocket.getLocalPort());
 				UDPHelper.sendUDPObject(feedback, datagramSocket, command.getServerAddress().getAddress(), otherServerPort);
 				synchronizer.sendData();
+				datagramSocket.close();
 				
 				synchronizationFakeUsers -= ServerConstants.FAKE_USER_SYNC_COUNT;
 				updateUserCount(serverMain.getNConnectedUsers());
