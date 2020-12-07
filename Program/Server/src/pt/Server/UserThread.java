@@ -318,7 +318,7 @@ public class UserThread extends Thread {
 		if (success) {
 			sendCommand(Constants.SUCCESS);
 			
-			getApp().protocolReceivedEditedChannel(channel);
+			getApp().propagateChannelEdition(channel);
 		} else sendCommand(Constants.ERROR, "Error Updating, shouldn't happen");
 	}
 	

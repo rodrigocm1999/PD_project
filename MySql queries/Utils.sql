@@ -23,8 +23,6 @@ insert into message(id,sender_id,content) values (1,100,'only you know what is g
 insert into channel_message(channel_id,message_id) values (15,1);
 insert into message(id,sender_id,content) values(2,100,'dont rely on others to make your life happen'); 
 insert into channel_message(channel_id,message_id) values(15,2);
--- insert test between user messages
-
 -- insert user to channel
 insert into channel_user(channel_id,user_id) values(15,100);
 
@@ -32,15 +30,16 @@ update channel set password_hash = '12fpfd2m99l1gsstg61m8o5f0s1y5nkftwo3hxw96pvi
 update channel set name = ?, password_hash = ?, description = ? where id = ?;
 
 select id,creator_id,name,password_hash,description,creation_moment from channel where id > 0 order by id asc;
+
 -- Selects
 use main;
+use main2;
 select * from channel;
 select * from user;
 select * from channel_user;
 select * from channel_message;
 select * from user_message;
 select * from message;
-select * from message,channel_message,channel where message_id = message.id and channel.id = channel_id and channel_id = 15;
 -- get all user messages to channels
 select * from message where id in (select message_id from channel_message where sender_id = 100);
 -- get all messages before certain one on channel
@@ -90,7 +89,7 @@ select id,(
 )as sender_id,moment_sent,type,content
 from message where (select channel_id from channel_message where channel_id = 3 and channel_message.message_id = message.id) = 2;
 
-select * from user where username like '%channel%'; 
+select * from user where username like '%channel%';
 
 select count(id) from message,user_message where message.id = message_id && receiver_id = 2;
 

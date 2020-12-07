@@ -10,7 +10,7 @@ public class MessageInfo implements Serializable {
 	public static final String TYPE_FILE = "file";
 	
 	public enum Recipient {
-		USER,CHANNEL
+		USER, CHANNEL
 	}
 	
 	private int id;
@@ -20,6 +20,7 @@ public class MessageInfo implements Serializable {
 	private long momentSent; // UTC time
 	private String type;
 	private String content;
+	private String senderUsername;
 	
 	public MessageInfo(String type, String content) {
 		this.type = type;
@@ -35,7 +36,13 @@ public class MessageInfo implements Serializable {
 		this.type = type;
 		this.content = content;
 	}
-
+	
+	public MessageInfo(int id, int senderId, Recipient recipientType, int recipientId, long momentSent, String type, String content, String senderUsername) {
+		this(id, senderId, recipientType, recipientId, momentSent, type, content);
+		this.senderUsername = senderUsername;
+	}
+	
+	
 	public MessageInfo(Recipient recipientType, int recipientId, String type, String content) {
 		this.recipientType = recipientType;
 		this.recipientId = recipientId;
@@ -114,5 +121,13 @@ public class MessageInfo implements Serializable {
 	
 	public void setContent(String content) {
 		this.content = content;
+	}
+	
+	public String getSenderUsername() {
+		return senderUsername;
+	}
+	
+	public void setSenderUsername(String senderUsername) {
+		this.senderUsername = senderUsername;
 	}
 }

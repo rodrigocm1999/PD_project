@@ -51,7 +51,7 @@ public class ServerMain {
 		serverFileSocket = new ServerSocket(listeningFilePort);
 		
 		connectDatabase();
-		serversManager = createServerSyncer();
+		serversManager = createServerNetwork();
 		serversManager.discoverServers();
 		serversManager.synchronizeDatabase();
 		
@@ -107,7 +107,7 @@ public class ServerMain {
 		return serverFileSocket.accept();
 	}
 	
-	private ServerNetwork createServerSyncer() throws IOException {
+	private ServerNetwork createServerNetwork() throws IOException {
 		InetAddress group = InetAddress.getByName(ServerConstants.MULTICAST_GROUP);
 		int port = ServerConstants.MULTICAST_PORT;
 		return new ServerNetwork(this, group, port, listeningUDPPort);
@@ -235,7 +235,7 @@ public class ServerMain {
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
-			} // TODO PROPAGATE channel edition
+			}
 		}).start();
 	}
 	

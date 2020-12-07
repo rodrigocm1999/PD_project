@@ -17,7 +17,7 @@ public class ChannelManager {
 	
 	public static ArrayList<ChannelInfo> getChannels(int userId) throws SQLException {
 		String select = "select id,creator_id,name,description,(" +
-				"select count(*) from channel_user where channel_id = id and user_id = ?" +
+				"select count(*) from channel_user where channel_user.channel_id = channel.id and channel_user.user_id = ?" +
 				") as is_part_of_channel from channel order by name asc";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setInt(1, userId);
@@ -63,7 +63,6 @@ public class ChannelManager {
 			statement.setString(4, channel.getPassword());
 			statement.setString(5, channel.getDescription());
 			statement.setDate(6, new Date(channel.getCreationMoment()));
-			System.out.println(statement);
 			return statement.executeUpdate() == 1; // Changed 1 row, it means it was added
 		}
 	}
@@ -107,10 +106,11 @@ public class ChannelManager {
 	}
 	
 	public static boolean registerUserToChannel(int userId, int channelId) throws SQLException {
-		String insert = "insert into channel_user(channel_id,user_id) values(?,?)";
+		String insert = "insert into channel_user(id,channel_id,user_id) values(?,?,?)";
 		PreparedStatement statement = getApp().getPreparedStatement(insert);
-		statement.setInt(1, channelId);
-		statement.setInt(2, userId);
+		statement.setInt(1, getLastChannelUserId() + 1);
+		statement.setInt(2, channelId);
+		statement.setInt(3, userId);
 		return statement.executeUpdate() == 1;
 	}
 	
@@ -155,9 +155,15 @@ public class ChannelManager {
 		return list;
 	}
 	
+	public static int getLastChannelUserId() throws SQLException {
+		String select = "select max(id) as id from channel_user";
+		PreparedStatement statement = getApp().getPreparedStatement(select);
+		ResultSet result = statement.executeQuery();
+		return result.getInt("id");
+	}
 	
 	public static ArrayList<Ids> getChannelUsersAfterIds(int lastConnectionId) throws SQLException {
-		String select = "select channel_id,user_id from channel_user where id > ?";
+		String select = "select id,channel_id,user_id from channel_user where id > ?";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setInt(1, lastConnectionId);
 		ResultSet result = statement.executeQuery();
@@ -165,13 +171,24 @@ public class ChannelManager {
 		ArrayList<Ids> list = new ArrayList<>();
 		
 		while (result.next()) {
-			list.add(new Ids(
+			Ids ids = new Ids(
 					result.getInt("user_id"),
 					result.getInt("channel_id"),
-					-1));
+					-1);
+			ids.setGenericId(result.getInt("id"));
+			list.add(ids);
 		}
 		
 		return list;
+	}
+	
+	public static boolean insertFullChannelUser(Ids id) throws SQLException {
+		String insert = "insert into channel_user(id,channel_id,user_id) values(?,?,?)";
+		PreparedStatement statement = getApp().getPreparedStatement(insert);
+		statement.setInt(1, id.getGenericId());
+		statement.setInt(2, id.getChannelId());
+		statement.setInt(3, id.getUserId());
+		return statement.executeUpdate() == 1;
 	}
 	
 	public static int getLastUserChannelId() throws SQLException {

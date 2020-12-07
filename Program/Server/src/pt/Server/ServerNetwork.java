@@ -37,10 +37,6 @@ public class ServerNetwork extends Thread {
 		this.synchronizerUDPPort = serverUDPPort + 1;
 	}
 	
-	public MulticastSocket getMulticastSocket() {
-		return multicastSocket;
-	}
-	
 	public ServerAddress getServerAddress() {
 		return ownAddress; //TODO IMPORTANT return publicIpAddress when on different networks
 	}
@@ -228,7 +224,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	public void protocolReceivedRegisterUserChannel(Ids ids) throws Exception {
-		ChannelManager.registerUserToChannel(ids.getUserId(), ids.getChannelId());
+		ChannelManager.insertFullChannelUser(ids);
 	}
 	
 	public void protocolReceivedNewChannel(ChannelInfo channelInfo) throws Exception {

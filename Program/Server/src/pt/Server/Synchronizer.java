@@ -129,7 +129,7 @@ public class Synchronizer {
 			}
 			ArrayList<Ids> channelUsers = (ArrayList<Ids>) command.getExtras();
 			for (var id : channelUsers) {
-				if (!ChannelManager.registerUserToChannel(id.getUserId(), id.getChannelId())) {
+				if (!ChannelManager.insertFullChannelUser(id)) {
 					System.err.println("registerUserToChannel insert");
 					socket.close();
 					return;
@@ -206,7 +206,6 @@ public class Synchronizer {
 					
 					sendCommand(NO_MORE_USERS, null);
 				}
-				
 				case GET_CHANNELS -> {
 					int lastChannelId = (int) command.getExtras();
 					
@@ -215,7 +214,6 @@ public class Synchronizer {
 					
 					sendCommand(NO_MORE_CHANNELS, null);
 				}
-				
 				case GET_USERS_CHANNELS -> {
 					int lastConnectionId = (int) command.getExtras();
 					
@@ -224,7 +222,6 @@ public class Synchronizer {
 					
 					sendCommand(NO_MORE_USERS_CHANNELS, null);
 				}
-				
 				case GET_MESSAGES -> {
 					int lastMessageId = (int) command.getExtras();
 					
@@ -233,21 +230,21 @@ public class Synchronizer {
 					
 					sendCommand(NO_MORE_MESSAGES, null);
 				}
-				
 				case GET_MESSAGE_FILE -> {
 					String fileName = (String) command.getExtras();
 					
-					FileInputStream fileInputStream = new FileInputStream(
-							ServerConstants.getTransferredFilesPath() + File.separator + fileName);
-					sendFileBlocks(fileInputStream);
-					
-					sendCommand(NO_MORE_MESSAGE_FILE, null);
-					fileInputStream.close();
+					try (FileInputStream fileInputStream = new FileInputStream(
+							ServerConstants.getTransferredFilesPath() + File.separator + fileName)) {
+						sendFileBlocks(fileInputStream);
+						
+						sendCommand(NO_MORE_MESSAGE_FILE, null);
+					}
 				}
 				case GET_USER_PHOTO -> {
 					String username = (String) command.getExtras();
 					
-					try (FileInputStream fileInputStream = new FileInputStream(ServerConstants.getPhotoPathFromUsername(username))) {
+					try (FileInputStream fileInputStream = new FileInputStream(
+							ServerConstants.getPhotoPathFromUsername(username))) {
 						sendFileBlocks(fileInputStream);
 						
 						sendCommand(NO_MORE_USER_PHOTO, null);
