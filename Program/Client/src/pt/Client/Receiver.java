@@ -26,7 +26,7 @@ public class Receiver extends Thread {
 			try {
 				
 				Command command = (Command) oIS.readObject();
-				System.out.println(command);
+				//System.out.println("Receiver received : " + command);
 				
 				setAll(command);
 			} catch (IOException e) {

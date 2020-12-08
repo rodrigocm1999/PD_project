@@ -159,6 +159,7 @@ public class ChannelManager {
 		String select = "select max(id) as id from channel_user";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		ResultSet result = statement.executeQuery();
+		result.next();
 		return result.getInt("id");
 	}
 	

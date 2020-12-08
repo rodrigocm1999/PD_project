@@ -30,10 +30,13 @@ public class MulticastSocketReceiver extends Thread {
 			try {
 				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
 				multicastSocket.receive(packet);
+				System.out.println("Command Received : " + UDPHelper.readObjectFromPacket(packet));
 				
 				setAll(packet);
 			} catch (IOException e) {
 				setAll(null);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
 			}
 			synchronized (waiters) {
 				for (var waiter : waiters) {

@@ -30,11 +30,7 @@ public class UserManager {
 			preparedStatement.setString(2, user.getUsername());
 			preparedStatement.setString(3, Utils.hashStringBase36(user.getPassword()));
 			preparedStatement.setString(4, imagePath);
-			if (preparedStatement.executeUpdate() == 1) {
-				getApp().propagateNewUser(user);
-				return true;
-			}
-			return false;
+			return preparedStatement.executeUpdate() == 1;
 		}
 	}
 	

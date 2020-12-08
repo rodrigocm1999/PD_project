@@ -25,7 +25,7 @@ public class Tests {
 	
 	public static void main(String[] args) throws Exception {
 		
-		
+		/*
 		MulticastSocket multicastSocket = new MulticastSocket(5432);
 		
 		MulticastSocketReceiver receiver = new MulticastSocketReceiver(multicastSocket);
@@ -47,7 +47,7 @@ public class Tests {
 		
 		
 		UDPHelper.sendUDPObject(new UserInfo("dsadfs","fnewi"),multicastSocket, InetAddress.getLocalHost(),5432);
-		
+		*/
 		
 		/*int initialSize = 10;
 		int endSize = 5;

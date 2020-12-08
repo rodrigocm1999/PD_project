@@ -35,12 +35,12 @@ public class MessageManager {
 	}
 	
 	public static ArrayList<MessageInfo> getChannelMessagesBefore(int channelId, int messageId, int amount) throws SQLException {
-		String select = "select id,type,content,moment_sent, sender_id, (select username from user where user.id = sender_id) as sender_username" +
+		String select = "select id,type,content,moment_sent, sender_id, (select username from user where user.id = sender_id) as sender_username " +
 				"from message,channel_message " +
 				"where message.id = channel_message.message_id " +
 				"and channel_id = ? " +
 				"and id < ? " +
-				"order by moment_sent,id " +
+				"order by moment_sent and id " +
 				" limit ? ";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		statement.setInt(1, channelId);
