@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="290.0" minWidth="420.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
    <children>
       <Pane minHeight="290.0" minWidth="420.0" prefHeight="290.0" prefWidth="420.0" VBox.vgrow="ALWAYS">
          <children>

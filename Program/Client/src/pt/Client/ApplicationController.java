@@ -192,6 +192,17 @@ public class ApplicationController implements Initializable {
 		box.setFillHeight(true);
 		
 		Label label = new Label(message.getContent());
+		if (client.getUserInfo().getUserId() != message.getSenderId()) {
+			if (message.getRecipientType().equals(Recipient.CHANNEL)){
+				Label usernameLabel = new Label(message.getSenderUsername() + ": ");
+				usernameLabel.setTextFill(Color.web("#7D82B8"));
+				box.getChildren().add(usernameLabel);
+			}
+			box.setAlignment(Pos.BASELINE_LEFT);
+		} else {
+			box.setAlignment(Pos.BASELINE_RIGHT);
+		}
+
 		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 			label.setTextFill(Color.color(0, 0, 1));
 			label.setOnMouseClicked(event -> {
@@ -204,14 +215,9 @@ public class ApplicationController implements Initializable {
 				}
 			});
 		}
+
+
 		box.getChildren().add(label);
-		
-		if (client.getUserInfo().getUserId() != message.getSenderId()) {
-			box.setAlignment(Pos.BASELINE_LEFT);
-		} else {
-			box.setAlignment(Pos.BASELINE_RIGHT);
-		}
-		
 		return box;
 	}
 	

@@ -28,14 +28,9 @@ public class ClientMain {
 	private ArrayList<MessageInfo> messages = null;
 	private MessageInfo messageTemplate = null;
 	
-	//TODO FAZER O FAILOVER
+	//TODO FAZER O FAILOVER OVER NETWORK
 	
 	//TODO TESTAR LABELS EM TODO O LADO
-	
-	//TODO SELECÇAO DO CANAL QUANDO ESTA MAL (HOW?)
-	
-	//TODO IDENTIFICAR PESSOAS NO NO CANAL
-	
 	
 	public static ClientMain getInstance() {
 		return instance;

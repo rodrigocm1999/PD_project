@@ -4,20 +4,20 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="137.0" minWidth="250.0" prefHeight="179.0" prefWidth="297.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
     <children>
-        <Pane prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-            <children>
-                <Label layoutX="22.0" layoutY="25.0" text="Channel Name" />
-                <TextField id="name" fx:id="nameField" layoutX="22.0" layoutY="42.0" />
-                <Label layoutX="22.0" layoutY="73.0" text="Password" />
-                <PasswordField id="password" fx:id="passwordField" layoutX="22.0" layoutY="90.0" />
-                <Button fx:id="btn" layoutX="120.0" layoutY="141.0" mnemonicParsing="false" onAction="#onDelete" text="Delete" />
-                <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" layoutX="61.0" layoutY="145.0" text="ErrorLabel" textFill="RED" />
-            </children>
-            <padding>
-                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-            </padding>
-        </Pane>
+          <Label text="Channel Name" />
+          <TextField id="name" fx:id="nameField" />
+          <Label text="Password" />
+          <PasswordField id="password" fx:id="passwordField" />
+          <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" minWidth="250.0" prefHeight="17.0" prefWidth="249.0" text="ErrorLabel" textFill="RED" />
+      <HBox alignment="CENTER_RIGHT" prefHeight="100.0" prefWidth="200.0">
+         <children>
+                <Button fx:id="btn" contentDisplay="CENTER" mnemonicParsing="false" onAction="#onDelete" text="Delete" />
+         </children>
+      </HBox>
     </children>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </padding>
 </VBox>

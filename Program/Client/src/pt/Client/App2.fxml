@@ -46,7 +46,7 @@
          <center>
             <VBox alignment="TOP_CENTER" nodeOrientation="LEFT_TO_RIGHT" style="-fx-background-color: red;" BorderPane.alignment="CENTER">
                <children>
-                  <HBox prefHeight="50.0" style="-fx-background-color: #24EAF3;">
+                  <HBox prefHeight="50.0" style="-fx-background-color: #DBF3FA;">
                      <children>
                         <ImageView fx:id="userImage" fitHeight="50.0" fitWidth="57.0" pickOnBounds="true" preserveRatio="true">
                            <HBox.margin>
@@ -63,7 +63,7 @@
                         </Label>
                      </children>
                   </HBox>
-                  <ScrollPane fx:id="scrollPane" hbarPolicy="NEVER" style="-fx-background-color: black;" VBox.vgrow="ALWAYS">
+                  <ScrollPane fx:id="scrollPane" hbarPolicy="NEVER" VBox.vgrow="ALWAYS">
                      <content>
                         <VBox fx:id="vBoxMessage" alignment="BOTTOM_CENTER" prefHeight="0.0" prefWidth="0.0" style="-fx-spacing: 5; -fx-background-color: E2FAB5;">
                            <padding>
