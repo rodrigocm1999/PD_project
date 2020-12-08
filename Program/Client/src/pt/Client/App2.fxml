@@ -65,7 +65,7 @@
                   </HBox>
                   <ScrollPane fx:id="scrollPane" hbarPolicy="NEVER" VBox.vgrow="ALWAYS">
                      <content>
-                        <VBox fx:id="vBoxMessage" alignment="BOTTOM_CENTER" prefHeight="0.0" prefWidth="0.0" style="-fx-spacing: 5; -fx-background-color: E2FAB5;">
+                        <VBox fx:id="vBoxMessage" alignment="BOTTOM_CENTER" prefHeight="416.0" prefWidth="497.0" style="-fx-spacing: 5; -fx-background-color: E2FAB5;">
                            <padding>
                               <Insets bottom="30.0" left="30.0" right="40.0" top="30.0" />
                            </padding></VBox>
