@@ -28,7 +28,7 @@ public class ClientWindow extends Application {
 		instance = this;
 		
 		stage = primaryStage;
-		primaryStage.setTitle("");
+		primaryStage.setTitle("TskCord");
 		Parent root = loadParent("LoginPage.fxml");
 		scene = new Scene(root, 600, 460);
 		primaryStage.setScene(scene);
@@ -55,6 +55,7 @@ public class ClientWindow extends Application {
 
 		if (args.length != 2) {
 			System.out.println("Invalid arguments: server_address, server_UDP_port");
+			return;
 		}
 		String serverAddress = args[0];
 		int port = Integer.parseInt(args[1]);

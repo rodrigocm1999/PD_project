@@ -43,7 +43,7 @@ public class LoginController {
 				UserInfo thisMan = (UserInfo) command.getExtras();
 				thisMan.setPassword(user.getPassword());
 				instance.setUserInfo(thisMan);
-				ClientWindow.getInstance().setWindowRoot("App2.fxml");
+				ClientWindow.getInstance().setWindowRoot("Application.fxml");
 			} else {
 				errorLabel.setText((String) command.getExtras());
 			}

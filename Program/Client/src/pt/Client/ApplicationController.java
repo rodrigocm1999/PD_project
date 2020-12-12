@@ -91,6 +91,9 @@ public class ApplicationController implements Initializable {
 		window.getStage().widthProperty().addListener((observable, oldValue, newValue) -> {
 			vBoxMessage.setPrefWidth(scrollPane.getWidth());
 		});
+		window.getStage().heightProperty().addListener((observable, oldValue, newValue) -> {
+			vBoxMessage.setPrefHeight(scrollPane.getHeight());
+		});
 		
 		
 		vBoxMessage.heightProperty().addListener((observable, oldValue, newValue) -> {
@@ -137,6 +140,8 @@ public class ApplicationController implements Initializable {
 			}
 			ArrayList<MessageInfo> messages = client.getMessagesFromChannel(channel.getId());
 			client.defineMessageTemplate(Recipient.CHANNEL, channel.getId());
+			titleLabel.setText(channel.getDescription());
+			titleLabel.setPrefWidth(window.getWidth()-10);
 			client.setMessages(messages);
 			updateMessageVBox();
 			
@@ -279,6 +284,10 @@ public class ApplicationController implements Initializable {
 							Platform.runLater(() -> {
 								channelsObsList.add(channel.getName());
 							});
+						}
+						case Constants.SERVERS_LIST -> {
+							//TODO FAZER ISTO MAS AMANHA
+							ArrayList<ServerAddress> newServer = (ArrayList<ServerAddress>) command.getExtras();
 						}
 					}
 				} catch (InterruptedException e) {
