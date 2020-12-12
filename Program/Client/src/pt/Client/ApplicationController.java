@@ -99,7 +99,7 @@ public class ApplicationController implements Initializable {
 		vBoxMessage.heightProperty().addListener((observable, oldValue, newValue) -> {
 			scrollPane.setVvalue(1.0d);
 		});
-
+		
 		
 	}
 	
@@ -198,7 +198,7 @@ public class ApplicationController implements Initializable {
 		
 		Label label = new Label(message.getContent());
 		if (client.getUserInfo().getUserId() != message.getSenderId()) {
-			if (message.getRecipientType().equals(Recipient.CHANNEL)){
+			if (message.getRecipientType().equals(Recipient.CHANNEL)) {
 				Label usernameLabel = new Label(message.getSenderUsername() + ": ");
 				usernameLabel.setTextFill(Color.web("#7D82B8"));
 				box.getChildren().add(usernameLabel);
@@ -207,7 +207,7 @@ public class ApplicationController implements Initializable {
 		} else {
 			box.setAlignment(Pos.BASELINE_RIGHT);
 		}
-
+		
 		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 			label.setTextFill(Color.color(0, 0, 1));
 			label.setOnMouseClicked(event -> {
@@ -220,8 +220,8 @@ public class ApplicationController implements Initializable {
 				}
 			});
 		}
-
-
+		
+		
 		box.getChildren().add(label);
 		return box;
 	}
@@ -292,7 +292,10 @@ public class ApplicationController implements Initializable {
 					}
 				} catch (InterruptedException e) {
 					try {
+						System.out.println("Interruped connecting again");
 						client.connectToServer();
+						String connectedServer = client.getServerIPAddress() + ":" + client.getPortUDPServer();
+						ClientWindow.getInstance().getStage().setTitle(connectedServer);
 						client.sendCommandToServer(Constants.LOGIN, client.getUserInfo());
 					} catch (Exception exception) {
 						exception.printStackTrace();
@@ -303,9 +306,13 @@ public class ApplicationController implements Initializable {
 	}
 	
 	public void onSendFile(ActionEvent actionEvent) throws IOException, InterruptedException {
+		if (client.getMessagesRecipientType() == null)
+			return;
 		FileChooser fileChooser = new FileChooser();
 		File file = fileChooser.showOpenDialog(ClientWindow.getInstance().getStage());
-		ClientMain.getInstance().sendFile(file);
+		if (file != null) {
+			ClientMain.getInstance().sendFile(file);
+		}
 	}
 	
 	public void onClickCreateChannel(ActionEvent actionEvent) {
@@ -315,7 +322,7 @@ public class ApplicationController implements Initializable {
 			Parent parent = instance.loadParent("CreateChannel.fxml");
 			stage.setScene(new Scene(parent, 500, 400));
 			stage.showAndWait();
-
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -347,11 +354,8 @@ public class ApplicationController implements Initializable {
 		if (selectedItem == null) return;
 		UserInfo user = client.getUserByUsername(selectedItem);
 		titleLabel.setText(user.getName());
-		System.out.println(selectedItem);
 		try {
-			System.out.println("sending");
 			Command command = (Command) client.sendCommandToServer(Constants.USER_GET_MESSAGES, new Ids(user.getUserId(), 0, 0));
-			System.out.println("received");
 			client.defineMessageTemplate(Recipient.USER, user.getUserId());
 			client.setMessages((ArrayList<MessageInfo>) command.getExtras());
 			updateMessageVBox();
@@ -378,7 +382,6 @@ public class ApplicationController implements Initializable {
 	}
 	
 	public void sendMessageByKey(KeyEvent keyEvent) {
-		System.out.println("key pressed");
 		if (keyEvent.getCode() == KeyCode.ENTER) {
 			onMessageSend(null);
 		}
@@ -389,7 +392,7 @@ public class ApplicationController implements Initializable {
 			ClientWindow.getInstance().setWindowRoot("LoginPage.fxml");
 		}
 	}
-
+	
 	public void onClickEditChannel(ActionEvent actionEvent) {
 		ClientWindow instance = ClientWindow.getInstance();
 		try {
@@ -397,7 +400,7 @@ public class ApplicationController implements Initializable {
 			Parent parent = instance.loadParent("EditChannel.fxml");
 			stage.setScene(new Scene(parent, 500, 400));
 			stage.showAndWait();
-
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

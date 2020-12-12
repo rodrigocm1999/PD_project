@@ -6,6 +6,7 @@ import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Synchronizer {
 	
@@ -37,6 +38,7 @@ public class Synchronizer {
 	private int otherServerPort;
 	private final int synchronizerUDPPort;
 	private DatagramSocket socket;
+	private LinkedBlockingQueue<DatagramPacket> packetQueue;
 	
 	public Synchronizer(ServerAddress otherServer, ServerAddress thisServer, int otherServerPort, DatagramSocket datagramSocket, int synchronizerUDPPort) {
 		this.otherServer = otherServer;
@@ -46,12 +48,29 @@ public class Synchronizer {
 		this.synchronizerUDPPort = synchronizerUDPPort;
 	}
 	
+	private void startPacketQueue() {
+		packetQueue = new LinkedBlockingQueue();
+		new Thread(() -> {
+			while (true) {
+				try {
+					DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_MAX_PACKET_SIZE], Constants.UDP_MAX_PACKET_SIZE);
+					socket.receive(packet);
+					packetQueue.offer(packet);
+				} catch (IOException e) {
+					return;
+				}
+			}
+		}).start();
+	}
+	
 	public void receiveData() throws Exception {
 		System.out.println("Receiving Data");
 		//Setup connection with server
 		socket = new DatagramSocket(synchronizerUDPPort);
 		ServerCommand ask = new ServerCommand(ServerConstants.ASK_SYNCHRONIZER, thisServer, socket.getLocalPort());
 		UDPHelper.sendUDPObject(ask, socket, otherServer.getAddress(), ServerConstants.MULTICAST_PORT);
+		
+		startPacketQueue();
 		ServerCommand serverCommand = receiveCommand();
 		otherServerPort = (int) serverCommand.getExtras();
 		
@@ -154,7 +173,7 @@ public class Synchronizer {
 					System.err.println("Message insert");
 					socket.close();
 					return;
-				}
+				}//TODO fix message files losing packets or something like that
 				if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 					fileMessages.add(message);
 				}
@@ -175,6 +194,7 @@ public class Synchronizer {
 				ServerCommand command = receiveCommand();
 				if (command.getProtocol().equals(NO_MORE_MESSAGE_FILE)) break;
 				byte[] receivedFileBytes = (byte[]) command.getExtras();
+				Thread.sleep(5);
 				fileOutputStream.write(receivedFileBytes);
 			}
 			fileOutputStream.close();
@@ -186,7 +206,7 @@ public class Synchronizer {
 	}
 	
 	public void sendData() throws Exception {
-		
+		startPacketQueue();
 		System.out.println("Sending Data");
 		while (true) {
 			ServerCommand command = receiveCommand();
@@ -238,6 +258,8 @@ public class Synchronizer {
 						sendFileBlocks(fileInputStream);
 						
 						sendCommand(NO_MORE_MESSAGE_FILE, null);
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 				}
 				case GET_USER_PHOTO -> {
@@ -248,6 +270,8 @@ public class Synchronizer {
 						sendFileBlocks(fileInputStream);
 						
 						sendCommand(NO_MORE_USER_PHOTO, null);
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 				}
 				case FINISHED -> {
@@ -265,7 +289,7 @@ public class Synchronizer {
 		ServerCommand command = new ServerCommand(protocol, otherServer, object);
 		byte[] bytes = UDPHelper.writeObjectToArray(command);
 		DatagramPacket packet = new DatagramPacket(bytes, bytes.length, otherServer.getAddress(), otherServerPort);
-		System.out.println(command);
+		//System.out.println("sendCOmmand : " + command);
 		
 		socket.send(packet);
 		/*int timeout = socket.getSoTimeout();
@@ -295,8 +319,9 @@ public class Synchronizer {
 	}
 	
 	private ServerCommand receiveCommand() throws Exception {
-		DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
-		socket.receive(packet);
+		//DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+		//socket.receive(packet);
+		DatagramPacket packet = packetQueue.take();
 		//Get Object from packet
 		return (ServerCommand) UDPHelper.readObjectFromPacket(packet);
 		/*

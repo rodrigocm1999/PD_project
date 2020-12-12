@@ -2,10 +2,12 @@ package pt.Server;
 
 import pt.Common.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ServerNetwork extends Thread {
 	
@@ -19,7 +21,7 @@ public class ServerNetwork extends Thread {
 	private Thread heartbeatCheck;
 	private boolean stop = false;
 	private int synchronizationFakeUsers;
-	private final MulticastSocketReceiver socketReceiver;
+	private LinkedBlockingQueue<DatagramPacket> packetQueue;
 	
 	ServerNetwork(ServerMain serverMain, InetAddress group, int port, int serverUDPPort) throws IOException {
 		this.serverMain = serverMain;
@@ -29,24 +31,20 @@ public class ServerNetwork extends Thread {
 		
 		ownPublicAddress = new ServerAddress(publicIPAddress, serverUDPPort);
 		ownAddress = new ServerAddress(InetAddress.getLocalHost(), serverUDPPort);
-		startMulticastSocket();
+		startMulticastSocket(group,port);
 		System.out.println("Own Local Address : " + ownAddress + "\t Own Public Address" + ownPublicAddress);
 		//multiMan = new MulticastManager(multicastSocket, getServerAddress(), group, port);
-		socketReceiver = new MulticastSocketReceiver(multicastSocket);
-		
 		this.synchronizerUDPPort = serverUDPPort + 1;
 	}
 	
 	public ServerAddress getServerAddress() {
-		return ownAddress; //TODO IMPORTANT return publicIpAddress when on different networks
+		return ownAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
+		// this was changed because my router won't let me connect to myself from my external ip address
 	}
 	
 	@Override
 	public void run() {
 		try {
-			startHeartbeatChecker();
-			startHeartbeatSender();
-			
 			receiveUpdates();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -92,7 +90,7 @@ public class ServerNetwork extends Thread {
 		multicastSocket.setSoTimeout(1000);
 		try {
 			while (true) {
-				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+				DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_MAX_PACKET_SIZE], Constants.UDP_MAX_PACKET_SIZE);
 				multicastSocket.receive(packet);
 				ServerCommand command = (ServerCommand) UDPHelper.readObjectFromPacket(packet);
 				
@@ -109,21 +107,26 @@ public class ServerNetwork extends Thread {
 		multicastSocket.setSoTimeout(0);
 		printAvailableServers();
 		
-		socketReceiver.start();
-	}
-	
-	public void updateUserCount(int count) throws IOException {
-		sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count + synchronizationFakeUsers);
-	}
-	
-	private void sendServerCommand(String protocol, Object extras) throws IOException {
-		UDPHelper.sendUDPObject(new ServerCommand(protocol, getServerAddress(), extras), multicastSocket,
-				InetAddress.getByName(ServerConstants.MULTICAST_GROUP), ServerConstants.MULTICAST_PORT);
+		startHeartbeatChecker();
+		startHeartbeatSender();
 	}
 	
 	private void receiveUpdates() throws Exception {
+		packetQueue = new LinkedBlockingQueue<>();
+		new Thread(() -> {
+			while (!stop) {
+				try {
+					DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_MAX_PACKET_SIZE], Constants.UDP_MAX_PACKET_SIZE);
+					multicastSocket.receive(packet);
+					packetQueue.offer(packet);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
 		while (!stop) {
-			DatagramPacket packet = socketReceiver.waitForPacket();
+			//DatagramPacket packet = socketReceiver.waitForPacket(); // This is not needed anymore. could just receive packet normally
+			DatagramPacket packet = receivePacket();
 			ServerCommand command;
 			try {
 				command = (ServerCommand) UDPHelper.readObjectFromPacket(packet);
@@ -144,17 +147,14 @@ public class ServerNetwork extends Thread {
 						ServerStatus status = getServerStatus(otherServerAddress);
 						receivedHeartbeat(status, otherServerAddress);
 					}
-					
 					case ServerConstants.CAME_ONLINE -> {
 						ServerAddress serverAddress = command.getServerAddress();
 						serverConnected(serverAddress);
 					}
-					
 					case ServerConstants.CAME_OFFLINE -> {
 						ServerAddress serverAddress = command.getServerAddress();
 						serverDisconnected(getServerStatus(serverAddress));
 					}
-					
 					case ServerConstants.UPDATE_USER_COUNT -> {
 						int connected = (int) command.getExtras();
 						ServerStatus status = getServerStatus(otherServerAddress);
@@ -164,17 +164,15 @@ public class ServerNetwork extends Thread {
 							System.err.println("Status == null\t Should never happen");
 						}
 					}
-					
 					case ServerConstants.ASK_SYNCHRONIZER -> {
 						receivedSynchronizationRequest(command);
 					}
-					
 					case ServerConstants.PROTOCOL_NEW_MESSAGE -> {
 						MessageInfo message = (MessageInfo) command.getExtras();
-						System.out.println("Received propagated : " + message);
+						System.out.println("Received propagated message : " + message);
+						//TODO fix not propagating to the right places
 						protocolReceivedNewMessage(message);
 					}
-					
 					case ServerConstants.PROTOCOL_NEW_USER -> {
 						UserInfo userInfo = (UserInfo) command.getExtras();
 						System.out.println("Received propagated new user : " + userInfo);
@@ -195,6 +193,18 @@ public class ServerNetwork extends Thread {
 						System.out.println("Received propagated channel edited : " + channelInfo);
 						protocolReceivedEditedChannel(channelInfo);
 					}
+					case ServerConstants.PROTOCOL_USER_PHOTO_BLOCK -> {
+						FileBlock fileBlock = (FileBlock) command.getExtras();
+						File file = new File(ServerConstants.getPhotoPathFromUsername(fileBlock.getIdentifier()));
+						//System.out.println("Received propagated user photo block : " + fileBlock + "\t writing on path : " + file.getPath());
+						writeBlock(file, fileBlock.getOffset(), fileBlock.getBytes());
+					}
+					case ServerConstants.PROTOCOL_MESSAGE_FILE_BLOCK -> {
+						FileBlock fileBlock = (FileBlock) command.getExtras();
+						File file = new File(ServerConstants.getTransferredFilePath(fileBlock.getIdentifier()));
+						//System.out.println("Received propagated message file block : " + fileBlock + "\t writing on path : " + file.getPath());
+						writeBlock(file, fileBlock.getOffset(), fileBlock.getBytes());
+					}
 					
 				}
 			} catch (Exception e) {
@@ -203,8 +213,51 @@ public class ServerNetwork extends Thread {
 		}
 	}
 	
+	public void updateUserCount(int count) throws IOException {
+		sendServerCommand(ServerConstants.UPDATE_USER_COUNT, count + synchronizationFakeUsers);
+	}
+	
 	public void propagateNewMessage(MessageInfo newMessage) throws IOException {
 		sendAllCommand(ServerConstants.PROTOCOL_NEW_MESSAGE, newMessage);
+		String fileName = newMessage.getContent();
+		
+		if (newMessage.getType().equals(MessageInfo.TYPE_FILE)) {
+			try (FileInputStream fileStream = new FileInputStream(ServerConstants.getTransferredFilePath(fileName))) {
+				sendFileInBlocksToAllServes(fileStream,fileName,ServerConstants.PROTOCOL_MESSAGE_FILE_BLOCK);
+			}
+		}
+	}
+	
+	public void propagateNewUser(UserInfo userInfo) throws IOException {
+		sendAllCommand(ServerConstants.PROTOCOL_NEW_USER, userInfo);
+		
+		if (userInfo.hasImage()) {
+			try (FileInputStream fileStream = new FileInputStream(ServerConstants.getPhotoPathFromUsername(userInfo.getUsername()))) {
+				sendFileInBlocksToAllServes(fileStream,userInfo.getUsername(),ServerConstants.PROTOCOL_USER_PHOTO_BLOCK);
+			}
+		}
+	}
+	
+	private void sendFileInBlocksToAllServes(FileInputStream fileStream,String identifier,String protocol) throws IOException {
+		byte[] bytes = new byte[Constants.UDP_FILE_BLOCK_SIZE];
+		FileBlock fileBlock = new FileBlock(identifier, -1, null);
+		int readAmount;
+		int offset = 0;
+		while ((readAmount = fileStream.read(bytes)) > 0) {
+			fileBlock.setBytes(Arrays.copyOfRange(bytes, 0, readAmount));
+			fileBlock.setOffset(offset);
+			sendAllCommand(protocol, fileBlock);
+			offset += readAmount;
+		}
+	}
+	
+	private void writeBlock(File path, int offset, byte[] bytes) {
+		try (FileOutputStream fileStream = new FileOutputStream(path, true)) {
+			fileStream.write(bytes, 0, bytes.length);
+			// TODO find problem
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void propagateRegisterUserChannel(Ids ids) throws IOException {
@@ -213,10 +266,6 @@ public class ServerNetwork extends Thread {
 	
 	public void propagateNewChannel(ChannelInfo channelInfo) throws IOException {
 		sendAllCommand(ServerConstants.PROTOCOL_NEW_CHANNEL, channelInfo);
-	}
-	
-	public void propagateNewUser(UserInfo userInfo) throws IOException {
-		sendAllCommand(ServerConstants.PROTOCOL_NEW_USER, userInfo);
 	}
 	
 	public void propagateChannelEdition(ChannelInfo channel) throws IOException {
@@ -238,8 +287,9 @@ public class ServerNetwork extends Thread {
 	}
 	
 	public void protocolReceivedNewUser(UserInfo userInfo) throws Exception {
-		UserManager.insertFull(userInfo, "");
-		//TODO receive user image
+		String username = userInfo.getUsername();
+		String imagePath = userInfo.hasImage() ? ServerConstants.getPhotoPathFromUsername(username) : "";
+		UserManager.insertFull(userInfo, imagePath);
 		serverMain.protocolReceivedNewUser(userInfo);
 	}
 	
@@ -248,10 +298,6 @@ public class ServerNetwork extends Thread {
 		if (!success) {
 			System.out.println("Error that shouldn't happens : protocolNewMessage(MessageInfo message)");
 			return;
-		}
-		//TODO receive file
-		if (message.getType().equals(MessageInfo.TYPE_FILE)) {
-		
 		}
 		serverMain.protocolReceivedNewMessage(message);
 	}
@@ -321,6 +367,11 @@ public class ServerNetwork extends Thread {
 		sendAllCommand(ServerConstants.CAME_ONLINE);
 	}
 	
+	private void sendServerCommand(String protocol, Object extras) throws IOException {
+		UDPHelper.sendUDPObject(new ServerCommand(protocol, getServerAddress(), extras), multicastSocket,
+				InetAddress.getByName(ServerConstants.MULTICAST_GROUP), ServerConstants.MULTICAST_PORT);
+	}
+	
 	private void sendAllCommand(String protocol) throws IOException {
 		sendAllCommand(protocol, null);
 	}
@@ -329,9 +380,11 @@ public class ServerNetwork extends Thread {
 		sendServerCommand(protocol, extras);
 	}
 	
-	private void startMulticastSocket() throws IOException {
-		InetAddress group = InetAddress.getByName(ServerConstants.MULTICAST_GROUP);
-		int port = ServerConstants.MULTICAST_PORT;
+	private DatagramPacket receivePacket() throws InterruptedException {
+		return packetQueue.take();
+	}
+	
+	private void startMulticastSocket(InetAddress group,int port) throws IOException {
 		multicastSocket = new MulticastSocket(port);
 		SocketAddress socketAddress = new InetSocketAddress(group, port);
 		NetworkInterface networkInterface = NetworkInterface.getByInetAddress(group);
@@ -369,7 +422,6 @@ public class ServerNetwork extends Thread {
 			while (!stop) {
 				try {
 					sendServerCommand(ServerConstants.HEARTBEAT, null);
-					//System.out.println("Heartbeat Sent");
 					Thread.sleep(ServerConstants.HEARTBEAT_SEND_INTERVAL);
 				} catch (InterruptedException | IOException e) {
 					System.out.println("startHeartbeatSender : " + e.getLocalizedMessage());

@@ -64,6 +64,7 @@ public class MessageInfo implements Serializable {
 				", recipientId=" + recipientId +
 				", type='" + type + '\'' +
 				", content='" + content + '\'' +
+				", senderUsername='" + senderUsername + '\'' +
 				'}';
 	}
 	

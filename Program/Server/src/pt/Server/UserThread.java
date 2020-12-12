@@ -293,7 +293,8 @@ public class UserThread extends Thread {
 				System.out.println(message);
 				if (MessageManager.insertMessage(message)) {
 					sendCommand(Constants.SUCCESS, fileNameWithTime);
-					getApp().propagateNewMessage(message, this);
+					
+					propagateNewMessage(message);
 				} else {
 					sendCommand(Constants.ERROR, "Should not happen");
 				}
@@ -302,6 +303,11 @@ public class UserThread extends Thread {
 				e.printStackTrace();
 			}
 		}).start();
+	}
+	
+	private void propagateNewMessage(MessageInfo message){
+		message.setSenderUsername(userInfo.getUsername());
+		getApp().propagateNewMessage(message, this);
 	}
 	
 	public void protocolChannelEdit(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
@@ -347,7 +353,7 @@ public class UserThread extends Thread {
 		
 		if (MessageManager.insertMessage(message)) {
 			sendCommand(Constants.SUCCESS);
-			getApp().propagateNewMessage(message, this);
+			propagateNewMessage(message);
 		} else {
 			sendCommand(Constants.ERROR, "Should not happen");
 		}
@@ -431,6 +437,7 @@ public class UserThread extends Thread {
 				if (UserManager.insertUser(userInfo, imageName)) {
 					System.out.println("Added new user");
 					sendCommand(Constants.REGISTER_SUCCESS);
+					getApp().propagateNewUser(userInfo);
 				} else {
 					if (imageName != null)
 						new File(imageName).delete();
@@ -469,9 +476,10 @@ public class UserThread extends Thread {
 	public void receivedPropagatedMessage(MessageInfo message) throws IOException {
 		System.out.println("Propagated message : " + message);
 		if (isLoggedIn) {
-			if (currentPlace.getChannelId() == message.getRecipientId() || currentPlace.getMessageId() == message.getRecipientId()) {
-				System.out.println("Send propagated message : " + message);
+			int id = message.getRecipientId();
+			if (currentPlace.getChannelId() == id || currentPlace.getUserId() == id || userInfo.getUserId() == id) {
 				sendCommand(Constants.NEW_MESSAGE, message);
+				System.out.println("Sent propagated message : " + message);
 			}
 		}
 	}

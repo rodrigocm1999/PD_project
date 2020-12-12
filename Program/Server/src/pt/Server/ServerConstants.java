@@ -9,8 +9,8 @@ public class ServerConstants {
 	
 	
 	public static final String HEARTBEAT = "HEARTBEAT";
-	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 9;
-	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 10;
+	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 18; // Heartbeat interval
+	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 20; // Heartbeat interval
 	public static final int FAKE_USER_SYNC_COUNT = 100;
 	public static final String ASK_SYNCHRONIZER = "ASK_SYNCHRONIZER";
 	public static final String ASK_SYNCHRONIZER_OK = "ASK_SYNCHRONIZER_OK";
@@ -24,6 +24,8 @@ public class ServerConstants {
 	public static final String PROTOCOL_NEW_CHANNEL = "PROTOCOL_NEW_CHANNEL";
 	public static final String PROTOCOL_REGISTER_USER_CHANNEL = "PROTOCOL_REGISTER_USER_CHANNEL";
 	public static final String PROTOCOL_EDITED_CHANNEL = "PROTOCOL_EDITED_CHANNEL";
+	public static final String PROTOCOL_USER_PHOTO_BLOCK = "PROTOCOL_USER_PHOTO_BLOCK";
+	public static final String PROTOCOL_MESSAGE_FILE_BLOCK = "PROTOCOL_MESSAGE_FILE_BLOCK";
 	
 	public static final String UPDATE_USER_COUNT = "UPDATE_USER_COUNT";
 	public static final float ACCEPT_PERCENTAGE_THRESHOLD = 0.5f;
@@ -48,6 +50,10 @@ public class ServerConstants {
 	
 	public static String getTransferredFilesPath() {
 		return getFilesPath() + File.separator + ServerConstants.TRANSFERRED_FILES;
+	}
+	
+	public static String getTransferredFilePath(String fileName) {
+		return getTransferredFilesPath() + File.separator + fileName;
 	}
 	
 	public static String getUserPhotosPath() {

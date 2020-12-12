@@ -4,6 +4,7 @@ import pt.Common.*;
 
 import java.io.*;
 import java.net.*;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -62,7 +63,7 @@ public class ServerMain {
 		System.out.println("Server Running ------------------------------------------------");
 		
 		while (true) {
-			DatagramPacket receivedPacket = new DatagramPacket(new byte[Constants.UDP_PACKET_SIZE], Constants.UDP_PACKET_SIZE);
+			DatagramPacket receivedPacket = new DatagramPacket(new byte[Constants.UDP_MAX_PACKET_SIZE], Constants.UDP_MAX_PACKET_SIZE);
 			Command command;
 			try {
 				command = (Command) UDPHelper.receiveUDPObject(udpSocket, receivedPacket);
@@ -206,7 +207,8 @@ public class ServerMain {
 		}).start();
 	}
 	
-	public void propagateNewUser(UserInfo user) {
+	public void propagateNewUser(UserInfo user) throws NoSuchAlgorithmException {
+		Utils.hashStringBase36(user.getPassword());
 		new Thread(() -> {
 			try {
 				serversManager.propagateNewUser(user);

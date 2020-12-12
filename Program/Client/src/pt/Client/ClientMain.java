@@ -46,16 +46,16 @@ public class ClientMain {
 	}
 	
 	public void connectToServer() throws Exception {
-		if (socket != null){
-			if(socket.isConnected()) socket.close();
+		if (socket != null) {
+			if (socket.isConnected()) socket.close();
 		}
 		DatagramSocket datagramSocket = new DatagramSocket();
 		
 		while (true) {
 			System.out.println(serverIPAddress + ":" + portUDPServer);
 			try {
-				
 				boolean success = tryConnectServer(serverIPAddress, portUDPServer, datagramSocket);
+				
 				if (success) {
 					receiver = new Receiver(oIS);
 					receiver.start();
@@ -66,9 +66,12 @@ public class ClientMain {
 					portUDPServer = serverAddress.getUDPPort();
 				}
 			} catch (Exception e) {
-				ServerAddress serverAddress = serversList.remove(0);
-				serverIPAddress = serverAddress.getAddress();
-				portUDPServer = serverAddress.getUDPPort();
+				try {
+					ServerAddress serverAddress = serversList.remove(0);
+					serverIPAddress = serverAddress.getAddress();
+					portUDPServer = serverAddress.getUDPPort();
+				} catch (IndexOutOfBoundsException ignored) {
+				}
 			}
 		}
 	}
@@ -94,8 +97,11 @@ public class ClientMain {
 			}
 			serversList = (ArrayList<ServerAddress>) command.getExtras();
 			
+			System.out.println("Connection accepted");
+			
 			return true;
 		} else if (protocol.equals(Constants.CONNECTION_REFUSED)) {
+			System.out.println("Connection refused");
 			serversList = (ArrayList<ServerAddress>) command.getExtras();
 			return false;
 		} else {
@@ -113,7 +119,6 @@ public class ClientMain {
 	}
 	
 	public Object receiveCommand() throws InterruptedException {
-		System.out.println("receive command : stopped to wait");
 		Command ob = (Command) receiver.waitForCommand();
 		if (ob.getProtocol().equals(Constants.LOST_CONNECTION)) {
 			throw new InterruptedException("Lost connection to the server");
@@ -178,6 +183,7 @@ public class ClientMain {
 	public void sendFile(File file) throws IOException, InterruptedException {
 		
 		Recipient recipientType = getMessagesRecipientType();
+		if (recipientType == null) return;
 		int recipientId = getMessagesRecipientId();
 		
 		MessageInfo message = new MessageInfo(recipientType, recipientId, MessageInfo.TYPE_FILE, file.getName());
@@ -238,11 +244,11 @@ public class ClientMain {
 	}
 	
 	public int getMessagesRecipientId() {
-		return messageTemplate.getRecipientId();
+		return messageTemplate == null ? null : messageTemplate.getRecipientId();
 	}
 	
 	public Recipient getMessagesRecipientType() {
-		return messageTemplate.getRecipientType();
+		return messageTemplate == null ? null : messageTemplate.getRecipientType();
 	}
 	
 	public ArrayList<MessageInfo> getMessages() {
@@ -304,5 +310,13 @@ public class ClientMain {
 			}
 		});
 		thread.start();
+	}
+	
+	public InetAddress getServerIPAddress() {
+		return serverIPAddress;
+	}
+	
+	public int getPortUDPServer() {
+		return portUDPServer;
 	}
 }

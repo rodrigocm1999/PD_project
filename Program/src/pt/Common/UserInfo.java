@@ -101,7 +101,7 @@ public class UserInfo implements Serializable {
 	}
 	
 	public boolean hasImage() {
-		return hasImage;
+		return imageBytes != null || hasImage;
 	}
 	
 	public void setHasImage(boolean hasImage) {
