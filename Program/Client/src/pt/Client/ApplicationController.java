@@ -165,6 +165,24 @@ public class ApplicationController implements Initializable {
 		dialog.showAndWait();
 		return password.getText();
 	}
+	private String openExitDialog(){
+		TextInputDialog dialog = new TextInputDialog();
+		dialog.setTitle("Exit Channel");
+		dialog.setHeaderText(null);
+
+		GridPane grid = new GridPane();
+		grid.setHgap(10);
+		grid.setVgap(10);
+
+		TextField name = new TextField();
+		name.setPromptText("Password");
+		grid.add(new Label("Channel Name:"), 0, 1);
+		grid.add(name, 1, 1);
+
+		dialog.getDialogPane().setContent(grid);
+		dialog.showAndWait();
+		return name.getText();
+	}
 	
 	public void alertError(String error) {
 		Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -210,6 +228,9 @@ public class ApplicationController implements Initializable {
 			label.setOnMouseClicked(event -> {
 				DirectoryChooser directoryChooser = new DirectoryChooser();
 				File fileDirectory = directoryChooser.showDialog(ClientWindow.getInstance().getStage());
+				if (fileDirectory == null){
+					return;
+				}
 				try {
 					client.downloadFile(message, fileDirectory.getAbsolutePath());
 				} catch (IOException | InterruptedException e) {
@@ -308,7 +329,14 @@ public class ApplicationController implements Initializable {
 		FileChooser fileChooser = new FileChooser();
 		File file = fileChooser.showOpenDialog(ClientWindow.getInstance().getStage());
 		if (file != null) {
+			MessageInfo message = new MessageInfo(MessageInfo.TYPE_TEXT,"A enviar Ficheiro: " + file.getName());
+			message.setRecipientType(client.getMessagesRecipientType());
+			message.setSenderId(client.getUserInfo().getUserId());
+			addMessageToScreen(message);
+
+
 			ClientMain.getInstance().sendFile(file);
+
 		}
 	}
 	
@@ -404,5 +432,27 @@ public class ApplicationController implements Initializable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void onClickExitChannel(ActionEvent actionEvent) throws IOException, InterruptedException {
+		String channelName = openExitDialog();
+		ChannelInfo channel = null;
+		for (var item:client.getChannels() ) {
+			if (channelName.equals(item.getName())){
+				channel = item;
+			}
+		}
+		if (channel == null){
+			alertError("This channel doesn't exit!");
+			return;
+		}
+		Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_LEAVE, channel.getId());
+		if (!command.getProtocol().equals(Constants.SUCCESS)){
+			alertError((String) command.getExtras());
+		}else {
+			channel.setPartOf(false);
+		}
+
+
 	}
 }

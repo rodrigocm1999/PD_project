@@ -20,6 +20,7 @@
               <MenuItem mnemonicParsing="false" onAction="#onClickCreateChannel" text="Create" />
                   <MenuItem mnemonicParsing="false" onAction="#onClickEditChannel" text="Edit Channel" />
                   <MenuItem mnemonicParsing="false" onAction="#onClickDeleteChannel" text="Delete" />
+                 <MenuItem mnemonicParsing="false" onAction="#onClickExitChannel" text="Leave" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Help">
