@@ -111,6 +111,14 @@ public class ChannelManager {
 		return statement.executeUpdate() == 1;
 	}
 	
+	public static boolean removeUserFormChannel(int userId, int channelId) throws SQLException {
+		String delete = "delete from channel_user where channel_id = ? and user_id = ? ";
+		PreparedStatement statement = getApp().getPreparedStatement(delete);
+		statement.setInt(1, channelId);
+		statement.setInt(2, userId);
+		return statement.executeUpdate() == 1;
+	}
+	
 	public static boolean updateChannel(ChannelInfo channel) throws SQLException, NoSuchAlgorithmException {
 		synchronized (channelLock) {
 			String insert = "update channel set name = ?, description = ? where id = ?";

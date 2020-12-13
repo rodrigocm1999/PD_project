@@ -123,6 +123,10 @@ public class UserThread extends Thread {
 							ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
 							protocolChannelRegister(channelInfo);
 						}
+						case Constants.CHANNEL_LEAVE -> {
+							ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
+							protocolChannelLeave(channelInfo);
+						}
 						case Constants.USER_GET_LIKE -> {
 							String username = (String) protocol.getExtras();
 							protocolUserGetLike(username);
@@ -341,6 +345,18 @@ public class UserThread extends Thread {
 					sendCommand(Constants.ERROR, "Should never happen. Pls fix");
 				}
 			} else sendCommand(Constants.ERROR, "Wrong password");
+		}
+	}
+	
+	private void protocolChannelLeave(ChannelInfo channelInfo) throws SQLException, IOException {
+		if (!ChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId())) {
+			sendCommand(Constants.SUCCESS, "User is already not part of channel");
+		} else {
+			if (ChannelManager.removeUserFormChannel(userInfo.getUserId(), channelInfo.getId())) {
+				sendCommand(Constants.SUCCESS, null);
+			} else {
+				sendCommand(Constants.ERROR, "Server Error, on leaving channel");
+			}
 		}
 	}
 	
