@@ -1,6 +1,7 @@
 package pt.Client;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -33,6 +34,12 @@ public class ClientWindow extends Application {
 		scene = new Scene(root, 600, 460);
 		primaryStage.setScene(scene);
 		primaryStage.show();
+	}
+
+	@Override
+	public void stop() throws Exception {
+		System.out.println("Exiting");
+		System.exit(0);
 	}
 
 	public Scene getScene() {

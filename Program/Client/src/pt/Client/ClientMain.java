@@ -231,9 +231,8 @@ public class ClientMain {
 					}
 				}
 				Command newNameCommand = (Command) receiveCommand();
-				String newFileName = (String) newNameCommand.getExtras();
-				message.setContent(newFileName);
-				Platform.runLater(() -> ApplicationController.get().addMessageToScreen(message));
+				MessageInfo newMessage = (MessageInfo) newNameCommand.getExtras();
+				Platform.runLater(() -> ApplicationController.get().addMessageToScreen(newMessage));
 			} catch (IOException | InterruptedException e) {
 			}
 		});
