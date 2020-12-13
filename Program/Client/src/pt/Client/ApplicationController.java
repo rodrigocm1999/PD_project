@@ -32,12 +32,9 @@ public class ApplicationController implements Initializable {
 	
 	@FXML
 	public VBox window;
-	public SplitPane bigSPane;
 	public SplitPane smallSPane;
 	public ListView channelsListView;
 	public ListView usersListView;
-	public ListView msgListView;
-	public GridPane msgPane;
 	public Button btnSend;
 	public TextField msgTextField;
 	public TextField searchTextField;
@@ -49,7 +46,7 @@ public class ApplicationController implements Initializable {
 	
 	private final ObservableList<String> channelsObsList = FXCollections.observableArrayList();
 	private final ObservableList<String> usersObsList = FXCollections.observableArrayList();
-	private final ObservableList<String> msgsObsList = FXCollections.observableArrayList();
+
 	
 	private static ApplicationController instance;
 	private ClientMain client;
@@ -279,15 +276,16 @@ public class ApplicationController implements Initializable {
 							});
 						}
 						case Constants.NEW_CHANNEL -> {
-							ChannelInfo channel = (ChannelInfo) command.getExtras();
-							
 							Platform.runLater(() -> {
-								channelsObsList.add(channel.getName());
+								updateChannelsListView();
 							});
 						}
+
 						case Constants.SERVERS_LIST -> {
-							//TODO FAZER ISTO MAS AMANHA
-							ArrayList<ServerAddress> newServer = (ArrayList<ServerAddress>) command.getExtras();
+							//TODO TRY THIS S***
+							ArrayList<ServerAddress> newServerList = (ArrayList<ServerAddress>) command.getExtras();
+							System.out.println("Recived server list: " +newServerList);
+							client.setServersList(newServerList);
 						}
 					}
 				} catch (InterruptedException e) {
@@ -295,7 +293,7 @@ public class ApplicationController implements Initializable {
 						System.out.println("Interruped connecting again");
 						client.connectToServer();
 						String connectedServer = client.getServerIPAddress() + ":" + client.getPortUDPServer();
-						ClientWindow.getInstance().getStage().setTitle(connectedServer);
+						Platform.runLater(() -> ClientWindow.getInstance().getStage().setTitle(connectedServer));
 						client.sendCommandToServer(Constants.LOGIN, client.getUserInfo());
 					} catch (Exception exception) {
 						exception.printStackTrace();
@@ -321,6 +319,7 @@ public class ApplicationController implements Initializable {
 			Stage stage = new Stage();
 			Parent parent = instance.loadParent("CreateChannel.fxml");
 			stage.setScene(new Scene(parent, 500, 400));
+			stage.setTitle("Channel Creation");
 			stage.showAndWait();
 			
 		} catch (IOException e) {
@@ -335,6 +334,7 @@ public class ApplicationController implements Initializable {
 			Stage stage = new Stage();
 			Parent parent = instance.loadParent("DeleteChannel.fxml");
 			stage.setScene(new Scene(parent, 500, 400));
+			stage.setTitle("Channel Delete");
 			stage.showAndWait();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -399,6 +399,7 @@ public class ApplicationController implements Initializable {
 			Stage stage = new Stage();
 			Parent parent = instance.loadParent("EditChannel.fxml");
 			stage.setScene(new Scene(parent, 500, 400));
+			stage.setTitle("Edit Channel");
 			stage.showAndWait();
 			
 		} catch (IOException e) {

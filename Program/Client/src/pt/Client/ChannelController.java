@@ -31,6 +31,7 @@ public class ChannelController implements Initializable {
     public TextField channelNameTextField;
     public Button editBtn;
     public PasswordField repeatPasswordField;
+    public TextField newChannelNameField;
 
 
     public ChannelInfo channel = null;
@@ -122,12 +123,13 @@ public class ChannelController implements Initializable {
                 setChannel(item);
             }
         }
-        if (getChannel() != null){
+        if (channel != null){
             if (channel.getCreatorId() != client.getUserInfo().getUserId()){
                 errorLabel.setText("You are not the owner of this channel!");
                 return;
             }else {
-                descriptionField.setText(getChannel().getDescription());
+                descriptionField.setText(channel.getDescription());
+                newChannelNameField.setText(channel.getName());
             }
         }else {
             errorLabel.setText("This channel does not exist!");
@@ -137,9 +139,14 @@ public class ChannelController implements Initializable {
 
 
     public void onEdit(ActionEvent actionEvent) throws IOException, InterruptedException {
+        if (channel == null){
+            return;
+        }
         String newDescrition =  descriptionField.getText();
         String pwd = passwordField.getText();
         String repeatPwd = repeatPasswordField.getText();
+        String newName = newChannelNameField.getText();
+
 
         if (!pwd.equals(repeatPwd)){
             errorLabel.setText("Password needs to be the same");
@@ -147,8 +154,9 @@ public class ChannelController implements Initializable {
         }
         ClientMain client = ClientMain.getInstance();
 
-        getChannel().setDescription(newDescrition);
-        getChannel().setPassword(pwd);
+        channel.setDescription(newDescrition);
+        channel.setPassword(pwd);
+        channel.setName(newName);
 
         Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_EDIT, channel);
         if (command.getProtocol().equals(Constants.SUCCESS)){

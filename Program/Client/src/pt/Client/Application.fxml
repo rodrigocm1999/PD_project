@@ -10,10 +10,10 @@
    <children>
       <MenuBar>
         <menus>
-          <Menu mnemonicParsing="false" text="File">
-            <items>
-              <MenuItem mnemonicParsing="false" onAction="#logout" text="Logout" />
-            </items>
+          <Menu mnemonicParsing="false" text="User Option">
+              <items>
+                  <MenuItem mnemonicParsing="false" onAction="#logout" text="Logout" />
+              </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Channels">
             <items>

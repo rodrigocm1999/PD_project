@@ -28,19 +28,28 @@
       </HBox>
       <HBox>
          <children>
-            <Label prefHeight="17.0" prefWidth="113.0" text="Description:">
+            <Label prefHeight="17.0" prefWidth="77.0" text="New Name:" />
+            <TextField fx:id="newChannelNameField" />
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </HBox>
+      <HBox>
+         <children>
+            <Label minWidth="70.0" prefHeight="17.0" prefWidth="78.0" text="Description:">
                <HBox.margin>
                   <Insets />
                </HBox.margin>
             </Label>
-            <TextArea fx:id="descriptionField" prefHeight="40.0" prefWidth="485.0">
+            <TextArea fx:id="descriptionField" minWidth="412.0" prefHeight="37.0" prefWidth="444.0">
                <HBox.margin>
-                  <Insets right="20.0" />
+                  <Insets />
                </HBox.margin>
             </TextArea>
          </children>
          <padding>
-            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
          </padding>
          <VBox.margin>
             <Insets />
@@ -48,7 +57,7 @@
       </HBox>
       <HBox>
          <padding>
-            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
          </padding>
          <children>
             <VBox prefHeight="67.0" prefWidth="524.0">
@@ -67,7 +76,7 @@
       </HBox>
       <HBox alignment="CENTER_RIGHT">
          <children>
-            <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="480.0" prefHeight="17.0" prefWidth="57.0" text="ErrorLable" textFill="RED" HBox.hgrow="ALWAYS">
+            <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="480.0" prefHeight="17.0" prefWidth="57.0" text="ErrorLabel" textFill="RED" HBox.hgrow="ALWAYS">
                <HBox.margin>
                   <Insets right="20.0" />
                </HBox.margin>

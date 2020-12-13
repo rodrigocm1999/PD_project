@@ -26,13 +26,23 @@ public class Receiver extends Thread {
 			try {
 				
 				Command command = (Command) oIS.readObject();
-				//System.out.println("Receiver received : " + command);
+
 				
 				setAll(command);
 			} catch (IOException e) {
 				setAll(new Command(Constants.LOST_CONNECTION));
+
 			} catch (ClassNotFoundException e) {
 				setAll(null);
+
+			} catch (Exception e){
+				ClientMain instance = ClientMain.getInstance();
+				System.out.println("Trying to connect");
+				try {
+					instance.connectToServer();
+				} catch (Exception exception) {
+					exception.printStackTrace();
+				}
 			}
 			for (var waiter : waiters) {
 				synchronized (waiter) {

@@ -67,6 +67,10 @@ public class ClientMain {
 				}
 			} catch (Exception e) {
 				try {
+					if (serversList == null){
+						System.out.println("The servers are down, try again later");
+						System.exit(0);
+					}
 					ServerAddress serverAddress = serversList.remove(0);
 					serverIPAddress = serverAddress.getAddress();
 					portUDPServer = serverAddress.getUDPPort();
@@ -109,9 +113,22 @@ public class ClientMain {
 		}
 	}
 	
-	public Object sendCommandToServer(String protocol, Object object) throws IOException, InterruptedException {
+	public Object sendCommandToServer(String protocol, Object object) throws IOException, InterruptedException,SocketException{
 		Command command = new Command(protocol, object);
-		oOS.writeObject(command);
+		while (true){
+			//WTF IS THIS. IT WORKS THOUGH
+			try {
+				oOS.writeObject(command);
+				break;
+			}catch (SocketException e){
+				try {
+					connectToServer();
+				} catch (Exception exception) {
+					exception.printStackTrace();
+				}
+			}
+		}
+
 		
 		Object ob = receiveCommand();
 		System.out.print("Sent : " + command + "\n\t");
@@ -318,5 +335,9 @@ public class ClientMain {
 	
 	public int getPortUDPServer() {
 		return portUDPServer;
+	}
+
+	public void setServersList(ArrayList<ServerAddress> serversList) {
+		this.serversList = serversList;
 	}
 }
