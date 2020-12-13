@@ -83,23 +83,19 @@ public class ServerMain {
 	}
 	
 	private void handleCommand(Command command, DatagramPacket receivedPacket, DatagramSocket udpSocket) {
-		switch (command.getProtocol()) {
-			case Constants.ESTABLISH_CONNECTION -> {
-				System.out.println("Establish Connection --> can accept user: " + !serversManager.checkIfBetterServer());
-				try {
-					if (!serversManager.checkIfBetterServer()) {
-						UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
-								udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-						receiveNewUser(receivedPacket, udpSocket);
-					} else {
-						ArrayList<ServerAddress> list = serversManager.getOrderedServerAddressesThisLast();
-						UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
-								udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+		System.out.println("Establish Connection --> can accept user: " + !serversManager.checkIfBetterServer());
+		try {
+			if (!serversManager.checkIfBetterServer()) {
+				UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_ACCEPTED, listeningTCPPort),
+						udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
+				new Thread(() -> receiveNewUser(receivedPacket, udpSocket)).start();
+			} else {
+				ArrayList<ServerAddress> list = serversManager.getOrderedServerAddressesThisLast();
+				UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
+						udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -114,7 +110,7 @@ public class ServerMain {
 		return new ServerNetwork(this, group, port, listeningUDPPort);
 	}
 	
-	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) throws IOException {
+	private void receiveNewUser(DatagramPacket receivedPacket, DatagramSocket udpSocket) {
 		try {
 			serverSocket.setSoTimeout(Constants.CONNECTION_TIMEOUT);
 			Socket socket = serverSocket.accept();
@@ -212,15 +208,18 @@ public class ServerMain {
 	}
 	
 	public void propagateNewUser(UserInfo userInfo) throws NoSuchAlgorithmException {
-		userInfo.setPassword(Utils.hashStringBase36(userInfo.getPassword()));
 		new Thread(() -> {
 			try {
+				userInfo.setPassword(Utils.hashStringBase36(userInfo.getPassword()));
+				userInfo.setImageBytes(null);
+				userInfo.setHasImage(true);
 				serversManager.propagateNewUser(userInfo);
+				userInfo.setPassword(null);
 				
 				for (UserThread user : connectedMachines) {
 					user.receivedPropagatedUser(userInfo);
 				}
-			} catch (IOException e) {
+			} catch (IOException | NoSuchAlgorithmException e) {
 				e.printStackTrace();
 			}
 		}).start();

@@ -124,8 +124,8 @@ public class UserThread extends Thread {
 							protocolChannelRegister(channelInfo);
 						}
 						case Constants.CHANNEL_LEAVE -> {
-							ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
-							protocolChannelLeave(channelInfo);
+							int channelId = (int) protocol.getExtras();
+							protocolChannelLeave(channelId);
 						}
 						case Constants.USER_GET_LIKE -> {
 							String username = (String) protocol.getExtras();
@@ -236,6 +236,8 @@ public class UserThread extends Thread {
 							}
 							outputStream.write(buffer, 0, amountRead);
 						}
+					}catch (FileNotFoundException e){
+						System.out.println("FileNotFound : não devia acontecer");
 					}
 					sendCommand(Constants.FINISHED_FILE_DOWNLOAD, messageId);
 				} catch (Exception e) {
@@ -282,9 +284,9 @@ public class UserThread extends Thread {
 				
 				message.setSenderId(userInfo.getUserId());
 				message.setContent(fileNameWithTime);
-				System.out.println(message);
+				message.setSenderUsername(userInfo.getUsername());
 				if (MessageManager.insertMessage(message)) {
-					sendCommand(Constants.SUCCESS, fileNameWithTime);
+					sendCommand(Constants.SUCCESS, message);
 					
 					propagateNewMessage(message);
 				} else {
@@ -348,11 +350,13 @@ public class UserThread extends Thread {
 		}
 	}
 	
-	private void protocolChannelLeave(ChannelInfo channelInfo) throws SQLException, IOException {
-		if (!ChannelManager.isUserPartOf(userInfo.getUserId(), channelInfo.getId())) {
+	private void protocolChannelLeave(int channelId) throws SQLException, IOException {
+		if (!ChannelManager.isUserPartOf(userInfo.getUserId(), channelId)) {
 			sendCommand(Constants.SUCCESS, "User is already not part of channel");
+		} else if (ChannelManager.isUserChannelOwner(userInfo.getUserId(), channelId)) {
+			sendCommand(Constants.ERROR, "User is channel owner");
 		} else {
-			if (ChannelManager.removeUserFormChannel(userInfo.getUserId(), channelInfo.getId())) {
+			if (ChannelManager.removeUserFormChannel(userInfo.getUserId(), channelId)) {
 				sendCommand(Constants.SUCCESS, null);
 			} else {
 				sendCommand(Constants.ERROR, "Server Error, on leaving channel");
@@ -489,7 +493,9 @@ public class UserThread extends Thread {
 		System.out.println("Propagated message : " + message);
 		if (isLoggedIn) {
 			int id = message.getRecipientId();
-			if (currentPlace.getChannelId() == id || currentPlace.getUserId() == id || userInfo.getUserId() == id) {
+			MessageInfo.Recipient type = message.getRecipientType();
+			if (type.equals(MessageInfo.Recipient.CHANNEL) && currentPlace.getChannelId() == id
+					|| type.equals(MessageInfo.Recipient.USER) && (currentPlace.getUserId() == id || userInfo.getUserId() == id)) {
 				sendCommand(Constants.NEW_MESSAGE, message);
 				System.out.println("Sent propagated message : " + message);
 			}

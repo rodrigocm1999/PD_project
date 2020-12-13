@@ -115,7 +115,6 @@ public class ClientMain {
 	public Object sendCommandToServer(String protocol, Object object) throws IOException, InterruptedException,SocketException{
 		Command command = new Command(protocol, object);
 		while (true){
-			//WTF IS THIS. IT WORKS THOUGH
 			try {
 				oOS.writeObject(command);
 				break;
@@ -127,7 +126,6 @@ public class ClientMain {
 				}
 			}
 		}
-
 		
 		Object ob = receiveCommand();
 		System.out.print("Sent : " + command + "\n\t");

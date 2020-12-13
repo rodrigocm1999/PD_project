@@ -24,29 +24,22 @@ public class Receiver extends Thread {
 	public void run() {
 		while (true) {
 			try {
-				
 				Command command = (Command) oIS.readObject();
-
 				
 				setAll(command);
-			} catch (IOException e) {
-				setAll(new Command(Constants.LOST_CONNECTION));
-
-			} catch (ClassNotFoundException e) {
-				setAll(null);
-
-			} catch (Exception e){
+				
+				for (var waiter : waiters) {
+					synchronized (waiter) {
+						waiter.notifyAll();
+					}
+				}
+			} catch (Exception e) {
 				ClientMain instance = ClientMain.getInstance();
 				System.out.println("Trying to connect");
 				try {
 					instance.connectToServer();
 				} catch (Exception exception) {
 					exception.printStackTrace();
-				}
-			}
-			for (var waiter : waiters) {
-				synchronized (waiter) {
-					waiter.notifyAll();
 				}
 			}
 		}

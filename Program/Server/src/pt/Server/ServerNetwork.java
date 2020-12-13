@@ -38,8 +38,8 @@ public class ServerNetwork extends Thread {
 	}
 	
 	public ServerAddress getServerAddress() {
-		return ownPublicAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
-		// this was changed because my router won't let me connect to myself from my external ip address
+		return ownAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
+		// this was changed because my router won't let me connect to myself from my external ip address need a VPN to do that
 	}
 	
 	@Override
@@ -220,9 +220,10 @@ public class ServerNetwork extends Thread {
 		String fileName = newMessage.getContent();
 		
 		if (newMessage.getType().equals(MessageInfo.TYPE_FILE)) {
-			try (FileInputStream fileStream = new FileInputStream(ServerConstants.getTransferredFilePath(fileName))) {
-				sendFileInBlocksToAllServes(fileStream, fileName, ServerConstants.PROTOCOL_MESSAGE_FILE_BLOCK);
-			}
+			sendFileInBlocksToAllServes(
+					ServerConstants.getTransferredFilePath(fileName),
+					fileName,
+					ServerConstants.PROTOCOL_MESSAGE_FILE_BLOCK);
 		}
 	}
 	
@@ -230,15 +231,17 @@ public class ServerNetwork extends Thread {
 		sendAllCommand(ServerConstants.PROTOCOL_NEW_USER, userInfo);
 		
 		if (userInfo.hasImage()) {
-			try (FileInputStream fileStream = new FileInputStream(ServerConstants.getPhotoPathFromUsername(userInfo.getUsername()))) {
-				sendFileInBlocksToAllServes(fileStream, userInfo.getUsername(), ServerConstants.PROTOCOL_USER_PHOTO_BLOCK);
-			}
+			sendFileInBlocksToAllServes(
+					ServerConstants.getPhotoPathFromUsername(userInfo.getUsername()),
+					userInfo.getUsername(),
+					ServerConstants.PROTOCOL_USER_PHOTO_BLOCK);
 		}
 	}
 	
-	private void sendFileInBlocksToAllServes(FileInputStream fileStream, String identifier, String protocol) {
+	private void sendFileInBlocksToAllServes(String filePath, String identifier, String protocol) {
 		new Thread(() -> {
 			try {
+				FileInputStream fileStream = new FileInputStream(filePath);
 				byte[] bytes = new byte[Constants.UDP_FILE_BLOCK_SIZE];
 				FileBlock fileBlock = new FileBlock(identifier, -1, null);
 				int readAmount;
@@ -258,6 +261,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	private void writeBlock(File path, int offset, byte[] bytes) {
+		Utils.createDirectories(path);
 		try (FileOutputStream fileStream = new FileOutputStream(path, true)) {
 			fileStream.write(bytes, 0, bytes.length);
 		} catch (IOException e) {
@@ -445,10 +449,10 @@ public class ServerNetwork extends Thread {
 	
 	private void serverDisconnected(ServerStatus server) {
 		System.out.println("Server Disconnected : " + server);
-		printAvailableServers();
 		synchronized (serversList) {
 			serversList.remove(server);
 		}
+		printAvailableServers();
 	}
 	
 	private void printAvailableServers() {
