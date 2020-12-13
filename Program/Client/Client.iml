@@ -7,7 +7,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Server" level="project" />
     <orderEntry type="module" module-name="Program" />
     <orderEntry type="library" name="javafx-swt" level="project" />
   </component>

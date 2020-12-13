@@ -15,14 +15,14 @@ import java.sql.Date;
 
 public class UserManager {
 	
-	private static Object syncLock = new Object();
+	private static Object userLock = new Object();
 	
 	private static ServerMain getApp() {
 		return ServerMain.getInstance();
 	}
 	
 	public static boolean insertUser(UserInfo user, String imagePath) throws SQLException, NoSuchAlgorithmException {
-		synchronized (syncLock) {
+		synchronized (userLock) {
 			// insert the new user into the database ------------------------------------------
 			String insert = "insert into user(name,username,password_hash,photo_path) values(?,?,?,?)";
 			PreparedStatement preparedStatement = getApp().getPreparedStatement(insert);
@@ -35,7 +35,7 @@ public class UserManager {
 	}
 	
 	public static boolean insertFull(UserInfo user, String imagePath) throws SQLException {
-		synchronized (syncLock) {
+		synchronized (userLock) {
 			// insert the new user into the database ------------------------------------------
 			String insert = "insert into user(id,name,username,password_hash,photo_path,user_creation) values(?,?,?,?,?,?)";
 			PreparedStatement preparedStatement = getApp().getPreparedStatement(insert);
@@ -124,7 +124,7 @@ public class UserManager {
 	}
 	
 	public static int getLastUserId() throws SQLException {
-		String select = "select max(id) from user";
+		String select = "select max(id) as id from user";
 		PreparedStatement statement = getApp().getPreparedStatement(select);
 		ResultSet result = statement.executeQuery();
 		result.next();

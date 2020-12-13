@@ -11,10 +11,10 @@ public class ServerConstants {
 	public static final String HEARTBEAT = "HEARTBEAT";
 	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 18; // Heartbeat interval
 	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 20; // Heartbeat interval
+	public static final int SERVERS_LIST_INTERVAL = 60 * 1000;
 	public static final int FAKE_USER_SYNC_COUNT = 100;
 	public static final String ASK_SYNCHRONIZER = "ASK_SYNCHRONIZER";
 	public static final String ASK_SYNCHRONIZER_OK = "ASK_SYNCHRONIZER_OK";
-	public static final String ACKNOWLEDGE = "ACKNOWLEDGE";
 	
 	public static final String CAME_ONLINE = "CAME_ONLINE";
 	public static final String CAME_OFFLINE = "CAME_OFFLINE";
@@ -30,7 +30,7 @@ public class ServerConstants {
 	public static final String UPDATE_USER_COUNT = "UPDATE_USER_COUNT";
 	public static final float ACCEPT_PERCENTAGE_THRESHOLD = 0.5f;
 	
-	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/{2}?allowPublicKeyRetrieval=true&autoReconnect=true&useSSL=false";
+	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/{2}?allowPublicKeyRetrieval=true&autoReconnect=true&useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
 	public static final String DATABASE_NAME = "main";
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";
@@ -40,7 +40,6 @@ public class ServerConstants {
 	}
 	
 	
-	public static final String PUBLIC_IP_ADDRESS_API = "https://api.ipify.org";
 	
 	public static final int DEFAULT_GET_MESSAGES_AMOUNT = 50;
 	

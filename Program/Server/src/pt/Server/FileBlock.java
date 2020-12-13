@@ -1,10 +1,8 @@
 package pt.Server;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 public class FileBlock implements Serializable {
-	//TODO send the actual blocks
 	private String identifier;
 	private int offset;
 	private byte[] bytes;

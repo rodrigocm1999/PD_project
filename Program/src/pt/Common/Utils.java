@@ -1,7 +1,5 @@
 package pt.Common;
 
-import pt.Server.ServerConstants;
-
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
@@ -30,8 +28,8 @@ public class Utils {
 		return matcher.find();
 	}
 	
-	public static boolean checkChannelPasswordFollowsRules(String password) {
-		return !(password.length() < 3 || password.length() > 25);
+	public static boolean checkChannelFollowsRules(String string) {
+		return !(string.length() < 3 || string.length() > 25);
 	}
 	
 	public static boolean checkNameUser(String name) {
@@ -81,7 +79,7 @@ public class Utils {
 		HttpURLConnection connection = null;
 		BufferedReader in = null;
 		try {
-			URL url = new URL(ServerConstants.PUBLIC_IP_ADDRESS_API);
+			URL url = new URL(Constants.PUBLIC_IP_ADDRESS_API);
 			connection = (HttpURLConnection) url.openConnection();
 			int responseCode = connection.getResponseCode();
 			
@@ -103,12 +101,12 @@ public class Utils {
 		createDirectories(file, true);
 	}
 	
-	private static void createDirectories(File file, boolean bottom) {
-		if (file.exists()) return;
-		File parent = file.getParentFile();
+	private static void createDirectories(File directory, boolean bottom) {
+		if (directory.exists()) return;
+		File parent = directory.getParentFile();
 		if (parent != null)
 			createDirectories(parent, false);
 		if (!bottom)
-			file.mkdir();
+			directory.mkdir();
 	}
 }

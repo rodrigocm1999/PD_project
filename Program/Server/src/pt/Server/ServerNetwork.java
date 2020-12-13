@@ -31,14 +31,14 @@ public class ServerNetwork extends Thread {
 		
 		ownPublicAddress = new ServerAddress(publicIPAddress, serverUDPPort);
 		ownAddress = new ServerAddress(InetAddress.getLocalHost(), serverUDPPort);
-		startMulticastSocket(group,port);
+		startMulticastSocket(group, port);
 		System.out.println("Own Local Address : " + ownAddress + "\t Own Public Address" + ownPublicAddress);
 		//multiMan = new MulticastManager(multicastSocket, getServerAddress(), group, port);
 		this.synchronizerUDPPort = serverUDPPort + 1;
 	}
 	
 	public ServerAddress getServerAddress() {
-		return ownAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
+		return ownPublicAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
 		// this was changed because my router won't let me connect to myself from my external ip address
 	}
 	
@@ -59,7 +59,7 @@ public class ServerNetwork extends Thread {
 			for (var server : serversList) {
 				list.add(server.getServerAddress());
 			}
-			list.add(ownPublicAddress);
+			list.add(getServerAddress());
 			return list;
 		}
 	}
@@ -139,7 +139,6 @@ public class ServerNetwork extends Thread {
 				//System.out.println("ServerNetwork received with own address, discarding");
 				continue;
 			}
-			
 			try {
 				switch (command.getProtocol()) {
 					
@@ -170,7 +169,6 @@ public class ServerNetwork extends Thread {
 					case ServerConstants.PROTOCOL_NEW_MESSAGE -> {
 						MessageInfo message = (MessageInfo) command.getExtras();
 						System.out.println("Received propagated message : " + message);
-						//TODO fix not propagating to the right places
 						protocolReceivedNewMessage(message);
 					}
 					case ServerConstants.PROTOCOL_NEW_USER -> {
@@ -223,7 +221,7 @@ public class ServerNetwork extends Thread {
 		
 		if (newMessage.getType().equals(MessageInfo.TYPE_FILE)) {
 			try (FileInputStream fileStream = new FileInputStream(ServerConstants.getTransferredFilePath(fileName))) {
-				sendFileInBlocksToAllServes(fileStream,fileName,ServerConstants.PROTOCOL_MESSAGE_FILE_BLOCK);
+				sendFileInBlocksToAllServes(fileStream, fileName, ServerConstants.PROTOCOL_MESSAGE_FILE_BLOCK);
 			}
 		}
 	}
@@ -233,28 +231,35 @@ public class ServerNetwork extends Thread {
 		
 		if (userInfo.hasImage()) {
 			try (FileInputStream fileStream = new FileInputStream(ServerConstants.getPhotoPathFromUsername(userInfo.getUsername()))) {
-				sendFileInBlocksToAllServes(fileStream,userInfo.getUsername(),ServerConstants.PROTOCOL_USER_PHOTO_BLOCK);
+				sendFileInBlocksToAllServes(fileStream, userInfo.getUsername(), ServerConstants.PROTOCOL_USER_PHOTO_BLOCK);
 			}
 		}
 	}
 	
-	private void sendFileInBlocksToAllServes(FileInputStream fileStream,String identifier,String protocol) throws IOException {
-		byte[] bytes = new byte[Constants.UDP_FILE_BLOCK_SIZE];
-		FileBlock fileBlock = new FileBlock(identifier, -1, null);
-		int readAmount;
-		int offset = 0;
-		while ((readAmount = fileStream.read(bytes)) > 0) {
-			fileBlock.setBytes(Arrays.copyOfRange(bytes, 0, readAmount));
-			fileBlock.setOffset(offset);
-			sendAllCommand(protocol, fileBlock);
-			offset += readAmount;
-		}
+	private void sendFileInBlocksToAllServes(FileInputStream fileStream, String identifier, String protocol) {
+		new Thread(() -> {
+			try {
+				byte[] bytes = new byte[Constants.UDP_FILE_BLOCK_SIZE];
+				FileBlock fileBlock = new FileBlock(identifier, -1, null);
+				int readAmount;
+				int offset = 0;
+				while ((readAmount = fileStream.read(bytes)) > 0) {
+					fileBlock.setBytes(Arrays.copyOfRange(bytes, 0, readAmount));
+					fileBlock.setOffset(offset);
+					sendAllCommand(protocol, fileBlock);
+					
+					offset += readAmount;
+					Thread.sleep(25);
+				}
+			} catch (InterruptedException | IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
 	}
 	
 	private void writeBlock(File path, int offset, byte[] bytes) {
 		try (FileOutputStream fileStream = new FileOutputStream(path, true)) {
 			fileStream.write(bytes, 0, bytes.length);
-			// TODO find problem
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -311,15 +316,13 @@ public class ServerNetwork extends Thread {
 		}
 		
 		System.out.println("Syncing Database ----------------------------------------------");
-		System.out.println("Creating synchronizer with address : " + getServerAddress() + " to server " + otherServer);
+		System.out.println("Creating synchronizer to server " + otherServer);
 		Synchronizer synchronizer = new Synchronizer(otherServer, getServerAddress(), -1, null, synchronizerUDPPort);
 		try {
 			synchronizer.receiveData();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		//Get all of the info after Ids of the info that this one has
-		//Have to use reliable UDP and break files into 5KB chunks
 	}
 	
 	private void receivedSynchronizationRequest(ServerCommand command) throws IOException {
@@ -384,7 +387,7 @@ public class ServerNetwork extends Thread {
 		return packetQueue.take();
 	}
 	
-	private void startMulticastSocket(InetAddress group,int port) throws IOException {
+	private void startMulticastSocket(InetAddress group, int port) throws IOException {
 		multicastSocket = new MulticastSocket(port);
 		SocketAddress socketAddress = new InetSocketAddress(group, port);
 		NetworkInterface networkInterface = NetworkInterface.getByInetAddress(group);

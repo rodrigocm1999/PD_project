@@ -1,6 +1,5 @@
 package pt.Common;
 
-import pt.Server.ServerCommand;
 
 import java.io.*;
 import java.net.*;
@@ -105,7 +104,7 @@ public class UDPHelper {
 	
 	public static byte[] writeServerCommandToArray(String protocol, ServerAddress serverAddress, Object extras)
 			throws IOException {
-		return writeObjectToArray(new ServerCommand(protocol, serverAddress, extras));
+		return null;//writeObjectToArray(new ServerCommand(protocol, serverAddress, extras));
 	}
 	
 	public static byte[] writeObjectToArray(Object object) throws IOException {

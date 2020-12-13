@@ -59,6 +59,7 @@ public class ServerMain {
 		Runtime.getRuntime().addShutdownHook(new shutdownHook());
 		
 		serversManager.start();
+		startUpdateClientsServersList();
 		
 		System.out.println("Server Running ------------------------------------------------");
 		
@@ -92,7 +93,6 @@ public class ServerMain {
 						receiveNewUser(receivedPacket, udpSocket);
 					} else {
 						ArrayList<ServerAddress> list = serversManager.getOrderedServerAddressesThisLast();
-						Utils.printList(list, "Servers Sent");
 						UDPHelper.sendUDPObject(new Command(Constants.CONNECTION_REFUSED, list),
 								udpSocket, receivedPacket.getAddress(), receivedPacket.getPort());
 					}
@@ -201,17 +201,25 @@ public class ServerMain {
 		new Thread(() -> {
 			try {
 				serversManager.propagateChannelEdition(channel);
+				
+				for (UserThread user : connectedMachines) {
+					user.receivedPropagatedChannel(channel);
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}).start();
 	}
 	
-	public void propagateNewUser(UserInfo user) throws NoSuchAlgorithmException {
-		Utils.hashStringBase36(user.getPassword());
+	public void propagateNewUser(UserInfo userInfo) throws NoSuchAlgorithmException {
+		userInfo.setPassword(Utils.hashStringBase36(userInfo.getPassword()));
 		new Thread(() -> {
 			try {
-				serversManager.propagateNewUser(user);
+				serversManager.propagateNewUser(userInfo);
+				
+				for (UserThread user : connectedMachines) {
+					user.receivedPropagatedUser(userInfo);
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -222,6 +230,10 @@ public class ServerMain {
 		new Thread(() -> {
 			try {
 				serversManager.propagateNewChannel(channel);
+				
+				for (UserThread user : connectedMachines) {
+					user.receivedPropagatedChannel(channel);
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -260,6 +272,23 @@ public class ServerMain {
 		for (var user : connectedMachines) {
 			user.receivedPropagatedChannel(channel);
 		}
+	}
+	
+	private void startUpdateClientsServersList() {
+		new Thread(() -> {
+			while (true) {
+				try {
+					Thread.sleep(ServerConstants.SERVERS_LIST_INTERVAL);
+					
+					ArrayList<ServerAddress> serversList = serversManager.getOrderedServerAddressesThisLast();
+					//System.out.println("Servers List to all clients : " + serversList);
+					for (var client : connectedMachines) {
+						client.sendCommand(Constants.SERVERS_LIST, serversList);
+					}
+				} catch (Exception e) {
+				}
+			}
+		}).start();
 	}
 	
 	public void shutdown() {
