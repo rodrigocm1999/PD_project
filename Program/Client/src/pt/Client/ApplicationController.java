@@ -282,7 +282,6 @@ public class ApplicationController implements Initializable {
 						}
 
 						case Constants.SERVERS_LIST -> {
-							//TODO TRY THIS S***
 							ArrayList<ServerAddress> newServerList = (ArrayList<ServerAddress>) command.getExtras();
 							System.out.println("Recived server list: " +newServerList);
 							client.setServersList(newServerList);

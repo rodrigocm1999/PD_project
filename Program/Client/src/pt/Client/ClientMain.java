@@ -28,10 +28,6 @@ public class ClientMain {
 	private ArrayList<MessageInfo> messages = null;
 	private MessageInfo messageTemplate = null;
 	
-	//TODO FAZER O FAILOVER OVER NETWORK
-	
-	//TODO TESTAR LABELS EM TODO O LADO
-	
 	public static ClientMain getInstance() {
 		return instance;
 	}
