@@ -43,17 +43,18 @@ public class Constants {
 	public static final String FINISHED_FILE_DOWNLOAD = "FINISHED_FILE_DOWNLOAD";
 	public static final String FINISHED_PHOTO_DOWNLOAD = "FINISHED_PHOTO_DOWNLOAD";
 	
-	public static final String SUCCESS = "SUCCESS";
-	public static final String FAILURE = "FAILURE";
 	
 	public static final String DISCONNECTING = "DISCONNECTING";
 	public static final String LOST_CONNECTION = "LOST_CONNECTION";
 	public static final String LOGOUT = "LOGOUT";
 	public static final String SERVERS_LIST = "SERVERS_LIST";
 	
+	public static final String SUCCESS = "SUCCESS";
 	public static final String ERROR = "ERROR";
 	public static final String INVALID_PROTOCOL = "INVALID_PROTOCOL";
 	public static final String INVALID_REQUEST = "INVALID_REQUEST";
 	
 	public static final int USER_IMAGE_SIZE = 256;
+	
+	public static final String PUBLIC_IP_ADDRESS_API = "https://api.ipify.org";
 }

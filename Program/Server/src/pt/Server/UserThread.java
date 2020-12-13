@@ -82,53 +82,43 @@ public class UserThread extends Thread {
 			case Constants.REGISTER -> {
 				handleRegister((UserInfo) protocol.getExtras());
 			}
-			
 			case Constants.LOGIN -> {
 				UserInfo userInfo = (UserInfo) protocol.getExtras();
 				login(userInfo.getUsername(), userInfo.getPassword());
 			}
-			
 			case Constants.DISCONNECTING -> {
 				disconnect();
 			}
-			
 			default -> {
 				if (isLoggedIn()) {
 					switch (protocol.getProtocol()) {
 						case Constants.CHANNEL_GET_ALL -> {
 							protocolChannelGetALl();
 						}
-						
 						case Constants.CHANNEL_GET_MESSAGES -> {
 							Ids ids = (Ids) protocol.getExtras();
 							protocolChannelGetMessages(ids);
 						}
-						
 						case Constants.CHANNEL_ADD -> {
 							ChannelInfo info = (ChannelInfo) protocol.getExtras();
 							protocolChannelAdd(info);
 						}
-						
 						case Constants.CHANNEL_REMOVE -> {
 							int channelId = (int) protocol.getExtras();
 							protocolChannelRemove(channelId);
 						}
-						
 						case Constants.CHANNEL_EDIT -> {
 							ChannelInfo info = (ChannelInfo) protocol.getExtras();
 							protocolChannelEdit(info);
 						}
-						
 						case Constants.ADD_MESSAGE -> {
 							MessageInfo message = (MessageInfo) protocol.getExtras();
 							protocolAddMessage(message);
 						}
-						
 						case Constants.ADD_FILE -> {
 							MessageInfo message = (MessageInfo) protocol.getExtras();
 							protocolAddFile(message);
 						}
-						
 						case Constants.CHANNEL_REGISTER -> {
 							ChannelInfo channelInfo = (ChannelInfo) protocol.getExtras();
 							protocolChannelRegister(channelInfo);
@@ -145,12 +135,10 @@ public class UserThread extends Thread {
 							int messageId = (int) protocol.getExtras();
 							protocolGetFile(messageId);
 						}
-						
 						case Constants.USER_GET_PHOTO -> {
 							String username = (String) protocol.getExtras();
 							protocolGetUserPhoto(username);
 						}
-						
 						case Constants.LOGOUT -> {
 							logout();
 						}
@@ -305,17 +293,29 @@ public class UserThread extends Thread {
 		}).start();
 	}
 	
-	private void propagateNewMessage(MessageInfo message){
+	private void propagateNewMessage(MessageInfo message) {
 		message.setSenderUsername(userInfo.getUsername());
 		getApp().propagateNewMessage(message, this);
 	}
 	
 	public void protocolChannelEdit(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (!Utils.checkChannelPasswordFollowsRules(channel.getPassword())) {
+		if (!channel.getPassword().isBlank() && !Utils.checkChannelFollowsRules(channel.getPassword())) {
 			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 25 characters)");
 			return;
 		}
-		if (!checkNameAvailability(channel.getName())) {
+		if (!Utils.checkChannelFollowsRules(channel.getName())) { // As regras são as mesmas
+			sendCommand(Constants.ERROR, "Channel name does not follow rules");
+			return;
+		}
+		
+		ChannelInfo oldChannel = ChannelManager.getChannelById(channel.getId());
+		if (oldChannel == null) {
+			System.err.println("No channel with ID : " + channel.getId());
+			sendCommand(Constants.ERROR, "Server Error");
+			return;
+		}
+		
+		if (!oldChannel.getName().equals(channel.getName()) && !ChannelManager.checkNameAvailability(channel.getName())) {
 			sendCommand(Constants.ERROR, "Name already in use");
 			return;
 		}
@@ -368,12 +368,12 @@ public class UserThread extends Thread {
 	}
 	
 	public void protocolChannelAdd(ChannelInfo channel) throws IOException, SQLException, NoSuchAlgorithmException {
-		if (!Utils.checkChannelPasswordFollowsRules(channel.getPassword())) {
+		if (!Utils.checkChannelFollowsRules(channel.getPassword())) {
 			sendCommand(Constants.ERROR, "Invalid Password (need to be between 3 and 25 characters)");
 			return;
 		}
-		if (!checkNameAvailability(channel.getName())) {
-			sendCommand(Constants.ERROR, "Name already in use by another channel or user");
+		if (!ChannelManager.checkNameAvailability(channel.getName())) {
+			sendCommand(Constants.ERROR, "Name already in use by another channel");
 			return;
 		}
 		channel.setCreatorId(userInfo.getUserId());
@@ -426,7 +426,7 @@ public class UserThread extends Thread {
 			} else if (!Utils.checkNameUser(userInfo.getName())) {
 				sendCommand(Constants.REGISTER_ERROR, "Name is invalid (needs to be between 3 and 50 characters long)");
 				
-			} else if (!checkNameAvailability(userInfo.getUsername())) {
+			} else if (!UserManager.checkUsernameAvailability(userInfo.getUsername())) {
 				sendCommand(Constants.REGISTER_ERROR, "Username already in use by another user or channel");
 				
 			} else {
@@ -453,10 +453,6 @@ public class UserThread extends Thread {
 	}
 	
 	private void login(String username, String password) throws SQLException, IOException, NoSuchAlgorithmException {
-		if (isLoggedIn()) {
-			sendCommand(Constants.LOGIN_ERROR, "Already Logged In");
-			return;
-		}
 		if (!UserManager.doesUsernameExist(username)) {
 			sendCommand(Constants.LOGIN_ERROR, "Username does not exist");
 			return;
@@ -467,7 +463,7 @@ public class UserThread extends Thread {
 		}
 		int userId = UserManager.getUserId(username);
 		String nameUser = UserManager.getNameUser(userId);
-		userInfo = new UserInfo(userId, username, nameUser);
+		userInfo = new UserInfo(userId, nameUser, username);
 		sendCommand(Constants.LOGIN_SUCCESS, userInfo);
 		System.out.println("Login success : " + userInfo);
 		isLoggedIn = true;
@@ -512,9 +508,5 @@ public class UserThread extends Thread {
 	
 	public boolean isLoggedIn() {
 		return isLoggedIn;
-	}
-	
-	private boolean checkNameAvailability(String name) throws SQLException {
-		return (UserManager.checkUsernameAvailability(name) && ChannelManager.checkNameAvailability(name));
 	}
 }

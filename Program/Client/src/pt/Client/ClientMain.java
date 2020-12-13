@@ -71,6 +71,9 @@ public class ClientMain {
 					serverIPAddress = serverAddress.getAddress();
 					portUDPServer = serverAddress.getUDPPort();
 				} catch (IndexOutOfBoundsException ignored) {
+				} catch (NullPointerException ignored) {
+					System.out.println("Server not accessible");
+					System.exit(-1);
 				}
 			}
 		}

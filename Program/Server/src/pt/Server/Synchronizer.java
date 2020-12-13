@@ -16,16 +16,16 @@ public class Synchronizer {
 	private static final String NO_MORE_USER_PHOTO = "SYNCHRONIZER_NO_MORE_USER_PHOTO";
 	private static final String GET_USERS_CHANNELS = "SYNCHRONIZER_GET_USERS_CHANNELS";
 	private static final String GET_MESSAGES = "SYNCHRONIZER_GET_MESSAGES";
-	private static final int USERS_BLOCK = 40;
-	private static final int CHANNELS_BLOCK = 30;
-	private static final int USERS_CHANNELS_BLOCK = 100;
-	private static final int MESSAGES_BLOCK = 20;
 	private static final String NO_MORE_USERS = "SYNCHRONIZER_NO_MORE_USERS";
 	private static final String NO_MORE_CHANNELS = "SYNCHRONIZER_NO_MORE_CHANNELS";
 	private static final String NO_MORE_USERS_CHANNELS = "SYNCHRONIZER_NO_MORE_USERS_CHANNELS";
 	private static final String NO_MORE_MESSAGES = "SYNCHRONIZER_NO_MORE_MESSAGES";
 	private static final String GET_MESSAGE_FILE = "SYNCHRONIZER_GET_MESSAGE_FILE";
 	private static final String NO_MORE_MESSAGE_FILE = "SYNCHRONIZER_NO_MORE_MESSAGE_FILE";
+	private static final int USERS_BLOCK = 40;
+	private static final int CHANNELS_BLOCK = 30;
+	private static final int USERS_CHANNELS_BLOCK = 100;
+	private static final int MESSAGES_BLOCK = 20;
 	
 	private static final String FINISHED = "SYNCHRONIZER_FINISHED";
 	private static final int FILE_CHUNK_SIZE = 5 * 1024;
@@ -49,11 +49,12 @@ public class Synchronizer {
 	}
 	
 	private void startPacketQueue() {
-		packetQueue = new LinkedBlockingQueue();
+		packetQueue = new LinkedBlockingQueue<>();
 		new Thread(() -> {
 			while (true) {
 				try {
-					DatagramPacket packet = new DatagramPacket(new byte[Constants.UDP_MAX_PACKET_SIZE], Constants.UDP_MAX_PACKET_SIZE);
+					DatagramPacket packet = new DatagramPacket(
+							new byte[Constants.UDP_MAX_PACKET_SIZE], Constants.UDP_MAX_PACKET_SIZE);
 					socket.receive(packet);
 					packetQueue.offer(packet);
 				} catch (IOException e) {
@@ -173,13 +174,14 @@ public class Synchronizer {
 					System.err.println("Message insert");
 					socket.close();
 					return;
-				}//TODO fix message files losing packets or something like that
+				}
 				if (message.getType().equals(MessageInfo.TYPE_FILE)) {
 					fileMessages.add(message);
 				}
 			}
 		}
-		// channel_message and user_message already get inserted along with the messages due to foreign keys -----------
+		
+		// channel_message and user_message already get inserted along with the messages -------------------------------
 		for (var fileMessage : fileMessages) {
 			sendCommand(GET_MESSAGE_FILE, fileMessage.getContent());
 			
@@ -194,7 +196,6 @@ public class Synchronizer {
 				ServerCommand command = receiveCommand();
 				if (command.getProtocol().equals(NO_MORE_MESSAGE_FILE)) break;
 				byte[] receivedFileBytes = (byte[]) command.getExtras();
-				Thread.sleep(5);
 				fileOutputStream.write(receivedFileBytes);
 			}
 			fileOutputStream.close();
@@ -222,7 +223,7 @@ public class Synchronizer {
 					int lastUserId = (int) command.getExtras();
 					
 					ArrayList<UserInfo> usersAfterId = UserManager.getAfterId(lastUserId);
-					sendByBlocks(usersAfterId, USERS_BLOCK);
+					sendInBlocks(usersAfterId, USERS_BLOCK);
 					
 					sendCommand(NO_MORE_USERS, null);
 				}
@@ -230,7 +231,7 @@ public class Synchronizer {
 					int lastChannelId = (int) command.getExtras();
 					
 					ArrayList<ChannelInfo> channelsAfterID = ChannelManager.getAfterId(lastChannelId);
-					sendByBlocks(channelsAfterID, CHANNELS_BLOCK);
+					sendInBlocks(channelsAfterID, CHANNELS_BLOCK);
 					
 					sendCommand(NO_MORE_CHANNELS, null);
 				}
@@ -238,7 +239,7 @@ public class Synchronizer {
 					int lastConnectionId = (int) command.getExtras();
 					
 					ArrayList<Ids> channelUsers = ChannelManager.getChannelUsersAfterIds(lastConnectionId);
-					sendByBlocks(channelUsers, USERS_CHANNELS_BLOCK);
+					sendInBlocks(channelUsers, USERS_CHANNELS_BLOCK);
 					
 					sendCommand(NO_MORE_USERS_CHANNELS, null);
 				}
@@ -246,7 +247,7 @@ public class Synchronizer {
 					int lastMessageId = (int) command.getExtras();
 					
 					ArrayList<MessageInfo> messagesAfterId = MessageManager.getAfterId(lastMessageId);
-					sendByBlocks(messagesAfterId, MESSAGES_BLOCK);
+					sendInBlocks(messagesAfterId, MESSAGES_BLOCK);
 					
 					sendCommand(NO_MORE_MESSAGES, null);
 				}
@@ -350,7 +351,7 @@ public class Synchronizer {
 		}*/
 	}
 	
-	private void sendFileBlocks(FileInputStream fileInputStream) throws IOException {
+	private void sendFileBlocks(FileInputStream fileInputStream) throws IOException, InterruptedException {
 		byte[] buffer = new byte[FILE_CHUNK_SIZE];
 		while (true) {
 			int readAmount = fileInputStream.read(buffer);
@@ -359,24 +360,25 @@ public class Synchronizer {
 			}
 			byte[] bufferTrimmed = Arrays.copyOfRange(buffer, 0, readAmount);
 			sendCommand("", bufferTrimmed);
+			Thread.sleep(25);
 		}
 	}
 	
-	private void sendByBlocks(ArrayList list, int blockSize) throws Exception {
+	private void sendInBlocks(ArrayList list, int blockSize) throws Exception {
 		if (list.size() == 0) {
 			return;
 		}
-		for (int usersCount = 0; usersCount < list.size(); usersCount++) {
-			ArrayList block = new ArrayList();
+		for (int itemCounter = 0; itemCounter < list.size(); itemCounter++) {
+			ArrayList<Object> block = new ArrayList<>();
 			
-			for (int blockCounter = 0; (blockCounter < blockSize) && (usersCount < list.size()); blockCounter++, usersCount++) {
-				block.add(list.get(usersCount));
+			for (int blockCounter = 0; (blockCounter < blockSize) && (itemCounter < list.size()); blockCounter++, itemCounter++) {
+				block.add(list.get(itemCounter));
 			}
 			sendCommand("", block);
 		}
 	}
 	
-	private static boolean getAck(DatagramSocket socket, long sentId) {
+	/*private static boolean getAck(DatagramSocket socket, long sentId) {
 		byte[] buffer = new byte[Constants.UDP_PACKET_SIZE];
 		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 		
@@ -404,7 +406,7 @@ public class Synchronizer {
 				//continue;
 			}
 		}
-	}
+	}*/
 	
 	/*public static class Wrapper implements Serializable {
 		private static final long serialVersionUID = 333L;

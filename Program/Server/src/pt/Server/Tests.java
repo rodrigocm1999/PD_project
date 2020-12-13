@@ -10,6 +10,8 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.function.Function;
 
 public class Tests {
 	
@@ -23,7 +25,9 @@ public class Tests {
 		this.ois = new ObjectInputStream(socket.getInputStream());
 	}
 	
+	
 	public static void main(String[] args) throws Exception {
+		
 		
 		/*
 		MulticastSocket multicastSocket = new MulticastSocket(5432);
