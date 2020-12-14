@@ -38,7 +38,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	public ServerAddress getServerAddress() {
-		return ownAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
+		return ownPublicAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
 		// this was changed because my router won't let me connect to myself from my external ip address need a VPN to do that
 	}
 	

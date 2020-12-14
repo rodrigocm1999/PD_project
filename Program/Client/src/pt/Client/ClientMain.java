@@ -288,7 +288,6 @@ public class ClientMain {
 			int fileDownloadPort = (int) command.getExtras();
 			try {
 				Socket socket = new Socket(serverIPAddress, fileDownloadPort);
-				System.out.println("cheguei aqui");
 				
 				InputStream fIS = socket.getInputStream();
 				FileOutputStream fileOutputStream = new FileOutputStream(directory + File.separator + message.getContent());
