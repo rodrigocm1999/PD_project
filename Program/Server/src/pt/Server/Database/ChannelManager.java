@@ -1,6 +1,7 @@
-package pt.Server;
+package pt.Server.Database;
 
 import pt.Common.*;
+import pt.Server.ServerMain;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

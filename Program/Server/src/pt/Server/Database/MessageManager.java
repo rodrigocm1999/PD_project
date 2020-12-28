@@ -1,6 +1,7 @@
-package pt.Server;
+package pt.Server.Database;
 
 import pt.Common.MessageInfo;
+import pt.Server.ServerMain;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;

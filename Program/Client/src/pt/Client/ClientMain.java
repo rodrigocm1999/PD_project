@@ -277,7 +277,6 @@ public class ClientMain {
 	}
 	
 	public void downloadFile(MessageInfo message, String directory) throws IOException, InterruptedException {
-		
 		Command command = (Command) sendCommandToServer(Constants.GET_FILE, message.getId());
 		if (!command.getProtocol().equals(Constants.FILE_ACCEPT_CONNECTION)) {
 			System.err.println("Error File not  Success before send");

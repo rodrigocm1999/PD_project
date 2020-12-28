@@ -5,8 +5,10 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 
+import javax.swing.*;
 import java.io.IOException;
 
 public class ClientWindow extends Application {
@@ -35,21 +37,21 @@ public class ClientWindow extends Application {
 		primaryStage.setScene(scene);
 		primaryStage.show();
 	}
-
+	
 	@Override
 	public void stop() throws Exception {
 		System.out.println("Exiting");
 		System.exit(0);
 	}
-
+	
 	public Scene getScene() {
 		return scene;
 	}
-
+	
 	public Stage getStage() {
 		return stage;
 	}
-
+	
 	public void setWindowRoot(String fileName) throws IOException {
 		scene.setRoot(loadParent(fileName));
 	}
@@ -59,7 +61,7 @@ public class ClientWindow extends Application {
 	}
 	
 	public static void main(String[] args) {
-
+		
 		if (args.length != 2) {
 			System.out.println("Invalid arguments: server_address, server_UDP_port");
 			return;
@@ -76,6 +78,6 @@ public class ClientWindow extends Application {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		
 	}
 }

@@ -1,17 +1,13 @@
-package pt.Server;
+package pt.Server.Unused;
 
 import pt.Common.Command;
-import pt.Common.UDPHelper;
-import pt.Common.UserInfo;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.function.Function;
+import java.util.*;
+import java.util.List;
 
 public class Tests {
 	
@@ -25,10 +21,74 @@ public class Tests {
 		this.ois = new ObjectInputStream(socket.getInputStream());
 	}
 	
+	private static void printIt(String name, long adding, long removing) {
+		System.out.println(name + " took " + adding + "ms adding and " + removing + "ms removing");
+	}
 	
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
+		//System.out.println(Utils.hashStringBase36("rodrigo123"));
+		final int NUMBER = 1000000;
 		
-		
+		Random random = new Random();
+		if (true) {
+			NavigableSet<Integer> sortedSet = new TreeSet<>();
+			long start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER; i++) {
+				sortedSet.add(random.nextInt());
+			}
+			long durationAdd = System.currentTimeMillis() - start;
+			start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER && sortedSet.size() > 0; i++) {
+				sortedSet.remove(sortedSet.first());
+			}
+			long durationDel = System.currentTimeMillis() - start;
+			printIt("TreeSet", durationAdd, durationDel);
+		}
+		if (true) {
+			NavigableMap<Integer, Integer> sortedSet = new TreeMap<>();
+			long start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER; i++) {
+				sortedSet.put(random.nextInt(), random.nextInt());
+			}
+			long durationAdd = System.currentTimeMillis() - start;
+			start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER && sortedSet.size() > 0; i++) {
+				sortedSet.remove(sortedSet.firstKey());
+			}
+			long durationDel = System.currentTimeMillis() - start;
+			printIt("TreeMap", durationAdd, durationDel);
+		}
+		if (false) {
+			List<Integer> list = new ArrayList<>();
+			long start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER; i++) {
+				list.add(random.nextInt());
+			}
+			Collections.sort(list);
+			long durationAdd = System.currentTimeMillis() - start;
+			start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER - 1; i++) {
+				list.remove(0);
+			}
+			long durationDel = System.currentTimeMillis() - start;
+			printIt("ArrayList", durationAdd, durationDel);
+		}
+		if (false) {
+			List<Integer> list = new LinkedList<>();
+			long start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER; i++) {
+				list.add(random.nextInt());
+			}
+			Collections.sort(list);
+			long durationAdd = System.currentTimeMillis() - start;
+			start = System.currentTimeMillis();
+			for (int i = 0; i < NUMBER - 1; i++) {
+				list.remove(0);
+			}
+			long durationDel = System.currentTimeMillis() - start;
+			printIt("LinkedList", durationAdd, durationDel);
+		}
+		System.out.println("Finished");
 		/*
 		MulticastSocket multicastSocket = new MulticastSocket(5432);
 		

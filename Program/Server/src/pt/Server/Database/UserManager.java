@@ -1,7 +1,9 @@
-package pt.Server;
+package pt.Server.Database;
 
 import pt.Common.UserInfo;
 import pt.Common.Utils;
+import pt.Server.ServerConstants;
+import pt.Server.ServerMain;
 
 import java.io.File;
 import java.io.FileOutputStream;

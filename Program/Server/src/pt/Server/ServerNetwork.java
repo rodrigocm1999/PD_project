@@ -1,6 +1,9 @@
 package pt.Server;
 
 import pt.Common.*;
+import pt.Server.Database.ChannelManager;
+import pt.Server.Database.MessageManager;
+import pt.Server.Database.UserManager;
 
 import java.io.*;
 import java.net.*;
@@ -38,7 +41,7 @@ public class ServerNetwork extends Thread {
 	}
 	
 	public ServerAddress getServerAddress() {
-		return ownPublicAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
+		return ownAddress; //TODO IMPORTANT return publicIpAddress when servers on different networks
 		// this was changed because my router won't let me connect to myself from my external ip address need a VPN to do that
 	}
 	

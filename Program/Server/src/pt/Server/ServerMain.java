@@ -27,6 +27,7 @@ public class ServerMain {
 	
 	private final ArrayList<UserThread> connectedMachines;
 	private ServerNetwork serversManager;
+	private HttpAPI httpAPI;
 	
 	public static ServerMain getInstance() {
 		assert instance != null;
@@ -60,6 +61,10 @@ public class ServerMain {
 		
 		serversManager.start();
 		startUpdateClientsServersList();
+		
+		
+		// TODO create or connect to RMI registry
+		httpAPI = new HttpAPI(this);
 		
 		System.out.println("Server Running ------------------------------------------------");
 		

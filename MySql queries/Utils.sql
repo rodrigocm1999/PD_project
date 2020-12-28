@@ -34,12 +34,13 @@ select id,creator_id,name,password_hash,description,creation_moment from channel
 -- Selects
 use main;
 use main2;
+delete from channel_user where channel_id = 3 and user_id = 2;
 select * from channel;
 select * from user;
 select * from channel_user;
 select * from channel_message;
 select * from user_message;
-select * from message;
+select * from message where content like '%ilya%';
 -- get all user messages to channels
 select * from message where id in (select message_id from channel_message where sender_id = 100);
 -- get all messages before certain one on channel
@@ -66,6 +67,10 @@ select max(id) from message,channel_message where message_id = id and channel_id
 select count(id) from user where username = 'testuser';
 
 insert into channel_user() values(1,2);
+
+delete from channel  where  id >0;
+
+
 
 select id,creator_id,name,description,(
 	select count(*) from channel_user where channel_id = id and user_id = 2
@@ -138,3 +143,13 @@ from user
 where username like '%' 
 order by (select count(id) from message,user_message where message.id = message_id && receiver_id = user.id) desc, username 
 limit 30;
+
+
+select id,type,content,moment_sent, sender_id, (select username from user where user.id = sender_id) as sender_username
+				from message,channel_message
+				where message.id = channel_message.message_id
+				and channel_id = 2
+				and id < 1999
+				order by moment_sent and id;
+
+select count(id) from message where type = 'file';
