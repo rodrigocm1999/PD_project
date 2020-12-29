@@ -23,7 +23,7 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	}
 	
 	@Override
-	public void sendMessageToAllConnected(MessageInfo message) throws RemoteException {
+	public void sendMessageToAllConnected(UserInfo user, MessageInfo message) throws RemoteException {
 		//TODO send to ALL on this server
 		//observerList.forEach(item -> item.newMessage(message));
 	}

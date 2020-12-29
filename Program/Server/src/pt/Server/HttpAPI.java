@@ -18,7 +18,7 @@ public class HttpAPI { // TODO
 	}
 	
 	private final ServerMain serverMain;
-	private List<User> authenticatedUsers;
+	private final List<User> authenticatedUsers;
 	
 	public HttpAPI(ServerMain serverMain) {
 		this.serverMain = serverMain;
