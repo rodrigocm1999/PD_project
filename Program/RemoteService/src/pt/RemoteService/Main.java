@@ -15,9 +15,9 @@ public class Main { // TODO
 		
 		// recebe um argumento, ip do RMI registry
 		// liga-se ao registry e pede a lista de serviços para obter todos os servidores
-		// fazer um menuzito para escolher entre os vários servers
+		// TODO fazer um menuzito para escolher entre os vários servers
 		
-		// depois de escolher o server tem-se outro menu para escolher o que se quer fazer
+		// TODO depois de escolher o server tem-se outro menu para escolher o que se quer fazer
 		
 		String registryAddress = "localhost";
 		if (args.length >= 1) {
@@ -26,12 +26,14 @@ public class Main { // TODO
 		
 		Registry registry = LocateRegistry.getRegistry(registryAddress);
 		
+		// Can obtain list server like this : registry.list();
+		// Then do : registry.lookup(nameObtainedInList);
+		
 		System.out.println("All remote services : " + Arrays.toString(registry.list())); // Aqui temos os vários servidores. podemos fazer uma lista a partir um menu a partir do que isto retorna
 		
+		// Tests
 		RemoteService remoteService = (RemoteService) registry.lookup(registry.list()[0]);
-		
 		Observer observer = new RMIObserver();
-		
 		remoteService.addObserver(observer);
 	}
 	

@@ -76,11 +76,10 @@ public class ServerMain {
 		} else {
 			registry = serversManager.getExistingRegistry();
 			System.out.println("Found existing registry");
-			// registry = LocateRegistry.getRegistry(,Registry.REGISTRY_PORT); // TODO arranjar uma maneira de ter o endereço do registry
 			isRMIRegistry = false;
 		}
 		remoteServiceRMI = new RemoteServiceRMI(this);
-		registry.bind(serversManager.getServerAddress().getServerId(), remoteServiceRMI); // TODO check this out
+		registry.bind(serversManager.getServerAddress().getServerId(), remoteServiceRMI);
 		httpAPI = new HttpAPI(this);
 		
 		System.out.println("Server Running ------------------------------------------------");

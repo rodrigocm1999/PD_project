@@ -13,11 +13,13 @@ public class RMIObserver extends UnicastRemoteObject implements Observer {
 	
 	@Override
 	public void userAuthenticated(UserInfo user) throws RemoteException {
+		//TODO
 		System.out.println("user authenticated");
 	}
 	
 	@Override
 	public void newMessage(MessageInfo message) throws RemoteException {
+		//TODO
 		System.out.println("new message");
 	}
 }
