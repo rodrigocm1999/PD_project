@@ -7,6 +7,8 @@ import pt.Server.Database.UserManager;
 
 import java.io.*;
 import java.net.*;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +27,9 @@ public class ServerNetwork extends Thread {
 	private boolean stop = false;
 	private int synchronizationFakeUsers;
 	private LinkedBlockingQueue<DatagramPacket> packetQueue;
+	
+	private final Object registryLock = new Object();
+	private String registryServerAddress;
 	
 	ServerNetwork(ServerMain serverMain, InetAddress group, int port, int serverUDPPort) throws IOException {
 		this.serverMain = serverMain;
@@ -53,6 +58,10 @@ public class ServerNetwork extends Thread {
 			e.printStackTrace();
 			stop = true;
 		}
+	}
+	
+	public int getNetworkSize() {
+		return serversList.size();
 	}
 	
 	public ArrayList<ServerAddress> getOrderedServerAddressesThisLast() {
@@ -166,9 +175,11 @@ public class ServerNetwork extends Thread {
 							System.err.println("Status == null\t Should never happen");
 						}
 					}
+					
 					case ServerConstants.ASK_SYNCHRONIZER -> {
 						receivedSynchronizationRequest(command);
 					}
+					
 					case ServerConstants.PROTOCOL_NEW_MESSAGE -> {
 						MessageInfo message = (MessageInfo) command.getExtras();
 						System.out.println("Received propagated message : " + message);
@@ -207,11 +218,30 @@ public class ServerNetwork extends Thread {
 						writeBlock(file, fileBlock.getOffset(), fileBlock.getBytes());
 					}
 					
+					case ServerConstants.LOCATE_REGISTRY -> {
+						if (serverMain.isRMIRegistry()) {
+							sendAllCommand(ServerConstants.REGISTRY_ADDRESS, command.getServerAddress().getAddress().getHostAddress());
+						}
+					}
+					case ServerConstants.REGISTRY_ADDRESS -> {
+						registryServerAddress = (String) command.getExtras();
+						synchronized (registryLock) {
+							registryLock.notifyAll();
+						}
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public Registry getExistingRegistry() throws IOException, InterruptedException {
+		sendAllCommand(ServerConstants.LOCATE_REGISTRY);
+		synchronized (registryLock) {
+			registryLock.wait();
+		}
+		return LocateRegistry.getRegistry(registryServerAddress, Registry.REGISTRY_PORT);
 	}
 	
 	public void updateUserCount(int count) throws IOException {
@@ -388,6 +418,11 @@ public class ServerNetwork extends Thread {
 	
 	private void sendAllCommand(String protocol, Object extras) throws IOException {
 		sendServerCommand(protocol, extras);
+	}
+	
+	private void sendCommandToServer(ServerAddress address, String protocol, Object extras) throws IOException {
+		UDPHelper.sendUDPObject(new ServerCommand(protocol, getServerAddress(), extras),
+				multicastSocket, address.getAddress(), address.getUDPPort());
 	}
 	
 	private DatagramPacket receivePacket() throws InterruptedException {

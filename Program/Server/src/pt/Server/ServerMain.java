@@ -1,9 +1,12 @@
 package pt.Server;
 
 import pt.Common.*;
+import pt.Server.RMI.RemoteServiceRMI;
 
 import java.io.*;
 import java.net.*;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -27,6 +30,9 @@ public class ServerMain {
 	
 	private final ArrayList<UserThread> connectedMachines;
 	private ServerNetwork serversManager;
+	private boolean isRMIRegistry;
+	private Registry registry;
+	private RemoteServiceRMI remoteServiceRMI;
 	private HttpAPI httpAPI;
 	
 	public static ServerMain getInstance() {
@@ -62,8 +68,19 @@ public class ServerMain {
 		serversManager.start();
 		startUpdateClientsServersList();
 		
-		
 		// TODO create or connect to RMI registry
+		if (serversManager.getNetworkSize() == 0) {
+			registry = LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
+			System.out.println("Registry Created");
+			isRMIRegistry = true;
+		} else {
+			registry = serversManager.getExistingRegistry();
+			System.out.println("Found existing registry");
+			// registry = LocateRegistry.getRegistry(,Registry.REGISTRY_PORT); // TODO arranjar uma maneira de ter o endereço do registry
+			isRMIRegistry = false;
+		}
+		remoteServiceRMI = new RemoteServiceRMI(this);
+		registry.bind(serversManager.getServerAddress().getServerId(), remoteServiceRMI); // TODO check this out
 		httpAPI = new HttpAPI(this);
 		
 		System.out.println("Server Running ------------------------------------------------");
@@ -81,6 +98,10 @@ public class ServerMain {
 			
 			handleCommand(command, receivedPacket, udpSocket);
 		}
+	}
+	
+	public boolean isRMIRegistry() {
+		return isRMIRegistry;
 	}
 	
 	public ServerNetwork getServersManager() {

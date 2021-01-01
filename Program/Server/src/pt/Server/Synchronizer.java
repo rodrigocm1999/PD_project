@@ -207,6 +207,7 @@ public class Synchronizer {
 		sendCommand(FINISHED, null);
 		
 		socket.close();
+		System.out.println("Finished Receiving Data");
 	}
 	
 	public void sendData() throws Exception {

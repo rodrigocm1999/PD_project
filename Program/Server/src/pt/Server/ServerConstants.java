@@ -16,6 +16,9 @@ public class ServerConstants {
 	public static final String ASK_SYNCHRONIZER = "ASK_SYNCHRONIZER";
 	public static final String ASK_SYNCHRONIZER_OK = "ASK_SYNCHRONIZER_OK";
 	
+	public static final String LOCATE_REGISTRY = "LOCATE_REGISTRY";
+	public static final String REGISTRY_ADDRESS = "REGISTRY_ADDRESS";
+	
 	public static final String CAME_ONLINE = "CAME_ONLINE";
 	public static final String CAME_OFFLINE = "CAME_OFFLINE";
 	public static final String AM_ONLINE = "AM_ONLINE";

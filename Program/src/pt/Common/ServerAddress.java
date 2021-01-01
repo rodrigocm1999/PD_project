@@ -2,6 +2,7 @@ package pt.Common;
 
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.util.Arrays;
 
 public class ServerAddress implements Serializable {
 	
@@ -25,6 +26,10 @@ public class ServerAddress implements Serializable {
 				"address=" + address +
 				", listeningUDPPort=" + udpPort +
 				'}';
+	}
+	
+	public String getServerId() {
+		return address.getHostAddress() + ":" + udpPort;
 	}
 	
 	@Override
