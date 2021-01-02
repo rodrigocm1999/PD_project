@@ -1,4 +1,6 @@
-package pt.Server;
+package pt.Server.DataHolders;
+
+import pt.Server.ServerMain;
 
 import java.io.File;
 

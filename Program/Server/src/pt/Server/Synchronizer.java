@@ -1,12 +1,18 @@
 package pt.Server;
 
 import pt.Common.*;
+import pt.Server.DataHolders.ServerCommand;
+import pt.Server.DataHolders.ServerConstants;
 import pt.Server.Database.ChannelManager;
 import pt.Server.Database.MessageManager;
 import pt.Server.Database.UserManager;
 
-import java.io.*;
-import java.net.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;

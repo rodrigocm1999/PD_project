@@ -1,4 +1,4 @@
-package pt.Server;
+package pt.Server.DataHolders;
 
 import java.io.Serializable;
 

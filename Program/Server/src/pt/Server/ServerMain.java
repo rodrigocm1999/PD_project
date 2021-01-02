@@ -1,9 +1,10 @@
 package pt.Server;
 
 import pt.Common.*;
+import pt.Server.DataHolders.ServerConstants;
 import pt.Server.RMI.RemoteServiceRMI;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -68,7 +69,6 @@ public class ServerMain {
 		serversManager.start();
 		startUpdateClientsServersList();
 		
-		// TODO create or connect to RMI registry
 		if (serversManager.getNetworkSize() == 0) {
 			registry = LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
 			System.out.println("Registry Created");

@@ -2,18 +2,18 @@ package pt.Server.Database;
 
 import pt.Common.UserInfo;
 import pt.Common.Utils;
-import pt.Server.ServerConstants;
+import pt.Server.DataHolders.ServerConstants;
 import pt.Server.ServerMain;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.sql.Date;
 
 public class UserManager {
 	
