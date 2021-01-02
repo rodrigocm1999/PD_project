@@ -6,6 +6,7 @@ import pt.Server.RMI.RemoteServiceRMI;
 
 import java.io.IOException;
 import java.net.*;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.NoSuchAlgorithmException;
@@ -31,6 +32,7 @@ public class ServerMain {
 	
 	private final ArrayList<UserThread> connectedMachines;
 	private ServerNetwork serversManager;
+	
 	private boolean isRMIRegistry;
 	private Registry registry;
 	private RemoteServiceRMI remoteServiceRMI;
@@ -193,6 +195,14 @@ public class ServerMain {
 	}
 	
 	public void propagateNewMessage(MessageInfo message, UserThread adder) {
+		try {
+			for (var ob : remoteServiceRMI.getObserverList()) {
+				ob.newMessage(message);
+			}
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		
 		new Thread(() -> {
 			try {
 				serversManager.propagateNewMessage(message);
@@ -265,6 +275,14 @@ public class ServerMain {
 	}
 	
 	public void protocolReceivedNewMessage(MessageInfo message) {
+		try {
+			for (var ob : remoteServiceRMI.getObserverList()) {
+				ob.newMessage(message);
+			}
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		
 		new Thread(() -> {
 			System.out.println("Received propagation new Message");
 			try {
@@ -322,6 +340,10 @@ public class ServerMain {
 		for (var connection : connectedMachines) {
 			connection.disconnect();
 		}
+	}
+	
+	public RemoteServiceRMI getRemoteServiceRMI() {
+		return remoteServiceRMI;
 	}
 	
 	private static class shutdownHook extends Thread {

@@ -29,7 +29,6 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	@Override
 	public void sendMessageToAllConnected(UserInfo user, MessageInfo message) throws RemoteException {
 		//TODO send to ALL on this server
-		//observerList.forEach(item -> item.newMessage(message));
 	}
 	
 	@Override
@@ -42,5 +41,9 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	public void removeObserver(Observer observer) throws RemoteException {
 		System.out.println("removed observer");
 		observerList.remove(observer);
+	}
+	
+	public List<Observer> getObserverList() {
+		return observerList;
 	}
 }

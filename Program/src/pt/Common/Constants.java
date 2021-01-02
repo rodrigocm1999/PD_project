@@ -9,7 +9,7 @@ public class Constants {
 	public static final String ESTABLISH_CONNECTION = "ESTABLISH_CONNECTION";
 	public static final String CONNECTION_ACCEPTED = "CONNECTION_ACCEPTED";
 	public static final String CONNECTION_REFUSED = "CONNECTION_REFUSED";
-	public static final int CONNECTION_TIMEOUT = 1000;
+	public static final int CONNECTION_TIMEOUT = 5000;
 	
 	public static final String REGISTER = "REGISTER_ATTEMPT";
 	public static final String REGISTER_SUCCESS = "REGISTER_SUCCESS";

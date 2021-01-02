@@ -8,6 +8,7 @@ import pt.Server.Database.UserManager;
 
 import java.io.*;
 import java.net.Socket;
+import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -491,6 +492,14 @@ public class UserThread extends Thread {
 		sendCommand(Constants.LOGIN_SUCCESS, userInfo);
 		System.out.println("Login success : " + userInfo);
 		isLoggedIn = true;
+
+		getApp().getRemoteServiceRMI().getObserverList().forEach(ob->{
+			try {
+				ob.userAuthenticated(userInfo);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+		});
 	}
 	
 	public void receivedPropagatedMessage(MessageInfo message) throws IOException {
