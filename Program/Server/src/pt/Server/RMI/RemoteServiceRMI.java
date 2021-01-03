@@ -16,8 +16,7 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	private final List<Observer> observerList = new ArrayList<>();
 	private final ServerMain serverMain;
 	
-	
-	public RemoteServiceRMI(ServerMain serverMain) throws RemoteException{
+	public RemoteServiceRMI(ServerMain serverMain) throws RemoteException {
 		this.serverMain = serverMain;
 	}
 	

@@ -25,16 +25,17 @@ public class Main { // TODO
 		}
 		
 		Registry registry = LocateRegistry.getRegistry(registryAddress);
-		
 		// Can obtain list server like this : registry.list();
 		// Then do : registry.lookup(nameObtainedInList);
 		
 		System.out.println("All remote services : " + Arrays.toString(registry.list())); // Aqui temos os vários servidores. podemos fazer uma lista a partir um menu a partir do que isto retorna
 		
 		// Tests
-		RemoteService remoteService = (RemoteService) registry.lookup(registry.list()[0]);
-		Observer observer = new RMIObserver();
-		remoteService.addObserver(observer);
+		for (var eee : registry.list()) {
+			RemoteService remoteService = (RemoteService) registry.lookup(eee);
+			Observer observer = new RMIObserver();
+			remoteService.addObserver(observer);
+		}
 	}
 	
 }

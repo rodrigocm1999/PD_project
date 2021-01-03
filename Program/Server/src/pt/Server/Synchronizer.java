@@ -221,10 +221,6 @@ public class Synchronizer {
 		System.out.println("Sending Data");
 		while (true) {
 			ServerCommand command = receiveCommand();
-			if (!command.getServerAddress().equals(thisServer)) {
-				System.out.println("SendData discarded command : " + command);
-				continue; // this packet is not from synchronization
-			}
 			System.out.println("Synchronizer received request : " + command);
 			
 			switch (command.getProtocol()) {

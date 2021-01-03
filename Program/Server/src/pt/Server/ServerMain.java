@@ -76,6 +76,7 @@ public class ServerMain {
 			System.out.println("Registry Created");
 			isRMIRegistry = true;
 		} else {
+			System.out.println("Trying to get registry");
 			registry = serversManager.getExistingRegistry();
 			System.out.println("Found existing registry");
 			isRMIRegistry = false;
