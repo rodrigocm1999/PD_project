@@ -4,10 +4,15 @@ import pt.Common.MessageInfo;
 import pt.Common.RemoteService.Observer;
 import pt.Common.RemoteService.RemoteService;
 import pt.Common.UserInfo;
+import pt.Common.Utils;
+import pt.Server.Database.UserManager;
 import pt.Server.ServerMain;
 
+import javax.xml.validation.Validator;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,8 +26,25 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	}
 	
 	@Override
-	public void registerNewUser(UserInfo user) throws RemoteException {
+	public String registerNewUser(UserInfo user) throws RemoteException {
 		//TODO register
+		try {
+			if (!Utils.checkUsername(user.getUsername())){
+				return "Username does not follow rules (length: 3-25 )";
+			}
+			if (!Utils.checkUserPasswordFollowsRules(user.getPassword())){
+				return "Password doesn't follow rules (needs 8 to 25 characters, a special character, a number and a upper and lower case letter)";
+			}
+			if (UserManager.insertUser(user, null)){
+				return "User registered with success";
+			}else {
+				return "This username is already in use";
+			}
+		} catch (SQLException | NoSuchAlgorithmException throwables) {
+			throwables.printStackTrace();
+		}
+
+		return "something went wrong";
 	}
 	
 	@Override

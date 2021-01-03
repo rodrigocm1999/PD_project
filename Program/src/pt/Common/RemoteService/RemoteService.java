@@ -8,7 +8,7 @@ import java.rmi.RemoteException;
 
 public interface RemoteService extends Remote {
 	
-	void registerNewUser(UserInfo user) throws RemoteException;
+	String registerNewUser(UserInfo user) throws RemoteException;
 	void sendMessageToAllConnected(UserInfo user, MessageInfo message) throws RemoteException;
 	
 	void addObserver(Observer observer) throws RemoteException;
