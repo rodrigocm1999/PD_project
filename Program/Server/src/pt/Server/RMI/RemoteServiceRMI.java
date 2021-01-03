@@ -8,7 +8,6 @@ import pt.Common.Utils;
 import pt.Server.Database.UserManager;
 import pt.Server.ServerMain;
 
-import javax.xml.validation.Validator;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.NoSuchAlgorithmException;
