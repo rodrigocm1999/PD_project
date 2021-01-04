@@ -2,42 +2,37 @@ package pt.Server;
 
 import pt.Common.UserInfo;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HttpAPI { // TODO
 	
-	private class User {
-		public final String token;
-		public final UserInfo user;
-		
-		public User(String token, UserInfo user) {
-			this.token = token;
-			this.user = user;
-		}
-	}
-	
 	private final ServerMain serverMain;
-	private final List<User> authenticatedUsers;
+	private final Map<String, UserInfo> authenticatedUsers;
 	
 	public HttpAPI(ServerMain serverMain) {
 		this.serverMain = serverMain;
-		authenticatedUsers = new ArrayList<>();
+		authenticatedUsers = new HashMap<>();
 		// probably need to create some sort of socket
 		// might give exception
 	}
 	
-	private void login() {
+	//GetMapping("/login")
+	public String login(String username, String password) {
 		//Check username and password
 		//Generate token
 		//Put it in the response body
 		// add to authenticated Users
+		// authenticatedUsers.put(token,user);
+		// return token;
+		return null;
 	}
 	
 	// Everything that requires login must return 401 (Unauthorized) if there is no token
 	// no header de request para mensagens entre outros é necessário vir o token no campo "Authorization"
 	
-	private void getLastNMessages() {
+	//GetMapping("/getMessages")
+	public void getLastNMessages(int amount) {
 		if (checkAuthorized()) {
 			//Obter asúltimas nmensagens  trocadas noservidor,  sendo  cada uma descrita  pelo remetente,
 			// pelo destinatário(utilizador ou canal) e pela mensagem em si;
@@ -47,7 +42,8 @@ public class HttpAPI { // TODO
 		}
 	}
 	
-	private void sendToConnected() {
+	//GetMapping("/send")
+	public void sendToConnected(String messageContent) {
 		if (checkAuthorized()) {
 			//Enviar  uma  mensagem  para  todos  os  utilizadores  que  estão  ligados  ao mesmo servidor.
 			//for each connectedMachine -> change the destination
@@ -56,9 +52,11 @@ public class HttpAPI { // TODO
 		}
 	}
 	
-	private boolean checkAuthorized() {
+	public boolean checkAuthorized() {
 		// Check if token is valid
 		// if not respond with code 401
+		//UserInfo user = authenticatedUsers.get(token);
+		// if(user == null) { //Send unauthorized  }
 		return false;
 	}
 }
