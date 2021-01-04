@@ -27,7 +27,6 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	
 	@Override
 	public String registerNewUser(UserInfo user) throws RemoteException {
-		//TODO register
 		try {
 			if (!Utils.checkUsername(user.getUsername())) {
 				return "Username does not follow rules (length: 3-25 )";
@@ -36,14 +35,14 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 				return "Password doesn't follow rules (needs 8 to 25 characters, a special character, a number and a upper and lower case letter)";
 			}
 			if (UserManager.insertUser(user, null)) {
+				serverMain.propagateNewUser(user);
 				return "User registered with success";
 			} else {
 				return "This username is already in use";
 			}
-		} catch (SQLException | NoSuchAlgorithmException throwables) {
-			throwables.printStackTrace();
+		} catch (SQLException | NoSuchAlgorithmException exception) {
+			exception.printStackTrace();
 		}
-		
 		return "something went wrong";
 	}
 	

@@ -23,7 +23,7 @@ public class Utils {
 	}
 	
 	public static boolean checkUserPasswordFollowsRules(String password) {
-		Pattern pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,25}$");
+		Pattern pattern = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$#!?/|&\\\\%()]).{8,25}$");
 		Matcher matcher = pattern.matcher(password);
 		return matcher.find();
 	}

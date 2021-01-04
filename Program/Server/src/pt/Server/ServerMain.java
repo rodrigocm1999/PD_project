@@ -248,8 +248,10 @@ public class ServerMain {
 		new Thread(() -> {
 			try {
 				userInfo.setPassword(Utils.hashStringBase36(userInfo.getPassword()));
-				userInfo.setImageBytes(null);
-				userInfo.setHasImage(true);
+				if (userInfo.getImageBytes() != null) {
+					userInfo.setImageBytes(null);
+					userInfo.setHasImage(true);
+				}
 				serversManager.propagateNewUser(userInfo);
 				userInfo.setPassword(null);
 				
@@ -265,12 +267,13 @@ public class ServerMain {
 	public void propagateNewChannel(ChannelInfo channel) {
 		new Thread(() -> {
 			try {
+				channel.setPassword(Utils.hashStringBase36(channel.getPassword()));
 				serversManager.propagateNewChannel(channel);
 				
 				for (UserThread user : connectedMachines) {
 					user.receivedPropagatedChannel(channel);
 				}
-			} catch (IOException e) {
+			} catch (IOException | NoSuchAlgorithmException e) {
 				e.printStackTrace();
 			}
 		}).start();

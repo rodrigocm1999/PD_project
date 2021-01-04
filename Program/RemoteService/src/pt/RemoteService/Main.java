@@ -64,12 +64,12 @@ public class Main { // TODO
 					case 0 -> {
 					}
 					case 1 -> {
-						System.out.println("Username:");
+						System.out.println("Username/Name:");
 						String name = scanner.nextLine();
 						System.out.println("Password:");
 						String pwd = scanner.nextLine();
 						
-						String result = remoteService.registerNewUser(new UserInfo(name, pwd));
+						String result = remoteService.registerNewUser(new UserInfo(name, name, pwd, null));
 						System.out.println(result);
 					}
 				}
