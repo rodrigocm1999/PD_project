@@ -17,12 +17,10 @@ public class Main { // TODO
 		// recebe um argumento, ip do RMI registry
 		// liga-se ao registry e pede a lista de serviços para obter todos os servidores
 		
-		
-		// TODO depois de escolher o server tem-se outro menu para escolher o que se quer fazer
-		
 		String registryAddress = "localhost";
 		if (args.length >= 1) {
 			registryAddress = args[0];
+			System.out.println(registryAddress);
 		}
 		
 		Registry registry = LocateRegistry.getRegistry(registryAddress);
@@ -53,6 +51,7 @@ public class Main { // TODO
 			RemoteService remoteService = (RemoteService) registry.lookup(list[choice - 2]);
 			System.out.println(remoteService);
 			
+			// TODO depois de escolher o server tem-se outro menu para escolher o que se quer fazer
 			while (choice != 0) {
 				System.out.println("0 - Go back");
 				System.out.println("1 - Register new User");

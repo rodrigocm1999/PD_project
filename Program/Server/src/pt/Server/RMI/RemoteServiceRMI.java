@@ -20,7 +20,8 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	private final List<Observer> observerList = new ArrayList<>();
 	private final ServerMain serverMain;
 	
-	public RemoteServiceRMI(ServerMain serverMain) throws RemoteException {
+	public RemoteServiceRMI(int objectPort, ServerMain serverMain) throws RemoteException {
+		super(objectPort);
 		this.serverMain = serverMain;
 	}
 	
@@ -28,21 +29,21 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	public String registerNewUser(UserInfo user) throws RemoteException {
 		//TODO register
 		try {
-			if (!Utils.checkUsername(user.getUsername())){
+			if (!Utils.checkUsername(user.getUsername())) {
 				return "Username does not follow rules (length: 3-25 )";
 			}
-			if (!Utils.checkUserPasswordFollowsRules(user.getPassword())){
+			if (!Utils.checkUserPasswordFollowsRules(user.getPassword())) {
 				return "Password doesn't follow rules (needs 8 to 25 characters, a special character, a number and a upper and lower case letter)";
 			}
-			if (UserManager.insertUser(user, null)){
+			if (UserManager.insertUser(user, null)) {
 				return "User registered with success";
-			}else {
+			} else {
 				return "This username is already in use";
 			}
 		} catch (SQLException | NoSuchAlgorithmException throwables) {
 			throwables.printStackTrace();
 		}
-
+		
 		return "something went wrong";
 	}
 	
