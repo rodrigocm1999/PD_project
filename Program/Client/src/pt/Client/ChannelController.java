@@ -55,7 +55,7 @@ public class ChannelController implements Initializable {
         ClientMain client = ClientMain.getInstance();
         ArrayList<ChannelInfo> list = client.getChannels();
 
-        for (var item: list) {
+        for (var item : list) {
             if (item.getName().equals(name)) {
                 errorLabel.setText("This channel already exists");
                 return;
@@ -63,12 +63,12 @@ public class ChannelController implements Initializable {
         }
 
         Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_ADD, new ChannelInfo(name, passwordField.getText(), descriptionField.getText()));
-        if (command.getProtocol().equals(Constants.SUCCESS)){
+        if (command.getProtocol().equals(Constants.SUCCESS)) {
             errorLabel.setText("Created successfully");
             errorLabel.setTextFill(Color.web("green"));
             btn.setDisable(true);
             btn.setVisible(false);
-        }else {
+        } else {
             errorLabel.setText((String) command.getExtras());
         }
     }
@@ -81,32 +81,32 @@ public class ChannelController implements Initializable {
         String pwd = passwordField.getText();
         setChannel(null);
 
-        for (var item: list) {
+        for (var item : list) {
             if (item.getName().equals(name)) {
                 setChannel(item);
             }
         }
-        if (channel != null){
-            if (channel.getCreatorId() != client.getUserInfo().getUserId()){
+        if (channel != null) {
+            if (channel.getCreatorId() != client.getUserInfo().getUserId()) {
                 errorLabel.setText("You are not the owner of this channel!");
                 return;
-            }else if (!channel.getPassword().equals(pwd)){
+            } else if (!channel.getPassword().equals(pwd)) {
                 errorLabel.setText("Wrong Password!");
                 return;
             }
-        }else {
+        } else {
             errorLabel.setText("This does not exists!");
             return;
         }
 
 
         Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_REMOVE, getChannel().getId());
-        if (command.getProtocol().equals(Constants.SUCCESS)){
+        if (command.getProtocol().equals(Constants.SUCCESS)) {
             errorLabel.setText("Deleted Successfully");
             errorLabel.setTextFill(Color.web("green"));
             btn.setDisable(true);
             btn.setVisible(false);
-        }else {
+        } else {
             errorLabel.setText((String) command.getExtras());
         }
     }
@@ -118,20 +118,20 @@ public class ChannelController implements Initializable {
         ArrayList<ChannelInfo> list = client.getChannels();
         channel = null;
 
-        for (var item: list) {
+        for (var item : list) {
             if (item.getName().equals(channelName)) {
                 setChannel(item);
             }
         }
-        if (channel != null){
-            if (channel.getCreatorId() != client.getUserInfo().getUserId()){
+        if (channel != null) {
+            if (channel.getCreatorId() != client.getUserInfo().getUserId()) {
                 errorLabel.setText("You are not the owner of this channel!");
                 return;
-            }else {
+            } else {
                 descriptionField.setText(channel.getDescription());
                 newChannelNameField.setText(channel.getName());
             }
-        }else {
+        } else {
             errorLabel.setText("This channel does not exist!");
             return;
         }
@@ -139,16 +139,16 @@ public class ChannelController implements Initializable {
 
 
     public void onEdit(ActionEvent actionEvent) throws IOException, InterruptedException {
-        if (channel == null){
+        if (channel == null) {
             return;
         }
-        String newDescrition =  descriptionField.getText();
+        String newDescrition = descriptionField.getText();
         String pwd = passwordField.getText();
         String repeatPwd = repeatPasswordField.getText();
         String newName = newChannelNameField.getText();
 
 
-        if (!pwd.equals(repeatPwd)){
+        if (!pwd.equals(repeatPwd)) {
             errorLabel.setText("Password needs to be the same");
             return;
         }
@@ -159,12 +159,12 @@ public class ChannelController implements Initializable {
         channel.setName(newName);
 
         Command command = (Command) client.sendCommandToServer(Constants.CHANNEL_EDIT, channel);
-        if (command.getProtocol().equals(Constants.SUCCESS)){
+        if (command.getProtocol().equals(Constants.SUCCESS)) {
             errorLabel.setText("Edited Successfully");
             errorLabel.setTextFill(Color.web("green"));
             editBtn.setDisable(true);
             editBtn.setVisible(false);
-        }else {
+        } else {
             errorLabel.setText((String) command.getExtras());
         }
 

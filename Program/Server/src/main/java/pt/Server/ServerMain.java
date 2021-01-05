@@ -3,6 +3,7 @@ package pt.Server;
 import org.springframework.boot.SpringApplication;
 import pt.Common.*;
 import pt.Server.DataHolders.ServerConstants;
+import pt.Server.Database.MessageManager;
 import pt.Server.RMI.RemoteServiceRMI;
 import pt.Server.RestAPI.HttpAPI;
 
@@ -169,7 +170,11 @@ public class ServerMain {
 	public int getNConnectedUsers() {
 		return connectedMachines.size();
 	}
-	
+
+	public ArrayList<UserThread> getConnected() {
+		return connectedMachines;
+	}
+
 	public void removeConnected(UserThread user) throws IOException {
 		synchronized (connectedMachines) {
 			connectedMachines.remove(user);
@@ -384,5 +389,14 @@ public class ServerMain {
 		
 		new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort, listeningFilePort, remoteObjectPort)
 				.start();
+	}
+	public void sendToAllConnected(MessageInfo message) throws SQLException {
+		for (var user: getConnected()){
+			if (user.isLoggedIn()) {
+				message.setRecipientId(user.getUserInfo().getUserId());
+				MessageManager.insertMessage(message);
+				propagateNewMessage(message, null);
+			}
+		}
 	}
 }

@@ -4,88 +4,93 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="372.0" minWidth="600.0" prefHeight="372.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
-   <children>
-      <HBox>
-         <children>
-            <TextField fx:id="channelNameTextField" prefHeight="30.0" prefWidth="189.0">
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin>
-            </TextField>
-            <Button mnemonicParsing="false" onAction="#findChannelOnClcik" text="Find">
-               <HBox.margin>
-                  <Insets left="20.0" />
-               </HBox.margin>
-            </Button>
-         </children>
-         <VBox.margin>
-            <Insets />
-         </VBox.margin>
-         <padding>
-            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
-         </padding>
-      </HBox>
-      <HBox>
-         <children>
-            <Label prefHeight="17.0" prefWidth="77.0" text="New Name:" />
-            <TextField fx:id="newChannelNameField" />
-         </children>
-         <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-         </padding>
-      </HBox>
-      <HBox>
-         <children>
-            <Label minWidth="70.0" prefHeight="17.0" prefWidth="78.0" text="Description:">
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin>
-            </Label>
-            <TextArea fx:id="descriptionField" minWidth="412.0" prefHeight="37.0" prefWidth="444.0">
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin>
-            </TextArea>
-         </children>
-         <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-         </padding>
-         <VBox.margin>
-            <Insets />
-         </VBox.margin>
-      </HBox>
-      <HBox>
-         <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-         </padding>
-         <children>
-            <VBox prefHeight="67.0" prefWidth="524.0">
-               <children>
-                  <Label text="New Password" />
-                  <PasswordField fx:id="passwordField" prefHeight="25.0" prefWidth="40.0">
-                     <VBox.margin>
-                        <Insets />
-                     </VBox.margin>
-                  </PasswordField>
-                  <Label text="Repeat Password" />
-                  <PasswordField fx:id="repeatPasswordField" prefHeight="20.0" prefWidth="20.0" VBox.vgrow="ALWAYS" />
-               </children>
-            </VBox>
-         </children>
-      </HBox>
-      <HBox alignment="CENTER_RIGHT">
-         <children>
-            <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="480.0" prefHeight="17.0" prefWidth="57.0" text="ErrorLabel" textFill="RED" HBox.hgrow="ALWAYS">
-               <HBox.margin>
-                  <Insets right="20.0" />
-               </HBox.margin>
-            </Label>
-            <Button fx:id="editBtn" alignment="TOP_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false" nodeOrientation="LEFT_TO_RIGHT" onAction="#onEdit" text="Edit" />
-         </children>
-         <padding>
-            <Insets bottom="10.0" left="30.0" right="30.0" top="10.0" />
-         </padding>
-      </HBox>
-   </children>
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="372.0" minWidth="600.0" prefHeight="372.0" prefWidth="600.0"
+      xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="pt.Client.ChannelController">
+    <children>
+        <HBox>
+            <children>
+                <TextField fx:id="channelNameTextField" prefHeight="30.0" prefWidth="189.0">
+                    <HBox.margin>
+                        <Insets/>
+                    </HBox.margin>
+                </TextField>
+                <Button mnemonicParsing="false" onAction="#findChannelOnClcik" text="Find">
+                    <HBox.margin>
+                        <Insets left="20.0"/>
+                    </HBox.margin>
+                </Button>
+            </children>
+            <VBox.margin>
+                <Insets/>
+            </VBox.margin>
+            <padding>
+                <Insets bottom="30.0" left="30.0" right="30.0" top="30.0"/>
+            </padding>
+        </HBox>
+        <HBox>
+            <children>
+                <Label prefHeight="17.0" prefWidth="77.0" text="New Name:"/>
+                <TextField fx:id="newChannelNameField"/>
+            </children>
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+        </HBox>
+        <HBox>
+            <children>
+                <Label minWidth="70.0" prefHeight="17.0" prefWidth="78.0" text="Description:">
+                    <HBox.margin>
+                        <Insets/>
+                    </HBox.margin>
+                </Label>
+                <TextArea fx:id="descriptionField" minWidth="412.0" prefHeight="37.0" prefWidth="444.0">
+                    <HBox.margin>
+                        <Insets/>
+                    </HBox.margin>
+                </TextArea>
+            </children>
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+            <VBox.margin>
+                <Insets/>
+            </VBox.margin>
+        </HBox>
+        <HBox>
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+            <children>
+                <VBox prefHeight="67.0" prefWidth="524.0">
+                    <children>
+                        <Label text="New Password"/>
+                        <PasswordField fx:id="passwordField" prefHeight="25.0" prefWidth="40.0">
+                            <VBox.margin>
+                                <Insets/>
+                            </VBox.margin>
+                        </PasswordField>
+                        <Label text="Repeat Password"/>
+                        <PasswordField fx:id="repeatPasswordField" prefHeight="20.0" prefWidth="20.0"
+                                       VBox.vgrow="ALWAYS"/>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+        <HBox alignment="CENTER_RIGHT">
+            <children>
+                <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="480.0"
+                       prefHeight="17.0" prefWidth="57.0" text="ErrorLabel" textFill="RED" HBox.hgrow="ALWAYS">
+                    <HBox.margin>
+                        <Insets right="20.0"/>
+                    </HBox.margin>
+                </Label>
+                <Button fx:id="editBtn" alignment="TOP_RIGHT" contentDisplay="RIGHT" mnemonicParsing="false"
+                        nodeOrientation="LEFT_TO_RIGHT" onAction="#onEdit" text="Edit"/>
+            </children>
+            <padding>
+                <Insets bottom="10.0" left="30.0" right="30.0" top="10.0"/>
+            </padding>
+        </HBox>
+    </children>
 </VBox>

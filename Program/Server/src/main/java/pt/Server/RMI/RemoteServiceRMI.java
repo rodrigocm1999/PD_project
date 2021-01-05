@@ -5,6 +5,7 @@ import pt.Common.RemoteService.Observer;
 import pt.Common.RemoteService.RemoteService;
 import pt.Common.UserInfo;
 import pt.Common.Utils;
+import pt.Server.Database.MessageManager;
 import pt.Server.Database.UserManager;
 import pt.Server.ServerMain;
 
@@ -47,12 +48,28 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	}
 	
 	@Override
-	public void sendMessageToAllConnected(UserInfo user, MessageInfo message) throws RemoteException {
-		//TODO send to ALL on this server
+	public String sendMessageToAllConnected(String username, String password, String content) throws RemoteException {
 		//Enviar  uma  mensagem  para  todos  os  utilizadores  que  estão  ligados  ao mesmo servidor.
 		//for each connectedMachine -> change the destination
-		//MessageManager.insertMessage();
-		//serverMain.propagateNewMessage();
+		try {
+			UserInfo user = UserManager.getUserByName(username);
+			if (user == null){
+				return "This user does not exist";
+			}
+			if (!UserManager.doesPasswordMatchUsername(username,password)){
+				return "Password does not match username";
+			}
+
+			MessageInfo message = new MessageInfo(MessageInfo.TYPE_TEXT,content);
+			message.setSenderUsername(username);
+			message.setSenderId(user.getUserId());
+			message.setRecipientType(MessageInfo.Recipient.USER);
+			serverMain.sendToAllConnected(message);
+			return "Message sent to all connected";
+		} catch (SQLException | NoSuchAlgorithmException throwables) {
+			throwables.printStackTrace();
+		}
+		return "Something went wrong";
 	}
 	
 	@Override
@@ -70,4 +87,6 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	public List<Observer> getObserverList() {
 		return observerList;
 	}
+
+
 }

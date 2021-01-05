@@ -544,4 +544,8 @@ public class UserThread extends Thread {
 	public boolean isLoggedIn() {
 		return isLoggedIn;
 	}
+
+	public UserInfo getUserInfo() {
+		return userInfo;
+	}
 }

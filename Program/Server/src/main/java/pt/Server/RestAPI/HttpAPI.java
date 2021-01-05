@@ -30,7 +30,7 @@ import java.util.Map;
 
 @SpringBootApplication
 @RestController
-public class HttpAPI { // TODO
+public class HttpAPI {
 	
 	private static final ServerMain serverMain = ServerMain.getInstance();
 	public static final Map<String, UserInfo> authenticatedUsers = new HashMap<>();
@@ -99,6 +99,8 @@ public class HttpAPI { // TODO
 		//for each connectedMachine -> change the destination
 		//MessageManager.insertMessage();
 		//serverMain.propagateNewMessage();
+
+		//TODO send message
 		
 	}
 	

@@ -6,106 +6,120 @@
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 
-<GridPane alignment="center" hgap="10" prefWidth="600.0" vgap="10" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.LoginController">
+<GridPane alignment="center" hgap="10" prefWidth="600.0" vgap="10" xmlns="http://javafx.com/javafx/11.0.1"
+          xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.LoginController">
     <children>
         <Pane prefHeight="460" prefWidth="600" style="-fx-background-color: #82CFC8;" styleClass="plano">
             <children>
                 <Label layoutX="245.0" layoutY="106.0" prefHeight="30.0" prefWidth="108.0" text="Username">
                     <font>
-                        <Font name="Tw Cen MT Condensed Extra Bold" size="27.0" />
+                        <Font name="Tw Cen MT Condensed Extra Bold" size="27.0"/>
                     </font>
                 </Label>
-                <TextField fx:id="idUsername" layoutX="226.0" layoutY="150.0" onKeyPressed="#keyPressed" style="-fx-border-radius: 1px;" />
+                <TextField fx:id="idUsername" layoutX="226.0" layoutY="150.0" onKeyPressed="#keyPressed"
+                           style="-fx-border-radius: 1px;"/>
 
                 <Label layoutX="251.0" layoutY="184.0" text="Password">
                     <font>
-                        <Font name="Tw Cen MT Condensed Extra Bold" size="27.0" />
+                        <Font name="Tw Cen MT Condensed Extra Bold" size="27.0"/>
                     </font>
                 </Label>
-                <PasswordField fx:id="idPassword" layoutX="225.0" layoutY="223.0" onKeyPressed="#keyPressed" />
+                <PasswordField fx:id="idPassword" layoutX="225.0" layoutY="223.0" onKeyPressed="#keyPressed"/>
 
-                <Button layoutX="225.0" layoutY="299.0" mnemonicParsing="false" onAction="#onClickLogin" prefHeight="25.0" prefWidth="149.0" style="-fx-background-color: #d9d9d9;" text="Login">
+                <Button layoutX="225.0" layoutY="299.0" mnemonicParsing="false" onAction="#onClickLogin"
+                        prefHeight="25.0" prefWidth="149.0" style="-fx-background-color: #d9d9d9;" text="Login">
                     <font>
-                        <Font name="Lucida Sans Unicode" size="18.0" />
+                        <Font name="Lucida Sans Unicode" size="18.0"/>
                     </font>
                 </Button>
                 <Circle fill="#1f93ff77" layoutX="93.0" layoutY="373.0" radius="54.0" strokeType="INSIDE">
                     <stroke>
-                        <RadialGradient centerX="0.7777777777777778" centerY="0.7095238095238096" radius="0.8255813953488372">
+                        <RadialGradient centerX="0.7777777777777778" centerY="0.7095238095238096"
+                                        radius="0.8255813953488372">
                             <stops>
                                 <Stop>
                                     <color>
-                                        <Color red="0.7236841917037964" green="0.10051169246435165" blue="0.10051169246435165" />
+                                        <Color red="0.7236841917037964" green="0.10051169246435165"
+                                               blue="0.10051169246435165"/>
                                     </color>
                                 </Stop>
                                 <Stop offset="1.0">
                                     <color>
-                                        <Color red="1.0" green="1.0" blue="1.0" />
+                                        <Color red="1.0" green="1.0" blue="1.0"/>
                                     </color>
                                 </Stop>
                             </stops>
                         </RadialGradient>
                     </stroke>
                 </Circle>
-                <Button layoutX="457.0" layoutY="35.0" mnemonicParsing="false" onAction="#onClickRegister" prefHeight="41.0" prefWidth="129.0" style="-fx-border-radius: 50%; -fx-background-color: #4f8186;" text="Register">
+                <Button layoutX="457.0" layoutY="35.0" mnemonicParsing="false" onAction="#onClickRegister"
+                        prefHeight="41.0" prefWidth="129.0"
+                        style="-fx-border-radius: 50%; -fx-background-color: #4f8186;" text="Register">
                     <font>
-                        <Font name="Lucida Bright" size="18.0" />
+                        <Font name="Lucida Bright" size="18.0"/>
                     </font>
                 </Button>
 
-            <Button layoutX="383.0" layoutY="391.0" mnemonicParsing="false" onAction="#onClickLoginTestUser" prefHeight="45.0" prefWidth="149.0" style="-fx-background-color: #1EDA1E;" text="Login test user" visible="false">
-               <font>
-                  <Font size="18.0" />
-               </font>
-            </Button>
-            <Label fx:id="errorLabel" alignment="CENTER" contentDisplay="CENTER" layoutX="142.0" layoutY="262.0" prefHeight="27.0" prefWidth="311.0" textFill="RED">
-               <font>
-                  <Font size="18.0" />
-               </font>
-            </Label>
-            <Circle fill="#1f93ff77" layoutX="93.0" layoutY="96.0" radius="54.0" strokeType="INSIDE">
-               <stroke>
-                  <RadialGradient centerX="0.7777777777777778" centerY="0.7095238095238096" radius="0.8255813953488372">
-                     <stops>
-                        <Stop>
-                           <color>
-                              <Color red="0.7236841917037964" green="0.10051169246435165" blue="0.10051169246435165" />
-                           </color>
-                        </Stop>
-                        <Stop offset="1.0">
-                           <color>
-                              <Color red="1.0" green="1.0" blue="1.0" />
-                           </color>
-                        </Stop>
-                     </stops>
-                  </RadialGradient>
-               </stroke>
-            </Circle>
-            <Circle fill="#1f93ff77" layoutX="522.0" layoutY="373.0" radius="54.0" strokeType="INSIDE">
-               <stroke>
-                  <RadialGradient centerX="0.7777777777777778" centerY="0.7095238095238096" radius="0.8255813953488372">
-                     <stops>
-                        <Stop>
-                           <color>
-                              <Color red="0.7236841917037964" green="0.10051169246435165" blue="0.10051169246435165" />
-                           </color>
-                        </Stop>
-                        <Stop offset="1.0">
-                           <color>
-                              <Color red="1.0" green="1.0" blue="1.0" />
-                           </color>
-                        </Stop>
-                     </stops>
-                  </RadialGradient>
-               </stroke>
-            </Circle>
+                <Button layoutX="383.0" layoutY="391.0" mnemonicParsing="false" onAction="#onClickLoginTestUser"
+                        prefHeight="45.0" prefWidth="149.0" style="-fx-background-color: #1EDA1E;"
+                        text="Login test user" visible="false">
+                    <font>
+                        <Font size="18.0"/>
+                    </font>
+                </Button>
+                <Label fx:id="errorLabel" alignment="CENTER" contentDisplay="CENTER" layoutX="142.0" layoutY="262.0"
+                       prefHeight="27.0" prefWidth="311.0" textFill="RED">
+                    <font>
+                        <Font size="18.0"/>
+                    </font>
+                </Label>
+                <Circle fill="#1f93ff77" layoutX="93.0" layoutY="96.0" radius="54.0" strokeType="INSIDE">
+                    <stroke>
+                        <RadialGradient centerX="0.7777777777777778" centerY="0.7095238095238096"
+                                        radius="0.8255813953488372">
+                            <stops>
+                                <Stop>
+                                    <color>
+                                        <Color red="0.7236841917037964" green="0.10051169246435165"
+                                               blue="0.10051169246435165"/>
+                                    </color>
+                                </Stop>
+                                <Stop offset="1.0">
+                                    <color>
+                                        <Color red="1.0" green="1.0" blue="1.0"/>
+                                    </color>
+                                </Stop>
+                            </stops>
+                        </RadialGradient>
+                    </stroke>
+                </Circle>
+                <Circle fill="#1f93ff77" layoutX="522.0" layoutY="373.0" radius="54.0" strokeType="INSIDE">
+                    <stroke>
+                        <RadialGradient centerX="0.7777777777777778" centerY="0.7095238095238096"
+                                        radius="0.8255813953488372">
+                            <stops>
+                                <Stop>
+                                    <color>
+                                        <Color red="0.7236841917037964" green="0.10051169246435165"
+                                               blue="0.10051169246435165"/>
+                                    </color>
+                                </Stop>
+                                <Stop offset="1.0">
+                                    <color>
+                                        <Color red="1.0" green="1.0" blue="1.0"/>
+                                    </color>
+                                </Stop>
+                            </stops>
+                        </RadialGradient>
+                    </stroke>
+                </Circle>
             </children>
         </Pane>
     </children>
     <columnConstraints>
-        <ColumnConstraints />
+        <ColumnConstraints/>
     </columnConstraints>
     <rowConstraints>
-        <RowConstraints />
+        <RowConstraints/>
     </rowConstraints>
 </GridPane>

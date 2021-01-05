@@ -9,22 +9,26 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="275.0" minWidth="420.0" prefHeight="275.0" prefWidth="420.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pt.Client.ChannelController">
-   <children>
-      <Label text="Channel Name" />
-      <TextField id="name" fx:id="nameField" prefHeight="25.0" prefWidth="192.0" />
-      <Label text="Password" />
-      <PasswordField id="password" fx:id="passwordField" />
-      <Label text="Description" />
-      <TextArea id="description" fx:id="descriptionField" prefHeight="75.0" prefWidth="374.0" />
-      <HBox alignment="CENTER_RIGHT" prefHeight="47.0" prefWidth="380.0">
-         <children>
-            <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="325.0" prefHeight="17.0" prefWidth="329.0" text="ErrorLabel" textFill="RED" />
-            <Button fx:id="btn" alignment="BOTTOM_RIGHT" contentDisplay="CENTER" mnemonicParsing="false" onAction="#onCreate" text="Create" />
-         </children>
-      </HBox>
-   </children>
-   <padding>
-      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-   </padding>
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="275.0" minWidth="420.0" prefHeight="275.0" prefWidth="420.0"
+      xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="pt.Client.ChannelController">
+    <children>
+        <Label text="Channel Name"/>
+        <TextField id="name" fx:id="nameField" prefHeight="25.0" prefWidth="192.0"/>
+        <Label text="Password"/>
+        <PasswordField id="password" fx:id="passwordField"/>
+        <Label text="Description"/>
+        <TextArea id="description" fx:id="descriptionField" prefHeight="75.0" prefWidth="374.0"/>
+        <HBox alignment="CENTER_RIGHT" prefHeight="47.0" prefWidth="380.0">
+            <children>
+                <Label fx:id="errorLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT" maxWidth="325.0"
+                       prefHeight="17.0" prefWidth="329.0" text="ErrorLabel" textFill="RED"/>
+                <Button fx:id="btn" alignment="BOTTOM_RIGHT" contentDisplay="CENTER" mnemonicParsing="false"
+                        onAction="#onCreate" text="Create"/>
+            </children>
+        </HBox>
+    </children>
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
 </VBox>
