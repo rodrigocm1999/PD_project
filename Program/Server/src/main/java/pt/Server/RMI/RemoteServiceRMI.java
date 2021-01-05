@@ -49,6 +49,10 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	@Override
 	public void sendMessageToAllConnected(UserInfo user, MessageInfo message) throws RemoteException {
 		//TODO send to ALL on this server
+		//Enviar  uma  mensagem  para  todos  os  utilizadores  que  estão  ligados  ao mesmo servidor.
+		//for each connectedMachine -> change the destination
+		//MessageManager.insertMessage();
+		//serverMain.propagateNewMessage();
 	}
 	
 	@Override

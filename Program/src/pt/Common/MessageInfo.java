@@ -21,6 +21,7 @@ public class MessageInfo implements Serializable {
 	private String type;
 	private String content;
 	private String senderUsername;
+	private String recipientUsername;
 	
 	public MessageInfo(String type, String content) {
 		this.type = type;
@@ -40,6 +41,11 @@ public class MessageInfo implements Serializable {
 	public MessageInfo(int id, int senderId, Recipient recipientType, int recipientId, long momentSent, String type, String content, String senderUsername) {
 		this(id, senderId, recipientType, recipientId, momentSent, type, content);
 		this.senderUsername = senderUsername;
+	}
+	
+	public MessageInfo(int id, int senderId, Recipient recipientType, int recipientId, long momentSent, String type, String content, String senderUsername, String recipientUsername) {
+		this(id, senderId, recipientType, recipientId, momentSent, type, content, senderUsername);
+		this.recipientUsername = recipientUsername;
 	}
 	
 	
@@ -130,5 +136,9 @@ public class MessageInfo implements Serializable {
 	
 	public void setSenderUsername(String senderUsername) {
 		this.senderUsername = senderUsername;
+	}
+	
+	public String getRecipientUsername() {
+		return recipientUsername;
 	}
 }

@@ -1,8 +1,10 @@
 package pt.Server;
 
+import org.springframework.boot.SpringApplication;
 import pt.Common.*;
 import pt.Server.DataHolders.ServerConstants;
 import pt.Server.RMI.RemoteServiceRMI;
+import pt.Server.RestAPI.HttpAPI;
 
 import java.io.IOException;
 import java.net.*;
@@ -37,7 +39,6 @@ public class ServerMain {
 	private Registry registry;
 	private int remoteObjectPort;
 	private RemoteServiceRMI remoteServiceRMI;
-	private HttpAPI httpAPI;
 	
 	public static ServerMain getInstance() {
 		assert instance != null;
@@ -84,7 +85,7 @@ public class ServerMain {
 		}
 		remoteServiceRMI = new RemoteServiceRMI(remoteObjectPort, this);
 		registry.bind(serversManager.getServerAddress().getServerId(), remoteServiceRMI);
-		httpAPI = new HttpAPI(this);
+		SpringApplication.run(HttpAPI.class); // Creates and starts RestAPI
 		
 		System.out.println("Server Running ------------------------------------------------");
 		

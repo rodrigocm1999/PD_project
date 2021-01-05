@@ -56,6 +56,28 @@ public class UserManager {
 		return !doesUsernameExist(username);
 	}
 	
+	public static UserInfo getUserByName(String username) throws SQLException {
+		String select = "select id,name,username from user where username = ?";
+		PreparedStatement stat = getApp().getPreparedStatement(select);
+		stat.setString(1, username);
+		ResultSet result = stat.executeQuery();
+		if (result.next()) {
+			return new UserInfo(result.getInt("id"), result.getString("name"), result.getString("username"));
+		}
+		return null;
+	}
+	
+	public static UserInfo getUserById(int id) throws SQLException {
+		String select = "select id,name,username from user where id = ?";
+		PreparedStatement stat = getApp().getPreparedStatement(select);
+		stat.setInt(1, id);
+		ResultSet result = stat.executeQuery();
+		if (result.next()) {
+			return new UserInfo(result.getInt("id"), result.getString("name"), result.getString("username"));
+		}
+		return null;
+	}
+	
 	public static boolean doesUsernameExist(String username) throws SQLException {
 		// check if username exists -------------------------------------------
 		String select = "select count(id) from user where username = ?";

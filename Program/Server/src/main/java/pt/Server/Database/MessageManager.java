@@ -1,6 +1,8 @@
 package pt.Server.Database;
 
+import pt.Common.ChannelInfo;
 import pt.Common.MessageInfo;
+import pt.Common.UserInfo;
 import pt.Server.ServerMain;
 
 import java.sql.Date;
@@ -8,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MessageManager {
 	
@@ -58,7 +61,7 @@ public class MessageManager {
 			String content = result.getString("content");
 			String senderUsername = result.getString("sender_username");
 			
-			messages.add(new MessageInfo(id, senderId, MessageInfo.Recipient.CHANNEL, channelId, utcTime, type, content,senderUsername));
+			messages.add(new MessageInfo(id, senderId, MessageInfo.Recipient.CHANNEL, channelId, utcTime, type, content, senderUsername));
 		}
 		return messages;
 	}
@@ -224,5 +227,41 @@ public class MessageManager {
 				recipientType, recipientId,
 				result.getDate("moment_sent").getTime(),
 				result.getString("type"), result.getString("content"));
+	}
+	
+	public static List<MessageInfo> getLastMessages(int amount) throws SQLException {
+		String sql = "select id,sender_id,moment_sent,type,content, " +
+				" (select channel_id from channel_message where message.id = message_id) as channel_id, " +
+				" (select receiver_id from user_message where message.id = message_id) as receiver_id, " +
+				" (select username from user where user.id = sender_id) as sender_username " +
+				"from message " +
+				"order by id desc " +
+				"limit ?";
+		PreparedStatement statement = getApp().getPreparedStatement(sql);
+		statement.setInt(1, amount);
+		ResultSet result = statement.executeQuery();
+		List<MessageInfo> messages = new ArrayList<>();
+		
+		while (result.next()) {
+			MessageInfo.Recipient recipientType = result.getString("channel_id") != null ? MessageInfo.Recipient.CHANNEL : MessageInfo.Recipient.USER;
+			int recipientId = recipientType == MessageInfo.Recipient.CHANNEL ? result.getInt("channel_id") : result.getInt("receiver_id");
+			String recipientUsername;
+			
+			if (recipientType.equals(MessageInfo.Recipient.USER)) {
+				UserInfo userById = UserManager.getUserById(recipientId);
+				recipientUsername = userById.getUsername();
+			} else {
+				ChannelInfo channelById = ChannelManager.getChannelById(recipientId);
+				recipientUsername = channelById.getName();
+			}
+			
+			messages.add(new MessageInfo(
+					result.getInt("id"), result.getInt("sender_id"),
+					recipientType, recipientId,
+					result.getDate("moment_sent").getTime(),
+					result.getString("type"), result.getString("content"),
+					result.getString("sender_username"), recipientUsername));
+		}
+		return messages;
 	}
 }
