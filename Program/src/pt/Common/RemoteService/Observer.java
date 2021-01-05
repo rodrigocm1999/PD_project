@@ -8,7 +8,6 @@ import java.rmi.RemoteException;
 
 public interface Observer extends Remote {
 
-    void userAuthenticated(UserInfo user) throws RemoteException; // TODO maybe just print to the console, IMPLEMENT, needs to be called from some fucked up place
-
-    void newMessage(MessageInfo message) throws RemoteException; // TODO same, IMPLEMENT
+	void userAuthenticated(UserInfo user) throws RemoteException;
+	void newMessage(MessageInfo message) throws RemoteException;
 }
