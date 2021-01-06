@@ -390,13 +390,16 @@ public class ServerMain {
 		new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort, listeningFilePort, remoteObjectPort)
 				.start();
 	}
-	public void sendToAllConnected(MessageInfo message) throws SQLException {
+	public int sendToAllConnected(MessageInfo message) throws SQLException {
+		int count = 0;
 		for (var user: getConnected()){
 			if (user.isLoggedIn()) {
+				count++;
 				message.setRecipientId(user.getUserInfo().getUserId());
 				MessageManager.insertMessage(message);
 				propagateNewMessage(message, null);
 			}
 		}
+		return count;
 	}
 }

@@ -64,8 +64,8 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 			message.setSenderUsername(username);
 			message.setSenderId(user.getUserId());
 			message.setRecipientType(MessageInfo.Recipient.USER);
-			serverMain.sendToAllConnected(message);
-			return "Message sent to all connected";
+			int amount = serverMain.sendToAllConnected(message);
+			return "Message sent to all connected: " + amount;
 		} catch (SQLException | NoSuchAlgorithmException throwables) {
 			throwables.printStackTrace();
 		}

@@ -1,17 +1,15 @@
 package pt.Server.RestAPI;
 
-import org.apache.logging.log4j.message.Message;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +20,7 @@ import pt.Server.Database.MessageManager;
 import pt.Server.Database.UserManager;
 import pt.Server.ServerMain;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -93,15 +92,30 @@ public class HttpAPI {
 	}
 	
 	@PutMapping("/sendMessage")
-	public void sendToConnected(@RequestParam(value = "content", defaultValue = "") String messageContent) {
+	public String sendToConnected(HttpServletRequest request,@RequestParam(value = "content", defaultValue = "") String messageContent) {
 		
 		//Enviar  uma  mensagem  para  todos  os  utilizadores  que  estão  ligados  ao mesmo servidor.
 		//for each connectedMachine -> change the destination
 		//MessageManager.insertMessage();
 		//serverMain.propagateNewMessage();
 
-		//TODO send message
-		
+
+		String token = request.getHeader("Authorization");
+		token = token.substring("Bearer ".length());
+		UserInfo user = authenticatedUsers.get(token);
+
+
+		MessageInfo message = new MessageInfo(MessageInfo.TYPE_TEXT,messageContent);
+		message.setSenderUsername(user.getUsername());
+		message.setSenderId(user.getUserId());
+		message.setRecipientType(MessageInfo.Recipient.USER);
+		try {
+			int amount = serverMain.sendToAllConnected(message);
+			return "Message sent to all connected: " + amount;
+		} catch (SQLException throwables) {
+			throwables.printStackTrace();
+		}
+		return "Something went wrong!";
 	}
 	
 }
