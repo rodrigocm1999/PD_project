@@ -22,7 +22,6 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 			return;
 		}
 		
-		token = token.substring("Bearer ".length());
 		UserInfo userInfo = HttpAPI.authenticatedUsers.get(token);
 		
 		if (userInfo != null) {

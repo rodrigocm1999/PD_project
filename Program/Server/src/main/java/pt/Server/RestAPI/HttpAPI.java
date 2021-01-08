@@ -44,7 +44,7 @@ public class HttpAPI {
 					.addFilterAfter(new AuthorizationFilter(),
 							UsernamePasswordAuthenticationFilter.class)
 					.authorizeRequests()
-					.antMatchers(HttpMethod.POST, "/login").permitAll()
+					.antMatchers(HttpMethod.PUT, "/login").permitAll()
 					.anyRequest().authenticated().and()
 					.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 					.and().exceptionHandling().authenticationEntryPoint(
@@ -52,7 +52,7 @@ public class HttpAPI {
 		}
 	}
 	
-	@PostMapping("/login")
+	@PutMapping("/login")
 	public String login(@RequestBody User user) {
 		//Check username and password
 		//Generate token
@@ -91,20 +91,19 @@ public class HttpAPI {
 		return null;
 	}
 	
-	@PutMapping("/sendMessage")
-	public String sendToConnected(HttpServletRequest request,@RequestParam(value = "content", defaultValue = "") String messageContent) {
+	@PostMapping("/sendMessage")
+	public String sendToConnected(HttpServletRequest request,@RequestBody String messageContent) {
 		
 		//Enviar  uma  mensagem  para  todos  os  utilizadores  que  estão  ligados  ao mesmo servidor.
 		//for each connectedMachine -> change the destination
-		//MessageManager.insertMessage();
-		//serverMain.propagateNewMessage();
-
-
+		
 		String token = request.getHeader("Authorization");
-		token = token.substring("Bearer ".length());
 		UserInfo user = authenticatedUsers.get(token);
-
-
+		
+		if(messageContent.isBlank()){
+			return "Message body cannot be empty";
+		}
+		
 		MessageInfo message = new MessageInfo(MessageInfo.TYPE_TEXT,messageContent);
 		message.setSenderUsername(user.getUsername());
 		message.setSenderId(user.getUserId());
