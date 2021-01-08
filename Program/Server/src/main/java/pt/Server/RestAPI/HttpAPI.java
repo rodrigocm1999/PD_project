@@ -23,16 +23,45 @@ import pt.Server.ServerMain;
 import javax.servlet.http.HttpServletRequest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @SpringBootApplication
 @RestController
 public class HttpAPI {
 	
+	static class AuthUser {
+		public UserInfo user;
+		public long lastSeen;
+		
+		public AuthUser(UserInfo user) {
+			this.user = user;
+			this.lastSeen = System.currentTimeMillis();
+		}
+	}
+	
 	private static final ServerMain serverMain = ServerMain.getInstance();
-	public static final Map<String, UserInfo> authenticatedUsers = new HashMap<>();
+	public static final Map<String, AuthUser> authenticatedUsers = Collections.synchronizedMap(new LinkedHashMap<>());
+	
+	static {
+		new Thread(() -> {
+			while (true) {
+				try {
+					Thread.sleep(AuthorizationFilter.TIMEOUT);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				synchronized (authenticatedUsers) {
+					
+					long now = System.currentTimeMillis();
+					authenticatedUsers.forEach((key, authUser) -> {
+						if ((now - authUser.lastSeen) > AuthorizationFilter.TIMEOUT) {
+							authenticatedUsers.remove(key);
+						}
+					});
+				}
+			}
+		}).start();
+	}
 	
 	@EnableWebSecurity
 	@Configuration
@@ -64,7 +93,7 @@ public class HttpAPI {
 			if (UserManager.doesPasswordMatchUsername(user.username, user.password)) {
 				UserInfo userInfo = UserManager.getUserByName(user.username);
 				if (userInfo != null) {
-					authenticatedUsers.put(token, userInfo);
+					authenticatedUsers.put(token, new AuthUser(userInfo));
 					return token;
 				}
 			}
@@ -92,19 +121,19 @@ public class HttpAPI {
 	}
 	
 	@PostMapping("/sendMessage")
-	public String sendToConnected(HttpServletRequest request,@RequestBody String messageContent) {
+	public String sendToConnected(HttpServletRequest request, @RequestBody String messageContent) {
 		
 		//Enviar  uma  mensagem  para  todos  os  utilizadores  que  estão  ligados  ao mesmo servidor.
 		//for each connectedMachine -> change the destination
 		
 		String token = request.getHeader("Authorization");
-		UserInfo user = authenticatedUsers.get(token);
+		UserInfo user = authenticatedUsers.get(token).user;
 		
-		if(messageContent.isBlank()){
+		if (messageContent.isBlank()) {
 			return "Message body cannot be empty";
 		}
 		
-		MessageInfo message = new MessageInfo(MessageInfo.TYPE_TEXT,messageContent);
+		MessageInfo message = new MessageInfo(MessageInfo.TYPE_TEXT, messageContent);
 		message.setSenderUsername(user.getUsername());
 		message.setSenderId(user.getUserId());
 		message.setRecipientType(MessageInfo.Recipient.USER);
