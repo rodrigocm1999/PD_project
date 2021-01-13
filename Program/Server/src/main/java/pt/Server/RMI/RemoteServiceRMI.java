@@ -5,7 +5,6 @@ import pt.Common.RemoteService.Observer;
 import pt.Common.RemoteService.RemoteService;
 import pt.Common.UserInfo;
 import pt.Common.Utils;
-import pt.Server.Database.MessageManager;
 import pt.Server.Database.UserManager;
 import pt.Server.ServerMain;
 

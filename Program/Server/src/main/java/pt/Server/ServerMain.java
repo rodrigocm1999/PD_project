@@ -9,6 +9,7 @@ import pt.Server.RestAPI.HttpAPI;
 
 import java.io.IOException;
 import java.net.*;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -83,7 +84,7 @@ public class ServerMain {
 			isRMIRegistry = false;
 		}
 		remoteServiceRMI = new RemoteServiceRMI( this);
-		registry.bind(serversManager.getServerAddress().getServerId(), remoteServiceRMI);
+		registry.rebind(serversManager.getServerAddress().getServerId(), remoteServiceRMI);
 		SpringApplication.run(HttpAPI.class); // Creates and starts RestAPI
 		
 		System.out.println("Server Running ------------------------------------------------");
@@ -345,6 +346,13 @@ public class ServerMain {
 	public void shutdown() {
 		serversManager.sendShutdown();
 		serversManager = null;
+		if(remoteServiceRMI != null){
+			try {
+				registry.unbind(serversManager.getServerAddress().getServerId());
+			} catch (RemoteException | NotBoundException e) {
+				e.printStackTrace();
+			}
+		}
 		
 		for (var connection : connectedMachines) {
 			connection.disconnect();
