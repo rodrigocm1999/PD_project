@@ -38,7 +38,6 @@ public class ServerMain {
 	
 	private boolean isRMIRegistry;
 	private Registry registry;
-	private int remoteObjectPort;
 	private RemoteServiceRMI remoteServiceRMI;
 	
 	public static ServerMain getInstance() {
@@ -46,7 +45,7 @@ public class ServerMain {
 		return instance;
 	}
 	
-	public ServerMain(String databaseAddress, String databaseName, int listeningUDPPort, int listeningTCPPort, int listeningFilePort, int remoteObjectPort) throws Exception {
+	public ServerMain(String databaseAddress, String databaseName, int listeningUDPPort, int listeningTCPPort, int listeningFilePort) throws Exception {
 		if (instance != null) {
 			throw new Exception("Server Already Running");
 		}
@@ -56,7 +55,6 @@ public class ServerMain {
 		this.listeningUDPPort = listeningUDPPort;
 		this.listeningTCPPort = listeningTCPPort;
 		this.listeningFilePort = listeningFilePort;
-		this.remoteObjectPort = remoteObjectPort;
 	}
 	
 	public void start() throws Exception {
@@ -84,7 +82,7 @@ public class ServerMain {
 			System.out.println("Found existing registry");
 			isRMIRegistry = false;
 		}
-		remoteServiceRMI = new RemoteServiceRMI(remoteObjectPort, this);
+		remoteServiceRMI = new RemoteServiceRMI( this);
 		registry.bind(serversManager.getServerAddress().getServerId(), remoteServiceRMI);
 		SpringApplication.run(HttpAPI.class); // Creates and starts RestAPI
 		
@@ -366,17 +364,16 @@ public class ServerMain {
 	
 	public static void main(String[] args) throws Exception {
 		
-		if (args.length < 5) {
-			System.out.println("Invalid Arguments : database_address, listening udp port (+1 for server synchronization), listening tcp port, fileTransfer tcp port, remote service object port, OPTIONAl database_name");
+		if (args.length < 4) {
+			System.out.println("Invalid Arguments : database_address, listening udp port (+1 for server synchronization), listening tcp port, fileTransfer tcp port, OPTIONAl database_name");
 			System.exit(-1);
 		}
 		String databaseAddress = args[0];
-		int listeningUDPPort = 0, listeningFilePort = 0, listeningTCPPort = 0, remoteObjectPort = 0;
+		int listeningUDPPort = 0, listeningFilePort = 0, listeningTCPPort = 0;
 		try {
 			listeningUDPPort = Integer.parseInt(args[1]);
 			listeningTCPPort = Integer.parseInt(args[2]);
 			listeningFilePort = Integer.parseInt(args[3]);
-			remoteObjectPort = Integer.parseInt(args[4]);
 		} catch (NumberFormatException e) {
 			System.out.println("Invalid Port number(s)");
 			System.exit(-1);
@@ -387,7 +384,7 @@ public class ServerMain {
 			databaseName = args[5];
 		}
 		
-		new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort, listeningFilePort, remoteObjectPort)
+		new ServerMain(databaseAddress, databaseName, listeningUDPPort, listeningTCPPort, listeningFilePort)
 				.start();
 	}
 	public int sendToAllConnected(MessageInfo message) throws SQLException {

@@ -21,8 +21,8 @@ public class RemoteServiceRMI extends UnicastRemoteObject implements RemoteServi
 	private final List<Observer> observerList = new ArrayList<>();
 	private final ServerMain serverMain;
 	
-	public RemoteServiceRMI(int objectPort, ServerMain serverMain) throws RemoteException {
-		super(objectPort);
+	public RemoteServiceRMI(ServerMain serverMain) throws RemoteException {
+		//super(objectPort); //Unicast remote object port still didnt work through the internet after forwarding the ports, so this was removed
 		this.serverMain = serverMain;
 	}
 	
