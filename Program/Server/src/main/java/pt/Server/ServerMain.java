@@ -211,7 +211,7 @@ public class ServerMain {
 			e.printStackTrace();
 		}
 		
-		new Thread(() -> {
+		//new Thread(() -> {
 			try {
 				serversManager.propagateNewMessage(message);
 				
@@ -223,7 +223,7 @@ public class ServerMain {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}).start();
+	//	}).start();
 	}
 	
 	public void propagateRegisterUserChannel(Ids ids) {

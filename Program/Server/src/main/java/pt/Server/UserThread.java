@@ -241,7 +241,7 @@ public class UserThread extends Thread {
 							}
 							outputStream.write(buffer, 0, amountRead);
 						}
-					}catch (FileNotFoundException e){
+					} catch (FileNotFoundException e) {
 						System.out.println("FileNotFound : não devia acontecer");
 					}
 					sendCommand(Constants.FINISHED_FILE_DOWNLOAD, messageId);
@@ -492,8 +492,8 @@ public class UserThread extends Thread {
 		sendCommand(Constants.LOGIN_SUCCESS, userInfo);
 		System.out.println("Login success : " + userInfo);
 		isLoggedIn = true;
-
-		getApp().getRemoteServiceRMI().getObserverList().forEach(ob->{
+		
+		getApp().getRemoteServiceRMI().getObserverList().forEach(ob -> {
 			try {
 				ob.userAuthenticated(userInfo);
 			} catch (RemoteException e) {
@@ -503,12 +503,21 @@ public class UserThread extends Thread {
 	}
 	
 	public void receivedPropagatedMessage(MessageInfo message) throws IOException {
-		System.out.println("Propagated message : " + message);
 		if (isLoggedIn) {
-			int id = message.getRecipientId();
+			int thisUserId = userInfo.getUserId();
+			int currentPlaceId = currentPlace.getUserId();
+			int messageToUserId = message.getRecipientId();
+			int fromThisPerson = message.getSenderId();
 			MessageInfo.Recipient type = message.getRecipientType();
-			if (type.equals(MessageInfo.Recipient.CHANNEL) && currentPlace.getChannelId() == id
-					|| type.equals(MessageInfo.Recipient.USER) && (currentPlace.getUserId() == id || userInfo.getUserId() == id)) {
+			
+			boolean forThisMan = (type.equals(MessageInfo.Recipient.CHANNEL) && currentPlace.getChannelId() == messageToUserId); // Se estiver no canal
+			
+			if (type.equals(MessageInfo.Recipient.USER) &&
+					(fromThisPerson == currentPlaceId && messageToUserId == thisUserId)) {
+				forThisMan = true;
+			}
+			
+			if (forThisMan) {
 				sendCommand(Constants.NEW_MESSAGE, message);
 				System.out.println("Sent propagated message : " + message);
 			}
@@ -544,7 +553,7 @@ public class UserThread extends Thread {
 	public boolean isLoggedIn() {
 		return isLoggedIn;
 	}
-
+	
 	public UserInfo getUserInfo() {
 		return userInfo;
 	}

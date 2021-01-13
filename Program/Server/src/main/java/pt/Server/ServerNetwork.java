@@ -258,7 +258,6 @@ public class ServerNetwork extends Thread {
 	public void propagateNewMessage(MessageInfo newMessage) throws IOException {
 		sendAllCommand(ServerConstants.PROTOCOL_NEW_MESSAGE, newMessage);
 		String fileName = newMessage.getContent();
-		
 		if (newMessage.getType().equals(MessageInfo.TYPE_FILE)) {
 			sendFileInBlocksToAllServes(
 					ServerConstants.getTransferredFilePath(fileName),

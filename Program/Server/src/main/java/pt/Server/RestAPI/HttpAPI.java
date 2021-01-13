@@ -40,7 +40,7 @@ public class HttpAPI {
 	}
 	
 	private static final ServerMain serverMain = ServerMain.getInstance();
-	public static final Map<String, AuthUser> authenticatedUsers = Collections.synchronizedMap(new LinkedHashMap<>());
+	public static final Map<String, AuthUser> authenticatedUsers = Collections.synchronizedMap(new HashMap<>());
 	
 	static {
 		new Thread(() -> {

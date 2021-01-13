@@ -11,9 +11,9 @@ public class ServerConstants {
 	
 	
 	public static final String HEARTBEAT = "HEARTBEAT";
-	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 18; // Heartbeat interval
-	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 20; // Heartbeat interval
-	public static final int SERVERS_LIST_INTERVAL = 60 * 1000;
+	public static final int HEARTBEAT_SEND_INTERVAL = 1000 * 28; // Heartbeat interval
+	public static final int HEARTBEAT_WAIT_INTERVAL = 1000 * 30; // Heartbeat interval
+	public static final int SERVERS_LIST_INTERVAL = 120 * 1000;
 	public static final int FAKE_USER_SYNC_COUNT = 100;
 	public static final String ASK_SYNCHRONIZER = "ASK_SYNCHRONIZER";
 	public static final String ASK_SYNCHRONIZER_OK = "ASK_SYNCHRONIZER_OK";
