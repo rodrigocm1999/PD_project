@@ -43,7 +43,7 @@ public class HttpAPI {
 	public static final Map<String, AuthUser> authenticatedUsers = Collections.synchronizedMap(new HashMap<>());
 	
 	static {
-		new Thread(() -> {
+		new Thread(() -> { // Esta thread serve para limpar os "utilizadores" da API que já não se conectam á algum tempo
 			while (true) {
 				try {
 					Thread.sleep(AuthorizationFilter.TIMEOUT);
@@ -51,13 +51,14 @@ public class HttpAPI {
 					e.printStackTrace();
 				}
 				synchronized (authenticatedUsers) {
-					
 					long now = System.currentTimeMillis();
+					List<String> toRemove = new ArrayList<>();
 					authenticatedUsers.forEach((key, authUser) -> {
 						if ((now - authUser.lastSeen) > AuthorizationFilter.TIMEOUT) {
-							authenticatedUsers.remove(key);
+							toRemove.add(key);
 						}
 					});
+					toRemove.forEach(key -> authenticatedUsers.remove(key));
 				}
 			}
 		}).start();
