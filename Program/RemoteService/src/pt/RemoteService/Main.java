@@ -112,7 +112,7 @@ public class Main {
 						}
 						case 3 -> {
 							if (serverService.observer == null) {
-								serverService.observer = new RMIObserver();
+								serverService.observer = new RMIObserver(serverService);
 								remoteService.addObserver(serverService.observer);
 								System.out.println("Observer added");
 							} else {
