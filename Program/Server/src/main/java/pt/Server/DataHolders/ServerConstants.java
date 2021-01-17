@@ -35,7 +35,15 @@ public class ServerConstants {
 	public static final String UPDATE_USER_COUNT = "UPDATE_USER_COUNT";
 	public static final float ACCEPT_PERCENTAGE_THRESHOLD = 0.5f;
 	
-	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/{2}?allowPublicKeyRetrieval=true&autoReconnect=true&useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+	private static final String DATABASE_URL = "jdbc:mysql://{1}:3306/{2}?" +
+			"allowPublicKeyRetrieval=true&" +
+			"autoReconnect=true&" +
+			"useSSL=false&" +
+			"useJDBCCompliantTimezoneShift=true&" +
+			"useLegacyDatetimeCode=false&" +
+			"serverTimezone=UTC&" +
+			"useUnicode=yes&" +
+			"characterEncoding=UTF-8";
 	public static final String DATABASE_NAME = "main";
 	public static final String DATABASE_USER_NAME = "server";
 	public static final String DATABASE_USER_PASSWORD = "VeryStrongPassword";

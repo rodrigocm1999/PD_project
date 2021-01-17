@@ -74,7 +74,7 @@ public class HttpAPI {
 					.addFilterAfter(new AuthorizationFilter(),
 							UsernamePasswordAuthenticationFilter.class)
 					.authorizeRequests()
-					.antMatchers(HttpMethod.PUT, "/login").permitAll()
+					.antMatchers(HttpMethod.POST, "/login").permitAll()
 					.anyRequest().authenticated().and()
 					.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 					.and().exceptionHandling().authenticationEntryPoint(
@@ -82,7 +82,7 @@ public class HttpAPI {
 		}
 	}
 	
-	@PutMapping("/login")
+	@PostMapping("/login")
 	public String login(@RequestBody User user) {
 		//Check username and password
 		//Generate token
@@ -95,14 +95,14 @@ public class HttpAPI {
 				UserInfo userInfo = UserManager.getUserByName(user.username);
 				if (userInfo != null) {
 					authenticatedUsers.put(token, new AuthUser(userInfo));
-					return token;
+					return "token : " + token;
 				}
 			}
-			return "";
+			return "Password doesn't match username";
 		} catch (SQLException | NoSuchAlgorithmException throwables) {
 			throwables.printStackTrace();
 		}
-		return "";
+		return "Server error";
 	}
 	
 	// Everything that requires login must return 401 (Unauthorized) if there is no token

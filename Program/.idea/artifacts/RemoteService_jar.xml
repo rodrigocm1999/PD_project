@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="RemoteService:jar">
+    <output-path>$PROJECT_DIR$/../../PD-2021-F1-TP-G07/Pronto a correr/Remote Service</output-path>
+    <root id="archive" name="RemoteService_jar.jar">
+      <element id="module-output" name="RemoteService" />
+      <element id="module-output" name="Program" />
+    </root>
+  </artifact>
+</component>

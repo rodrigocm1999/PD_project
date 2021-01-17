@@ -57,6 +57,13 @@ public class Main {
 			int choice = getUserChoice(scanner);
 			
 			if (choice == 0) {
+				services.forEach((key, value) -> {
+					try {
+						value.remoteService.removeObserver(value.observer);
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
+				});
 				System.exit(0);
 			} else if (choice == 1) {
 				continue;
@@ -89,7 +96,8 @@ public class Main {
 					System.out.println("3 - " + (serverService.observer == null ? "Register" : "Remove") + " observer");
 					choice = getUserChoice(scanner);
 					switch (choice) {
-						case 0 -> {}
+						case 0 -> {
+						}
 						case 1 -> {
 							System.out.println("Username/Name:");
 							String name = scanner.nextLine();
